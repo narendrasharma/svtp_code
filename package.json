@@ -27,6 +27,7 @@
         "@popperjs/core": "^2.11.8",
         "axios": "^1.20.0",
         "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.13.1",
         "qrcode.vue": "^3.10.0",
         "vue": "^3.5.42"
     }
