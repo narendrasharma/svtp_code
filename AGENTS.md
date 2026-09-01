@@ -1,47 +1,46 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# Shree Vrindavan Tour Packages
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+## Project
 
-## Prerequisites
+This is a Laravel + Vue website for Shree Vrindavan Tour Packages,
+a tour and travel agency focused on Mathura, Vrindavan and Braj tourism.
 
-Verify that PHP and Composer are available:
+## Coding Rules
 
-```sh
-php -v
-composer -V
-```
+- Preserve existing backend functionality.
+- Reuse existing components whenever practical.
+- Do not install packages unless necessary.
+- Do not modify database structure unless the task requires it.
+- Do not hardcode data that already comes from Laravel.
+- Keep controllers and existing application architecture consistent.
+- Keep code clean and reusable.
+- Run the appropriate build/tests after significant changes.
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
+## Design Direction
 
-macOS:
+- The website should feel colorful, vibrant and premium.
+- Take visual inspiration from Vrindavan, Mathura and Braj.
+- Use high-quality temple and destination photography.
+- Suitable colors include Krishna blue, saffron, Radha pink,
+  marigold tones and warm neutral backgrounds.
+- Avoid excessive gradients and visual clutter.
+- Maintain good whitespace and readability.
+- Mobile responsiveness is a priority.
 
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
-```
+## Business Priorities
 
-Windows PowerShell:
+- Tour packages
+- Mathura/Vrindavan destinations
+- Taxi booking
+- Custom trip enquiries
+- WhatsApp conversion
+- Festival tourism
+- Family and senior-citizen tours
+- Foreign tourist assistance
 
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
+## Safety Before Changes
 
-Linux:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
-
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
-
-## Agent Setup
-
-Install Laravel Boost from the application root before making application changes:
-
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
-
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+- Inspect existing implementation before replacing it.
+- Do not modify unrelated files.
+- Preserve working functionality during UI redesigns.
+- Prefer focused changes over unnecessary project-wide refactors.
