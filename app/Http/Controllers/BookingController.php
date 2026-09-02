@@ -13,11 +13,6 @@ class BookingController extends Controller
 {
     public function __construct(protected PaymentService $payments) {}
 
-    public function checkout(TourPackage $package)
-    {
-        return Inertia::render('Booking/Checkout', compact('package'));
-    }
-
     public function store(StoreBookingRequest $request)
     {
         $package = TourPackage::findOrFail($request->package_id);

@@ -10,31 +10,72 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    public function test_admin_login_screen_can_be_rendered(): void
+    {
+        $response = $this->get('/admin');
+
+        $response->assertOk();
+    }
+
+    public function test_public_login_route_is_not_exposed(): void
     {
         $response = $this->get('/login');
 
-        $response->assertStatus(200);
+        $response->assertNotFound();
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_authenticated_admin_visiting_admin_root_is_redirected_to_dashboard(): void
     {
-        $user = User::factory()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->post('/login', [
+        $response = $this->actingAs($admin)->get('/admin');
+
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_admins_can_authenticate_and_are_redirected_to_the_admin_dashboard(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->post('/admin/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_admin_can_access_the_admin_dashboard(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
+
+        $response->assertOk();
+    }
+
+    public function test_guests_cannot_access_the_admin_dashboard(): void
+    {
+        $response = $this->get('/admin/dashboard');
+
+        $response->assertRedirect(route('login', absolute: false));
+    }
+
+    public function test_non_admin_users_cannot_access_the_admin_dashboard(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+
+        $response = $this->actingAs($user)->get('/admin/dashboard');
+
+        $response->assertForbidden();
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();
 
-        $this->post('/login', [
+        $this->post('/admin/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
@@ -42,13 +83,36 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_users_can_logout(): void
+    public function test_non_admin_users_cannot_authenticate_through_the_admin_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'customer']);
 
-        $response = $this->actingAs($user)->post('/logout');
+        $this->post('/admin/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+    }
+
+    public function test_admins_can_logout(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($user)->post('/admin/logout');
 
         $this->assertGuest();
         $response->assertRedirect('/');
+    }
+
+    public function test_logged_out_admins_cannot_access_the_admin_dashboard(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post('/admin/logout');
+        $response = $this->get('/admin/dashboard');
+
+        $this->assertGuest();
+        $response->assertRedirect(route('login', absolute: false));
     }
 }

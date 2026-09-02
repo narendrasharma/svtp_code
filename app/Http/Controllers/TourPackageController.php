@@ -20,7 +20,11 @@ class TourPackageController extends Controller
 
         return Inertia::render('Packages/Index', [
             'packages' => $packages,
-            'filters' => $request->only('city', 'category', 'min_price', 'max_price', 'date'),
+            'filters' => $request->only(
+                'city', 'category', 'min_price', 'max_price', 'date',
+                'adults', 'children', 'pickup_address', 'pickup_place_id',
+                'pickup_lat', 'pickup_lng'
+            ),
         ]);
     }
 

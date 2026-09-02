@@ -8,11 +8,20 @@ import { Link } from '@inertiajs/vue3';
         <aside class="bg-dark text-white p-3" style="width: 240px; min-height: 100vh;">
             <h5 class="mb-4">SVTP Admin</h5>
             <nav class="d-flex flex-column gap-2">
-                <Link :href="appUrl('/admin')" class="text-white text-decoration-none">Dashboard</Link>
+                <Link :href="appUrl('/admin/dashboard')" class="text-white text-decoration-none">Dashboard</Link>
+                <Link :href="appUrl('/admin/enquiries')" class="text-white text-decoration-none">Enquiries</Link>
                 <Link :href="appUrl('/admin/packages')" class="text-white text-decoration-none">Packages</Link>
                 <Link :href="appUrl('/admin/banners')" class="text-white text-decoration-none">Banners</Link>
                 <Link :href="appUrl('/admin/bookings')" class="text-white text-decoration-none">Bookings</Link>
                 <Link :href="appUrl('/admin/reviews')" class="text-white text-decoration-none">Reviews</Link>
+                <Link
+                    :href="appUrl('/admin/logout')"
+                    method="post"
+                    as="button"
+                    class="btn btn-link p-0 text-start text-white text-decoration-none"
+                >
+                    Logout
+                </Link>
             </nav>
         </aside>
         <main class="flex-grow-1 p-4">

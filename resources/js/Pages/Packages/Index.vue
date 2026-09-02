@@ -89,6 +89,14 @@ function resetFilters() {
             </div>
 
             <p class="text-muted mb-4">{{ packages.total ?? packages.data.length }} tours found</p>
+            <div v-if="filters.pickup_address || filters.date || filters.adults" class="alert alert-light border mb-4">
+                <span v-if="filters.pickup_address"><strong>Pickup:</strong> {{ filters.pickup_address }}</span>
+                <span v-if="filters.date" class="ms-3"><strong>Travel date:</strong> {{ filters.date }}</span>
+                <span v-if="filters.adults" class="ms-3">
+                    <strong>Travellers:</strong> {{ filters.adults }} adult<span v-if="Number(filters.adults) !== 1">s</span>
+                    <template v-if="Number(filters.children)">, {{ filters.children }} child<span v-if="Number(filters.children) !== 1">ren</span></template>
+                </span>
+            </div>
 
             <div v-if="packages.data.length" class="row g-4">
                 <div v-for="pkg in packages.data" :key="pkg.id" class="col-md-4">

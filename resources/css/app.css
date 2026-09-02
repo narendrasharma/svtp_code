@@ -348,6 +348,36 @@ a:hover { color: var(--saffron); }
     border-color: var(--gulal);
 }
 
+.places-autocomplete-host gmp-place-autocomplete { width: 100%; }
+.search-dropdown {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0.75rem;
+    right: 0.75rem;
+    z-index: 20;
+    max-height: 240px;
+    overflow-y: auto;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 14px 35px rgba(36, 6, 19, 0.22);
+}
+.search-dropdown > button {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    border: 0;
+    padding: 0.65rem 0.8rem;
+    background: #fff;
+    color: var(--ink);
+    text-align: left;
+}
+.search-dropdown > button:hover { background: var(--cream-warm); }
+.search-dropdown small { color: var(--gulal-deep); }
+.traveller-dropdown { padding: 0.8rem; }
+.traveller-row { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; color: var(--ink); }
+.traveller-row div { display: flex; align-items: center; gap: 0.75rem; }
+.traveller-row div button { width: 30px; height: 30px; border: 1px solid var(--gold-soft); border-radius: 50%; background: #fff; }
+
 /* ============================================================
    Top utility bar
    ============================================================ */
@@ -363,6 +393,8 @@ a:hover { color: var(--saffron); }
     opacity: 0.9;
 }
 .top-bar-contact a:hover { color: var(--turmeric); opacity: 1; }
+.top-bar-contact { display: flex; align-items: center; min-width: 0; }
+.top-bar-contact a:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top-bar-hours { opacity: 0.75; }
 .top-bar-social { display: flex; gap: 0.9rem; }
 .top-bar-social a { color: var(--gold-soft); font-size: 0.95rem; }
@@ -695,6 +727,53 @@ footer .marquee-badge { color: var(--cream-warm); }
 /* ============================================================
    WhatsApp float
    ============================================================ */
+.quick-enquiry-float {
+    position: fixed;
+    right: 24px;
+    bottom: 94px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    background: var(--maroon);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.enquiry-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(36, 6, 19, 0.62);
+}
+
+.enquiry-modal {
+    position: relative;
+    width: min(100%, 440px);
+    padding: 2rem;
+    background: var(--cream);
+}
+
+.enquiry-modal-wide {
+    width: min(100%, 780px);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+}
+
+.enquiry-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
 .whatsapp-float {
     position: fixed;
     bottom: 24px;
@@ -711,6 +790,11 @@ footer .marquee-badge { color: var(--cream-warm); }
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     animation: pulseGlow 2.6s ease-in-out infinite;
+}
+
+@media (max-width: 575px) {
+    .quick-enquiry-float span { display: none; }
+    .quick-enquiry-float { width: 48px; height: 48px; justify-content: center; padding: 0; }
 }
 
 /* ---------- Itinerary accordion ---------- */
@@ -743,6 +827,13 @@ footer.site-footer .footer-social {
     transition: background 0.2s ease;
 }
 footer.site-footer .footer-social:hover { background: var(--saffron); color: #fff; }
+
+.contact-map-card { min-height: 520px; }
+.contact-map-card iframe { width: 100%; height: 100%; min-height: 520px; border: 0; display: block; }
+
+@media (max-width: 991.98px) {
+    .contact-map-card, .contact-map-card iframe { min-height: 380px; }
+}
 
 /* ============================================================
    Tour detail page

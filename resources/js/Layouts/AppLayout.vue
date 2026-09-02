@@ -1,13 +1,19 @@
 <script setup>
+import { ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
+import QuickEnquiryModal from '../Components/QuickEnquiryModal.vue';
+import TourPlanEnquiryModal from '../Components/TourPlanEnquiryModal.vue';
 import WhatsAppFloat from '../Components/WhatsAppFloatButton.vue';
 import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
 import TopBar from '../Components/TopBar.vue';
 import Logo from '../Components/Logo.vue';
 import { appUrl } from '../appUrl';
+import { contactInfo } from '../festiveAssets';
 
 const page = usePage();
 const year = new Date().getFullYear();
+const isQuickEnquiryOpen = ref(false);
+const isTourEnquiryOpen = ref(false);
 </script>
 
 <template>
@@ -24,8 +30,7 @@ const year = new Date().getFullYear();
                     <Link :href="appUrl('/blog')" class="nav-link-custom">Blog</Link>
                     <Link :href="appUrl('/about')" class="nav-link-custom">About</Link>
                     <Link :href="appUrl('/contact')" class="nav-link-custom">Contact</Link>
-                    <Link v-if="page.props.auth?.user" :href="appUrl('/my-bookings')" class="nav-link-custom">My Bookings</Link>
-                    <Link v-else :href="appUrl('/login')" class="btn btn-svtp ms-3">Login</Link>
+                    <button type="button" class="btn btn-svtp ms-3" @click="isTourEnquiryOpen = true">Enquiry</button>
                 </div>
             </div>
         </nav>
@@ -52,7 +57,7 @@ const year = new Date().getFullYear();
                             <a href="#" class="footer-social" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                             <a href="#" class="footer-social" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
                             <a href="#" class="footer-social" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
-                            <a href="https://wa.me/917017621518" target="_blank" rel="noopener" class="footer-social" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                            <a href="https://wa.me/918923427393" target="_blank" rel="noopener" class="footer-social" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
                         </div>
                     </div>
 
@@ -74,7 +79,6 @@ const year = new Date().getFullYear();
                             <li class="mb-2"><Link :href="appUrl('/faq')">FAQs</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/testimonials')">Testimonials</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/contact')">Contact Us</Link></li>
-                            <li class="mb-2"><Link :href="appUrl('/my-bookings')">My Bookings</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/terms')">Terms &amp; Conditions</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/privacy')">Privacy Policy</Link></li>
                         </ul>
@@ -82,9 +86,10 @@ const year = new Date().getFullYear();
 
                     <div class="col-lg-3 col-md-6">
                         <h6>Reach Us</h6>
-                        <p class="small mb-1"><i class="bi bi-geo-alt-fill me-2"></i>Mathura, Uttar Pradesh</p>
-                        <p class="small mb-1"><i class="bi bi-envelope-fill me-2"></i><a href="mailto:info@shreevrindavantourpackages.com">info@shreevrindavantourpackages.com</a></p>
-                        <p class="small mb-0"><i class="bi bi-whatsapp me-2"></i><a href="https://wa.me/917017621518" target="_blank" rel="noopener">Chat with us</a></p>
+                        <p class="small mb-2"><i class="bi bi-geo-alt-fill me-2"></i><a :href="contactInfo.mapUrl" target="_blank" rel="noopener">{{ contactInfo.headOffice }}</a></p>
+                        <p class="small mb-2"><i class="bi bi-telephone-fill me-2"></i><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a></p>
+                        <p class="small mb-2"><i class="bi bi-envelope-fill me-2"></i><a :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a></p>
+                        <p class="small mb-0"><i class="bi bi-whatsapp me-2"></i><a href="https://wa.me/918923427393" target="_blank" rel="noopener">Chat with us</a></p>
                     </div>
                 </div>
             </div>
@@ -98,6 +103,16 @@ const year = new Date().getFullYear();
             </div>
         </footer>
 
+        <button type="button" class="quick-enquiry-float" @click="isQuickEnquiryOpen = true">
+            <i class="bi bi-chat-dots-fill"></i>
+            <span>Quick Enquiry</span>
+        </button>
         <WhatsAppFloat />
+        <QuickEnquiryModal :open="isQuickEnquiryOpen" @close="isQuickEnquiryOpen = false" />
+        <TourPlanEnquiryModal
+            :open="isTourEnquiryOpen"
+            :security-question="page.props.securityQuestion"
+            @close="isTourEnquiryOpen = false"
+        />
     </div>
 </template>

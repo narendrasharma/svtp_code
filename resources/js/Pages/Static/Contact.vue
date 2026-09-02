@@ -1,28 +1,39 @@
 <script setup>
-import { appUrl } from '../../appUrl';
 import AppLayout from '../../Layouts/AppLayout.vue';
-import { useForm } from '@inertiajs/vue3';
-
-const form = useForm({ name: '', email: '', message: '' });
+import { contactInfo } from '../../festiveAssets';
 </script>
 
 <template>
     <AppLayout>
-        <div class="container py-5" style="max-width: 640px;">
-            <h1 class="brand-heading">Contact Us</h1>
-            <address>
-                <strong>Head Office:</strong> House No. 1, Sec No. 4, Shree Radhapuram Estate,
-                Near Goverdhan Chauraha, Mathura, Uttar Pradesh<br />
-                <strong>Alternate Address:</strong> Behind ATK, Near Pawan Kunj, Jay Gurudev Temple, Mathura<br />
-                <strong>Email:</strong> info@shreevrindavantourpackages.com
-            </address>
-
-            <form class="mt-4" @submit.prevent="form.post(appUrl('/contact'))">
-                <input v-model="form.name" class="form-control mb-2" placeholder="Your Name" required />
-                <input v-model="form.email" type="email" class="form-control mb-2" placeholder="Your Email" required />
-                <textarea v-model="form.message" class="form-control mb-2" rows="4" placeholder="Message" required></textarea>
-                <button class="btn btn-svtp">Send Message</button>
-            </form>
+        <div class="container py-5">
+            <p class="section-eyebrow">संपर्क करें</p>
+            <h1 class="brand-heading">Contact {{ contactInfo.companyName }}</h1>
+            <p class="text-muted mb-5">Speak directly with our Mathura-based team or visit our head office.</p>
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="glass-card p-4 h-100">
+                        <h4 class="text-svtp mb-4">Contact Details</h4>
+                        <p><strong>CEO / Travel Consultant</strong><br>{{ contactInfo.ceo }}<br><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a></p>
+                        <p><strong>Marketing Head</strong><br>{{ contactInfo.marketingHead }}<br><a :href="contactInfo.marketingPhoneHref">{{ contactInfo.marketingPhone }}</a></p>
+                        <p>
+                            <strong>Travel Consultants</strong><br>
+                            <template v-for="consultant in contactInfo.travelConsultants" :key="consultant.name">
+                                {{ consultant.name }} · <a :href="consultant.phoneHref">{{ consultant.phone }}</a><br>
+                            </template>
+                        </p>
+                        <p><strong>Email</strong><br><a :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a></p>
+                        <p><strong>Website</strong><br><a :href="contactInfo.websiteHref">{{ contactInfo.website }}</a></p>
+                        <hr>
+                        <p><strong>Head Office</strong><br>{{ contactInfo.headOffice }}</p>
+                        <a :href="contactInfo.mapUrl" target="_blank" rel="noopener" class="btn btn-svtp"><i class="bi bi-geo-alt-fill me-2"></i>Open in Google Maps</a>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="glass-card overflow-hidden h-100 contact-map-card">
+                        <iframe :src="contactInfo.mapEmbedUrl" title="Shree Vrindavan Tour Packages at Pawan Kunj map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

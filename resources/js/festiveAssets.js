@@ -153,9 +153,23 @@ export const festivalGuidesDetailed = [
 ];
 
 export const contactInfo = {
-    phone: '+91 70176 21518',
-    phoneHref: 'tel:+917017621518',
+    companyName: 'Shree Vrindavan Tour Packages',
+    phone: '+91 89234 27393',
+    phoneHref: 'tel:+918923427393',
+    marketingPhone: '+91 70176 21518',
+    marketingPhoneHref: 'tel:+917017621518',
+    ceo: 'Kanhaiya Upadhyay',
+    marketingHead: 'Narendra Sharma',
+    travelConsultants: [
+        { name: 'Abhishek Upadhyay', phone: '844550786', phoneHref: 'tel:844550786' },
+        { name: 'Lavi Upadhyay', phone: '8979020415', phoneHref: 'tel:+918979020415' },
+    ],
     email: 'info@shreevrindavantourpackages.com',
+    website: 'www.shreevrindavantourpackages.com',
+    websiteHref: 'https://www.shreevrindavantourpackages.com',
+    headOffice: 'Behind ATV, Near Pawan Kunj, Jay Gurudev Temple, Mathura, Uttar Pradesh.',
+    mapUrl: 'https://maps.app.goo.gl/hvnfoqfjsMf4D5748',
+    mapEmbedUrl: 'https://www.google.com/maps?q=27.4748346%2C77.6192256&z=17&output=embed',
     hours: 'Support 7:00 AM – 10:00 PM',
 };
 
@@ -163,7 +177,7 @@ export const socialLinks = [
     { icon: 'bi-facebook', href: '#', label: 'Facebook' },
     { icon: 'bi-instagram', href: '#', label: 'Instagram' },
     { icon: 'bi-youtube', href: '#', label: 'YouTube' },
-    { icon: 'bi-whatsapp', href: 'https://wa.me/917017621518', label: 'WhatsApp' },
+    { icon: 'bi-whatsapp', href: 'https://wa.me/918923427393', label: 'WhatsApp' },
 ];
 
 export const whyChooseUs = [

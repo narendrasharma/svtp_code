@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { appUrl } from '../../appUrl';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ItineraryAccordion from '../../Components/ItineraryAccordion.vue';
 import StarRating from '../../Components/StarRating.vue';
+import TourPlanEnquiryModal from '../../Components/TourPlanEnquiryModal.vue';
 import { categoryImage } from '../../festiveAssets';
 
-const props = defineProps({ package: Object, reviews: Object });
+const props = defineProps({ package: Object, reviews: Object, securityQuestion: String });
 
 const gallery = computed(() => {
     const g = props.package.gallery && props.package.gallery.length
@@ -16,6 +16,7 @@ const gallery = computed(() => {
 });
 
 const activeImage = ref(0);
+const isTourEnquiryOpen = ref(false);
 
 const adults = ref(2);
 const children = ref(0);
@@ -113,9 +114,9 @@ const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.v
                             <span class="price-tag fs-4 mb-0">₹{{ totalPrice.toLocaleString('en-IN') }}</span>
                         </div>
 
-                        <a :href="`${appUrl('/packages')}/${package.slug}/checkout`" class="btn btn-svtp w-100 mt-3">
-                            <i class="bi bi-calendar-check me-1"></i>Book Now
-                        </a>
+                        <button type="button" class="btn btn-svtp w-100 mt-3" @click="isTourEnquiryOpen = true">
+                            <i class="bi bi-chat-square-text-fill me-1"></i>Enquire Now
+                        </button>
                         <a href="https://wa.me/917017621518" target="_blank" rel="noopener" class="btn btn-outline-svtp w-100 mt-2">
                             <i class="bi bi-whatsapp me-1"></i>Ask on WhatsApp
                         </a>
@@ -123,5 +124,11 @@ const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.v
                 </div>
             </div>
         </div>
+        <TourPlanEnquiryModal
+            :open="isTourEnquiryOpen"
+            :security-question="securityQuestion"
+            :tour-package="package"
+            @close="isTourEnquiryOpen = false"
+        />
     </AppLayout>
 </template>

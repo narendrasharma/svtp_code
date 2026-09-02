@@ -9,6 +9,7 @@ class Booking extends Model
 {
     protected $fillable = [
         'user_id', 'package_id', 'booking_reference_id', 'travel_date',
+        'customer_name', 'customer_phone', 'customer_email', 'pickup_address',
         'total_adults', 'total_children', 'total_amount', 'payment_gateway',
         'payment_reference', 'payment_status', 'booking_status', 'qr_code_string',
     ];
@@ -20,7 +21,7 @@ class Booking extends Model
     protected static function booted()
     {
         static::creating(function (Booking $booking) {
-            $booking->booking_reference_id ??= 'SVTP-' . strtoupper(Str::random(8));
+            $booking->booking_reference_id ??= 'SVTP-'.strtoupper(Str::random(8));
             $booking->qr_code_string ??= Str::uuid()->toString();
         });
     }

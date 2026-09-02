@@ -33,8 +33,27 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                'flash' => ['message' => fn () => $request->session()->get('flash')],
             ],
+            'flash' => [
+                'message' => fn () => $request->session()->get('flash'),
+            ],
+            'securityQuestion' => $this->securityQuestion($request),
         ];
+    }
+
+    private function securityQuestion(Request $request): string
+    {
+        if (! $request->session()->has('enquiry_math_answer')
+            || ! $request->session()->has('enquiry_math_question')) {
+            $left = random_int(1, 9);
+            $right = random_int(1, 9);
+
+            $request->session()->put([
+                'enquiry_math_answer' => $left + $right,
+                'enquiry_math_question' => "{$left} + {$right} = ?",
+            ]);
+        }
+
+        return $request->session()->get('enquiry_math_question');
     }
 }
