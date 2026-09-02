@@ -1,6 +1,5 @@
 <script setup>
-// TODO: replace with the live business WhatsApp number before launch.
-const whatsappNumber = '917017621518';
+const whatsappNumber = '918923427393';
 const message = encodeURIComponent('Radhe Radhe! I would like to know more about your Vrindavan tour packages.');
 </script>
 

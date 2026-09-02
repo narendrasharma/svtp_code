@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import QuickEnquiryModal from '../Components/QuickEnquiryModal.vue';
+import DevotionalDivider from '../Components/DevotionalDivider.vue';
+import FooterReviewPlatforms from '../Components/FooterReviewPlatforms.vue';
 import TourPlanEnquiryModal from '../Components/TourPlanEnquiryModal.vue';
 import WhatsAppFloat from '../Components/WhatsAppFloatButton.vue';
 import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
@@ -43,6 +45,7 @@ const isTourEnquiryOpen = ref(false);
             <slot />
         </main>
 
+        <DevotionalDivider />
         <footer class="site-footer pt-5">
             <div class="container pb-4">
                 <div class="row g-4">
@@ -70,6 +73,7 @@ const isTourEnquiryOpen = ref(false);
                             <li class="mb-2"><Link :href="appUrl('/gallery')">Gallery</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/blog')">Blog</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/about')">About Us</Link></li>
+                            <li class="mb-2"><Link :href="appUrl('/our-team')">Our Team</Link></li>
                         </ul>
                     </div>
 
@@ -93,6 +97,8 @@ const isTourEnquiryOpen = ref(false);
                     </div>
                 </div>
             </div>
+
+            <FooterReviewPlatforms />
 
             <div class="py-3" style="border-top: 1px solid rgba(228,205,140,0.2); border-bottom: 1px solid rgba(228,205,140,0.2);">
                 <TrustBadgeMarquee />

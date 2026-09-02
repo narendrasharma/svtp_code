@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="96" viewBox="0 0 1600 96" role="img" aria-labelledby="title description" preserveAspectRatio="xMidYMid slice">
+    <title id="title">Braj devotional temple border</title>
+    <desc id="description">An original ornamental border inspired by Vrindavan temples, lotus flowers, peacock feathers and Krishna's flute.</desc>
+    <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="1" y2="0">
+            <stop stop-color="#FCDFB4"/>
+            <stop offset="0.25" stop-color="#F7B9C9"/>
+            <stop offset="0.5" stop-color="#F9E3A5"/>
+            <stop offset="0.75" stop-color="#C7DDF1"/>
+            <stop offset="1" stop-color="#F3C0D0"/>
+        </linearGradient>
+        <linearGradient id="temple" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#8B2A62"/>
+            <stop offset="1" stop-color="#541B46"/>
+        </linearGradient>
+        <pattern id="lotusPattern" width="180" height="96" patternUnits="userSpaceOnUse">
+            <path d="M90 78C72 67 67 53 70 41C82 45 89 54 90 65C91 54 98 45 110 41C113 53 108 67 90 78Z" fill="#E44F88" opacity="0.68"/>
+            <path d="M90 78C72 80 57 73 51 62C64 58 77 62 86 72C81 59 83 47 90 38C97 47 99 59 94 72C103 62 116 58 129 62C123 73 108 80 90 78Z" fill="#F39A3D" opacity="0.62"/>
+        </pattern>
+    </defs>
+    <rect width="1600" height="96" fill="url(#sky)"/>
+    <rect width="1600" height="96" fill="url(#lotusPattern)" opacity="0.38"/>
+    <path d="M0 82H1600V96H0Z" fill="#541B46"/>
+    <path d="M0 83C120 66 215 87 330 78C459 68 530 81 654 76C772 71 851 83 975 76C1094 69 1187 85 1308 77C1421 70 1503 82 1600 74V96H0Z" fill="url(#temple)" opacity="0.92"/>
+
+    <g fill="#6D2053">
+        <path d="M90 83V55H128V83ZM96 55C99 41 106 32 109 20C112 32 120 41 122 55Z"/>
+        <path d="M286 82V60H324V82ZM291 60C295 47 302 41 305 29C309 41 316 47 319 60Z"/>
+        <path d="M1215 82V58H1257V82ZM1221 58C1224 44 1233 37 1236 24C1240 37 1249 44 1252 58Z"/>
+        <path d="M1455 83V54H1497V83ZM1461 54C1464 40 1473 30 1476 17C1480 30 1489 40 1492 54Z"/>
+    </g>
+
+    <g transform="translate(736 8)">
+        <path d="M25 75V49H103V75ZM34 49C39 31 52 20 64 8C76 20 89 31 94 49Z" fill="#67204F"/>
+        <path d="M51 75V54C51 44 57 38 64 38C71 38 77 44 77 54V75Z" fill="#F7D9B5"/>
+        <circle cx="64" cy="25" r="5" fill="#EBA63B"/>
+        <path d="M64 8V0M58 5H70" stroke="#D28A25" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(520 21) rotate(-7)">
+        <rect x="0" y="27" width="150" height="7" rx="3.5" fill="#D49331"/>
+        <circle cx="39" cy="30.5" r="2" fill="#713052"/><circle cx="67" cy="30.5" r="2" fill="#713052"/><circle cx="95" cy="30.5" r="2" fill="#713052"/>
+        <path d="M144 16C153 23 153 38 144 45" fill="none" stroke="#D49331" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(938 8)">
+        <path d="M10 75C25 53 37 31 56 9" fill="none" stroke="#D49331" stroke-width="3" stroke-linecap="round"/>
+        <path d="M34 46C28 30 36 13 55 5C72 18 72 38 58 50C49 58 39 55 34 46Z" fill="#177B83"/>
+        <path d="M41 43C38 32 44 18 55 12C66 21 65 35 58 42C52 49 45 48 41 43Z" fill="#E6A735"/>
+        <ellipse cx="54" cy="31" rx="7" ry="10" fill="#24356F"/>
+        <ellipse cx="52" cy="27" rx="2.2" ry="3" fill="#58C7AE"/>
+    </g>
+
+    <path d="M0 7H1600" stroke="#D5912F" stroke-width="3" opacity="0.85"/>
+    <path d="M0 13H1600" stroke="#8B2A62" stroke-width="1" stroke-dasharray="4 9" opacity="0.55"/>
+</svg>

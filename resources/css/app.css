@@ -430,15 +430,13 @@ a:hover { color: var(--saffron); }
 /* ============================================================
    Logo
    ============================================================ */
-.svtp-logo { display: flex; align-items: center; gap: 0.6rem; }
-.svtp-logo-mark { width: 40px; height: 40px; flex-shrink: 0; }
-.svtp-logo-text { font-family: var(--font-display); font-weight: 700; line-height: 1.05; }
-.svtp-logo-text .line1 {
-    display: block; font-size: 1.15rem;
-    background: var(--festive-gradient);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+.svtp-logo { display: inline-flex; align-items: center; max-width: 100%; }
+.svtp-logo-image { display: block; width: min(294px, 68vw); height: auto; }
+.svtp-logo-compact { display: block; width: 44px; height: 44px; }
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .svtp-logo-image { width: 190px; }
 }
-.svtp-logo-text .line2 { display: block; font-size: 0.62rem; letter-spacing: 0.16em; color: var(--maroon); font-family: var(--font-body); font-weight: 600; text-transform: uppercase; }
 
 /* ============================================================
    Attraction / gallery / FAQ / review sections

@@ -14,11 +14,11 @@ import { contactInfo } from '../../festiveAssets';
                     <div class="glass-card p-4 h-100">
                         <h4 class="text-svtp mb-4">Contact Details</h4>
                         <p><strong>CEO / Travel Consultant</strong><br>{{ contactInfo.ceo }}<br><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a></p>
-                        <p><strong>Marketing Head</strong><br>{{ contactInfo.marketingHead }}<br><a :href="contactInfo.marketingPhoneHref">{{ contactInfo.marketingPhone }}</a></p>
+                            <p><strong>Head – Tech &amp; Digital Operations</strong><br>{{ contactInfo.marketingHead }}<br><a :href="contactInfo.marketingPhoneHref">{{ contactInfo.marketingPhone }}</a></p>
                         <p>
                             <strong>Travel Consultants</strong><br>
                             <template v-for="consultant in contactInfo.travelConsultants" :key="consultant.name">
-                                {{ consultant.name }} · <a :href="consultant.phoneHref">{{ consultant.phone }}</a><br>
+                                {{ consultant.name }}<template v-if="consultant.phone"> · <a :href="consultant.phoneHref">{{ consultant.phone }}</a></template><br>
                             </template>
                         </p>
                         <p><strong>Email</strong><br><a :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a></p>
@@ -30,7 +30,7 @@ import { contactInfo } from '../../festiveAssets';
                 </div>
                 <div class="col-lg-7">
                     <div class="glass-card overflow-hidden h-100 contact-map-card">
-                        <iframe :src="contactInfo.mapEmbedUrl" title="Shree Vrindavan Tour Packages at Pawan Kunj map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                        <iframe :src="contactInfo.mapEmbedUrl" title="Shree Vrindavan Tour Packages at Pawan Kunj map" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                     </div>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import AppLayout from '../Layouts/AppLayout.vue';
 import HeroCarousel from '../Components/HeroCarousel.vue';
+import DevotionalDivider from '../Components/DevotionalDivider.vue';
 import SearchWidget from '../Components/SearchWidget.vue';
 import PackageCard from '../Components/PackageCard.vue';
 import StarRating from '../Components/StarRating.vue';
@@ -44,6 +45,7 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
                 <SearchWidget :cities="cities" />
             </template>
         </HeroCarousel>
+        <DevotionalDivider />
 
         <!-- Circuit chips -->
         <section class="container py-5 mt-4">

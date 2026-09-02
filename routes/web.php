@@ -23,6 +23,7 @@ Route::get('/packages', [TourPackageController::class, 'index'])->name('packages
 Route::get('/packages/{package:slug}', [TourPackageController::class, 'show'])->name('packages.show');
 
 Route::get('/about', fn () => Inertia::render('Static/About'))->name('about');
+Route::get('/our-team', fn () => Inertia::render('Static/Team'))->name('team');
 Route::get('/contact', [EnquiryController::class, 'create'])->name('contact');
 Route::post('/enquiries', [EnquiryController::class, 'store'])
     ->middleware('throttle:10,1')

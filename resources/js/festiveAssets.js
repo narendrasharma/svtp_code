@@ -162,14 +162,14 @@ export const contactInfo = {
     marketingHead: 'Narendra Sharma',
     travelConsultants: [
         { name: 'Abhishek Upadhyay', phone: '844550786', phoneHref: 'tel:844550786' },
-        { name: 'Lavi Upadhyay', phone: '8979020415', phoneHref: 'tel:+918979020415' },
+        { name: 'Ashok', phone: null, phoneHref: null },
     ],
     email: 'info@shreevrindavantourpackages.com',
     website: 'www.shreevrindavantourpackages.com',
     websiteHref: 'https://www.shreevrindavantourpackages.com',
     headOffice: 'Behind ATV, Near Pawan Kunj, Jay Gurudev Temple, Mathura, Uttar Pradesh.',
     mapUrl: 'https://maps.app.goo.gl/hvnfoqfjsMf4D5748',
-    mapEmbedUrl: 'https://www.google.com/maps?q=27.4748346%2C77.6192256&z=17&output=embed',
+    mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3539.820901453969!2d77.6192256!3d27.4748346!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x397373370beb6725%3A0xfebdbab354cac92e!2sShree%20Vrindavan%20Tour%20Packages!5e0!3m2!1sen!2sin!4v1788339214038!5m2!1sen!2sin',
     hours: 'Support 7:00 AM – 10:00 PM',
 };
 
