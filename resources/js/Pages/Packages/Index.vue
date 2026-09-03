@@ -3,24 +3,43 @@ import { appUrl } from '../../appUrl';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PackageCard from '../../Components/PackageCard.vue';
 import { router } from '@inertiajs/vue3';
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { whyChooseUs, faqItems, attractions } from '../../festiveAssets';
 
 const openFaq = ref(0);
 function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
 
-const props = defineProps({ packages: Object, filters: Object });
+const props = defineProps({
+    packages: Object,
+    filters: Object,
+    places: { type: Array, default: () => [] },
+    tags: { type: Array, default: () => [] },
+    categories: { type: Array, default: () => [] },
+});
 
 const filters = reactive({ ...props.filters });
+filters.tags = [...(filters.tags || [])];
+const selectedPlace = props.places.find((place) => place.slug === filters.place);
+const placeQuery = ref(selectedPlace?.name || '');
+const placeOpen = ref(false);
 
-const categories = [
-    { value: '', label: 'All Tours', icon: 'bi-grid-fill' },
-    { value: 'braj', label: 'Vrindavan & Mathura', icon: 'bi-flower3' },
-    { value: 'temple', label: 'Temple Trails', icon: 'bi-bank2' },
-    { value: 'up_circuit', label: 'UP Circuit', icon: 'bi-signpost-2-fill' },
-    { value: 'rajasthan', label: 'Rajasthan', icon: 'bi-building' },
-    { value: 'uttarakhand', label: 'Uttarakhand', icon: 'bi-water' },
-];
+const filteredPlaces = computed(() => {
+    const query = placeQuery.value.trim().toLowerCase();
+
+    if (!query) {
+        return props.places;
+    }
+
+    return props.places.filter((place) =>
+        place.name.toLowerCase().includes(query)
+        || place.destination?.name?.toLowerCase().includes(query)
+    );
+});
+
+const categories = computed(() => [
+    { slug: '', name: 'All Tours', icon: 'bi-grid-fill' },
+    ...props.categories,
+]);
 
 function applyFilters() {
     router.get(appUrl('/packages'), filters, { preserveState: true, preserveScroll: true });
@@ -31,10 +50,37 @@ function setCategory(value) {
     applyFilters();
 }
 
+function updatePlaceQuery() {
+    filters.place = '';
+    placeOpen.value = true;
+}
+
+function selectPlace(place) {
+    filters.place = place.slug;
+    placeQuery.value = place.name;
+    placeOpen.value = false;
+}
+
+function toggleTag(slug) {
+    filters.tags = filters.tags.includes(slug)
+        ? filters.tags.filter((tag) => tag !== slug)
+        : [...filters.tags, slug];
+    applyFilters();
+}
+
+function clearTags() {
+    filters.tags = [];
+    applyFilters();
+}
+
 function resetFilters() {
     filters.category = '';
     filters.min_price = '';
     filters.max_price = '';
+    filters.destination = '';
+    filters.place = '';
+    filters.tags = [];
+    placeQuery.value = '';
     filters.city = '';
     applyFilters();
 }
@@ -55,33 +101,85 @@ function resetFilters() {
             <div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
                 <button
                     v-for="c in categories"
-                    :key="c.value"
+                    :key="c.slug"
                     type="button"
                     class="category-chip border-0"
-                    :class="{ 'is-active': (filters.category || '') === c.value }"
-                    @click="setCategory(c.value)"
+                    :class="{ 'is-active': (filters.category || '') === c.slug }"
+                    @click="setCategory(c.slug)"
                 >
-                    <i class="bi" :class="c.icon"></i>
-                    <strong>{{ c.label }}</strong>
+                    <i class="bi" :class="c.icon || 'bi-map'"></i>
+                    <strong>{{ c.name }}</strong>
                 </button>
             </div>
 
-            <!-- Price filters -->
+            <div v-if="tags.length" class="mb-4 text-center">
+                <p class="small fw-semibold text-uppercase text-muted mb-2">Choose your travel style</p>
+                <div class="d-flex flex-wrap gap-2 justify-content-center" role="group" aria-label="Filter tours by travel style">
+                    <button
+                        type="button"
+                        class="tag-filter-chip"
+                        :class="{ 'is-active': !filters.tags.length }"
+                        :aria-pressed="!filters.tags.length"
+                        @click="clearTags"
+                    >
+                        All experiences
+                    </button>
+                    <button
+                        v-for="tag in tags"
+                        :key="tag.id"
+                        type="button"
+                        class="tag-filter-chip"
+                        :class="{ 'is-active': filters.tags.includes(tag.slug) }"
+                        :aria-pressed="filters.tags.includes(tag.slug)"
+                        @click="toggleTag(tag.slug)"
+                    >
+                        {{ tag.name }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tour filters -->
             <div class="glass-card p-3 p-md-4 mb-5">
                 <div class="row g-3 align-items-end">
-                    <div class="col-6 col-md-3">
+                    <div class="col-12 col-md-4 position-relative">
+                        <label class="form-label small fw-semibold text-svtp">Place / Attraction</label>
+                        <input
+                            v-model="placeQuery"
+                            type="search"
+                            class="form-control"
+                            placeholder="Taj Mahal, Prem Mandir..."
+                            autocomplete="off"
+                            @input="updatePlaceQuery"
+                            @focus="placeOpen = true"
+                            @keydown.escape="placeOpen = false"
+                        />
+                        <div v-if="placeOpen" class="search-dropdown shadow-sm">
+                            <button
+                                v-for="place in filteredPlaces"
+                                :key="place.id"
+                                type="button"
+                                class="dropdown-item text-start"
+                                @mousedown.prevent="selectPlace(place)"
+                            >
+                                <strong>{{ place.name }}</strong>
+                                <small v-if="place.destination" class="d-block text-muted">{{ place.destination.name }}</small>
+                            </button>
+                            <p v-if="!filteredPlaces.length" class="small text-muted px-3 py-2 mb-0">No matching attractions found.</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-2">
                         <label class="form-label small fw-semibold text-svtp">Min Price (₹)</label>
                         <input v-model="filters.min_price" type="number" placeholder="e.g. 3000" class="form-control" @change="applyFilters" />
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                         <label class="form-label small fw-semibold text-svtp">Max Price (₹)</label>
                         <input v-model="filters.max_price" type="number" placeholder="e.g. 15000" class="form-control" @change="applyFilters" />
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                         <label class="form-label small fw-semibold text-svtp">Travel Date</label>
                         <input v-model="filters.date" type="date" class="form-control" />
                     </div>
-                    <div class="col-6 col-md-3 d-flex gap-2">
+                    <div class="col-12 col-md-2 d-flex gap-2">
                         <button class="btn btn-svtp flex-grow-1" @click="applyFilters">Apply</button>
                         <button class="btn btn-outline-svtp" @click="resetFilters">Reset</button>
                     </div>
@@ -89,7 +187,8 @@ function resetFilters() {
             </div>
 
             <p class="text-muted mb-4">{{ packages.total ?? packages.data.length }} tours found</p>
-            <div v-if="filters.pickup_address || filters.date || filters.adults" class="alert alert-light border mb-4">
+            <div v-if="filters.place || filters.pickup_address || filters.date || filters.adults" class="alert alert-light border mb-4">
+                <span v-if="filters.place"><strong>Attraction:</strong> {{ placeQuery }}</span>
                 <span v-if="filters.pickup_address"><strong>Pickup:</strong> {{ filters.pickup_address }}</span>
                 <span v-if="filters.date" class="ms-3"><strong>Travel date:</strong> {{ filters.date }}</span>
                 <span v-if="filters.adults" class="ms-3">
@@ -173,3 +272,35 @@ function resetFilters() {
         </section>
     </AppLayout>
 </template>
+
+<style scoped>
+.tag-filter-chip {
+    border: 1px solid rgba(37, 74, 135, 0.2);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--yamuna);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.tag-filter-chip:hover {
+    border-color: var(--gulal);
+    color: var(--gulal-deep);
+    box-shadow: 0 0.35rem 1rem rgba(207, 65, 112, 0.12);
+    transform: translateY(-1px);
+}
+
+.tag-filter-chip.is-active {
+    border-color: var(--gulal-deep);
+    background: var(--gulal-deep);
+    color: #fff;
+    box-shadow: 0 0.4rem 1rem rgba(166, 42, 91, 0.2);
+}
+
+.tag-filter-chip:focus-visible {
+    outline: 3px solid rgba(244, 166, 35, 0.35);
+    outline-offset: 2px;
+}
+</style>

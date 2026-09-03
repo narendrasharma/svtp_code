@@ -17,7 +17,7 @@ import {
 defineProps({
     featured: { type: Array, default: () => [] },
     banners: { type: Array, default: () => [] },
-    cities: { type: Array, default: () => [] },
+    destinations: { type: Array, default: () => [] },
     testimonials: { type: Array, default: () => [] },
 });
 
@@ -42,7 +42,7 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
     <AppLayout>
         <HeroCarousel>
             <template #search>
-                <SearchWidget :cities="cities" />
+                <SearchWidget :destinations="destinations" />
             </template>
         </HeroCarousel>
         <DevotionalDivider />
@@ -65,8 +65,8 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
             <p class="section-eyebrow text-center">दर्शन यात्रा</p>
             <h2 class="section-title text-center mb-5">Popular Tour Packages</h2>
             <div class="row g-4">
-                <div v-for="pkg in featured" :key="pkg.id" class="col-md-4">
-                    <PackageCard :pkg="pkg" />
+                <div v-for="tour in featured" :key="tour.id" class="col-md-4">
+                    <PackageCard :pkg="tour" />
                 </div>
             </div>
             <div class="text-center mt-5">

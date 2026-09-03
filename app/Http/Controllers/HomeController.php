@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banner;
-use App\Models\City;
+use App\Models\Destination;
 use App\Models\Review;
 use App\Models\TourPackage;
 use Illuminate\Support\Facades\Cache;
@@ -13,19 +13,33 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $featured = Cache::remember('home.featured_packages', 3600, function () {
-            return TourPackage::active()->featured()->with('city')
-                ->withCount('approvedReviews')
-                ->withAvg('approvedReviews', 'rating')
-                ->take(6)->get();
-        });
+        $featured = TourPackage::active()->featured()->with('city')
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
+            ->take(6)->get();
 
         $banners = Cache::remember('home.banners', 3600, fn () => Banner::active()->get());
 
-        $cities = Cache::remember('home.cities', 3600, fn () => City::withCount([
-            'packages' => fn ($query) => $query->active(),
-        ])->orderByDesc('is_spiritual_hub')->orderByDesc('packages_count')->orderBy('name')
-            ->get(['id', 'name', 'slug', 'is_spiritual_hub']));
+        $destinations = Cache::remember(
+            'home.destinations.autocomplete',
+            3600,
+            fn () => Destination::query()
+                ->with('city:id,state_id,name,is_spiritual_hub', 'city.state:id,name')
+                ->orderBy('name')
+                ->get(['id', 'city_id', 'name', 'slug'])
+                ->map(fn (Destination $destination): array => [
+                    'id' => $destination->id,
+                    'name' => $destination->name,
+                    'slug' => $destination->slug,
+                    'city' => $destination->city ? [
+                        'name' => $destination->city->name,
+                        'is_spiritual_hub' => $destination->city->is_spiritual_hub,
+                        'state' => $destination->city->state ? [
+                            'name' => $destination->city->state->name,
+                        ] : null,
+                    ] : null,
+                ])->values()->all()
+        );
 
         $testimonials = Cache::remember('home.testimonials', 1800, function () {
             return Review::where('is_approved', true)
@@ -33,6 +47,6 @@ class HomeController extends Controller
                 ->latest()->take(9)->get();
         });
 
-        return Inertia::render('Home', compact('featured', 'banners', 'cities', 'testimonials'));
+        return Inertia::render('Home', compact('featured', 'banners', 'destinations', 'testimonials'));
     }
 }

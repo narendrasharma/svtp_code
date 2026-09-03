@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\TourCategory;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -38,6 +39,11 @@ class HandleInertiaRequests extends Middleware
                 'message' => fn () => $request->session()->get('flash'),
             ],
             'securityQuestion' => $this->securityQuestion($request),
+            'tourCategories' => fn () => TourCategory::active()
+                ->whereHas('tourPackages', fn ($query) => $query->active())
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'icon']),
         ];
     }
 

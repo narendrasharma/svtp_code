@@ -4,13 +4,20 @@ use App\Http\Controllers\Admin\AiContentController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BookingManagerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DestinationController as AdminDestinationController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\PackageManagerController;
+use App\Http\Controllers\Admin\PlaceController;
 use App\Http\Controllers\Admin\ReviewModerationController;
+use App\Http\Controllers\Admin\TagController;
+use App\Http\Controllers\Admin\TourCategoryController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\EnquiryController;
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PlaceController as PublicPlaceController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TourPackageController;
 use App\Models\Review;
@@ -18,6 +25,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/search', GlobalSearchController::class)
+    ->middleware('throttle:60,1')
+    ->name('search');
 
 Route::get('/packages', [TourPackageController::class, 'index'])->name('packages.index');
 Route::get('/packages/{package:slug}', [TourPackageController::class, 'show'])->name('packages.show');
@@ -29,7 +39,9 @@ Route::post('/enquiries', [EnquiryController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('enquiries.store');
 Route::get('/faq', fn () => Inertia::render('Static/Faq'))->name('faq');
-Route::get('/destinations', fn () => Inertia::render('Static/Destinations'))->name('destinations');
+Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations');
+Route::get('/destinations/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
+Route::get('/places/{place:slug}', [PublicPlaceController::class, 'show'])->name('places.show');
 Route::get('/gallery', fn () => Inertia::render('Static/Gallery'))->name('gallery');
 Route::get('/blog', fn () => Inertia::render('Blog/Index'))->name('blog');
 Route::get('/privacy', fn () => Inertia::render('Static/Privacy'))->name('privacy');
@@ -66,6 +78,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/packages/{package}', [PackageManagerController::class, 'update'])->name('packages.update');
     Route::delete('/packages/{package}', [PackageManagerController::class, 'destroy'])->name('packages.destroy');
     Route::post('/packages/ai-draft-itinerary', [AiContentController::class, 'draftItinerary'])->name('packages.ai-draft');
+
+    Route::resource('destinations', AdminDestinationController::class)->except('show');
+    Route::resource('places', PlaceController::class)->except('show');
+    Route::resource('tags', TagController::class)->except('show');
+    Route::resource('tour-categories', TourCategoryController::class)->except('show');
 
     Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
     Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');

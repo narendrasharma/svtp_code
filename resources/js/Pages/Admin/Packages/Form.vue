@@ -1,11 +1,19 @@
 <script setup>
 import { appUrl } from '../../../appUrl';
+import AdminSearchableMultiSelect from '../../../Components/AdminSearchableMultiSelect.vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import axios from 'axios';
 
-const props = defineProps({ package: Object, cities: Array });
+const props = defineProps({
+    package: { type: Object, default: null },
+    cities: { type: Array, default: () => [] },
+    categories: { type: Array, default: () => [] },
+    destinations: { type: Array, default: () => [] },
+    places: { type: Array, default: () => [] },
+    tags: { type: Array, default: () => [] },
+});
 
 const form = useForm({
     title: props.package?.title ?? '',
@@ -15,9 +23,48 @@ const form = useForm({
     price: props.package?.price ?? '',
     discounted_price: props.package?.discounted_price ?? '',
     overview: props.package?.overview ?? '',
+    category_id: props.package?.category_id ?? '',
+    day_wise_itinerary: Array.isArray(props.package?.day_wise_itinerary)
+        ? props.package.day_wise_itinerary.map((day, index) => ({
+            day: day.day ?? index + 1,
+            title: day.title ?? '',
+            points: Array.isArray(day.points) && day.points.length ? [...day.points] : [''],
+        }))
+        : [],
+    inclusions: Array.isArray(props.package?.inclusions) ? [...props.package.inclusions] : [],
+    exclusions: Array.isArray(props.package?.exclusions) ? [...props.package.exclusions] : [],
+    gallery: Array.isArray(props.package?.gallery) ? [...props.package.gallery] : [],
+    gallery_uploads: [],
     is_featured: props.package?.is_featured ?? false,
     is_active: props.package?.is_active ?? true,
+    destination_ids: props.package?.destinations?.map((destination) => destination.id) ?? [],
+    place_ids: props.package?.places?.map((place) => place.id) ?? [],
+    tag_ids: props.package?.tags?.map((tag) => tag.id) ?? [],
 });
+
+const destinationOptions = computed(() => props.destinations.map((destination) => ({
+    id: destination.id,
+    label: destination.name,
+})));
+const placeOptions = computed(() => {
+    const destinationIds = form.destination_ids.map(Number);
+    const selectedPlaceIds = form.place_ids.map(Number);
+
+    return props.places
+        .filter((place) => !destinationIds.length
+            || destinationIds.includes(Number(place.destination_id))
+            || selectedPlaceIds.includes(Number(place.id)))
+        .map((place) => ({
+            id: place.id,
+            label: place.name,
+            meta: place.destination?.name,
+        }));
+});
+const tagOptions = computed(() => props.tags.map((tag) => ({
+    id: tag.id,
+    label: tag.name,
+    meta: tag.is_active ? '' : 'Inactive',
+})));
 
 const aiNotes = ref('');
 const aiLoading = ref(false);
@@ -32,11 +79,59 @@ async function generateWithAi() {
     }
 }
 
+function addItineraryDay() {
+    form.day_wise_itinerary.push({
+        day: form.day_wise_itinerary.length + 1,
+        title: '',
+        points: [''],
+    });
+}
+
+function removeItineraryDay(index) {
+    form.day_wise_itinerary.splice(index, 1);
+}
+
+function addItineraryPoint(day) {
+    day.points.push('');
+}
+
+function removeItineraryPoint(day, index) {
+    day.points.splice(index, 1);
+}
+
+function addListItem(field) {
+    form[field].push('');
+}
+
+function removeListItem(field, index) {
+    form[field].splice(index, 1);
+}
+
+function selectGalleryUploads(event) {
+    form.gallery_uploads = Array.from(event.target.files || []);
+}
+
+function prepareContentForSubmission() {
+    form.day_wise_itinerary = form.day_wise_itinerary
+        .map((day, index) => ({
+            day: Number(day.day) || index + 1,
+            title: day.title.trim(),
+            points: day.points.map((point) => point.trim()).filter(Boolean),
+        }))
+        .filter((day) => day.title || day.points.length);
+
+    ['inclusions', 'exclusions', 'gallery'].forEach((field) => {
+        form[field] = form[field].map((item) => item.trim()).filter(Boolean);
+    });
+}
+
 function submit() {
+    prepareContentForSubmission();
+
     if (props.package) {
-        form.put(`${appUrl('/admin/packages')}/${props.package.id}`);
+        form.put(`${appUrl('/admin/packages')}/${props.package.id}`, { forceFormData: true });
     } else {
-        form.post(appUrl('/admin/packages'));
+        form.post(appUrl('/admin/packages'), { forceFormData: true });
     }
 }
 </script>
@@ -50,6 +145,13 @@ function submit() {
                 <option value="">Select City</option>
                 <option v-for="c in cities" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
+            <select v-model="form.category_id" class="form-select mb-2">
+                <option value="">Select Tour Category (optional)</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id" :disabled="!category.is_active">
+                    {{ category.name }}{{ category.is_active ? '' : ' (Inactive)' }}
+                </option>
+            </select>
+            <small class="d-block text-danger mb-2">{{ form.errors.category_id }}</small>
             <div class="row">
                 <div class="col-4"><input v-model.number="form.duration_days" type="number" class="form-control mb-2" placeholder="Days" /></div>
                 <div class="col-4"><input v-model.number="form.duration_nights" type="number" class="form-control mb-2" placeholder="Nights" /></div>
@@ -68,6 +170,92 @@ function submit() {
             </div>
 
             <textarea v-model="form.overview" class="form-control mb-2" rows="4" placeholder="Overview"></textarea>
+
+            <div class="border rounded p-3 mb-3">
+                <h5 class="mb-3">Package Content</h5>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-semibold mb-0">Day-wise Itinerary</label>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="addItineraryDay">Add Day</button>
+                    </div>
+                    <div v-for="(day, dayIndex) in form.day_wise_itinerary" :key="dayIndex" class="border rounded p-2 mb-2 bg-light">
+                        <div class="row g-2 align-items-center mb-2">
+                            <div class="col-3">
+                                <input v-model.number="day.day" type="number" min="1" class="form-control" placeholder="Day" />
+                            </div>
+                            <div class="col-7">
+                                <input v-model="day.title" class="form-control" placeholder="Day title" />
+                            </div>
+                            <div class="col-2 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove itinerary day" @click="removeItineraryDay(dayIndex)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-for="(_, pointIndex) in day.points" :key="pointIndex" class="input-group input-group-sm mb-2">
+                            <input v-model="day.points[pointIndex]" class="form-control" placeholder="Itinerary point" />
+                            <button type="button" class="btn btn-outline-danger" aria-label="Remove itinerary point" @click="removeItineraryPoint(day, pointIndex)">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="addItineraryPoint(day)">Add Point</button>
+                    </div>
+                    <small class="text-danger">{{ form.errors.day_wise_itinerary }}</small>
+                </div>
+
+                <div v-for="field in ['inclusions', 'exclusions', 'gallery']" :key="field" class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-semibold mb-0">{{ field === 'gallery' ? 'Gallery Image URLs' : field[0].toUpperCase() + field.slice(1) }}</label>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="addListItem(field)">Add Item</button>
+                    </div>
+                    <div v-for="(_, index) in form[field]" :key="index" class="input-group input-group-sm mb-2">
+                        <input v-model="form[field][index]" class="form-control" :placeholder="field === 'gallery' ? 'https://… or /storage/…' : 'Add an item'" />
+                        <button type="button" class="btn btn-outline-danger" :aria-label="`Remove ${field} item`" @click="removeListItem(field, index)">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                    </div>
+                    <small class="text-danger">{{ form.errors[field] }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Upload Gallery Images</label>
+                    <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" multiple @change="selectGalleryUploads" />
+                    <p class="small text-muted mt-2 mb-1">Recommended: 1600 × 900 px (16:9 landscape). JPG, PNG, or WebP; up to 5 MB each. Images are cropped with their aspect ratio preserved, never stretched.</p>
+                    <p v-if="form.gallery_uploads.length" class="small mb-0">{{ form.gallery_uploads.length }} image{{ form.gallery_uploads.length === 1 ? '' : 's' }} selected for upload.</p>
+                    <small class="text-danger">{{ form.errors.gallery_uploads }}</small>
+                </div>
+            </div>
+
+            <div class="border rounded p-3 mb-3">
+                <h5 class="mb-3">Tour Classification</h5>
+
+                <label class="form-label fw-semibold">Destinations</label>
+                <AdminSearchableMultiSelect
+                    v-model="form.destination_ids"
+                    :options="destinationOptions"
+                    placeholder="Search destinations..."
+                />
+                <small class="text-danger">{{ form.errors.destination_ids }}</small>
+
+                <label class="form-label fw-semibold mt-3">Places / Attractions</label>
+                <p class="small text-muted mb-2">Selecting destinations narrows this list while keeping existing place assignments visible.</p>
+                <AdminSearchableMultiSelect
+                    v-model="form.place_ids"
+                    :options="placeOptions"
+                    placeholder="Search places or destinations..."
+                    empty-text="No places are available for the selected destinations."
+                />
+                <small class="text-danger">{{ form.errors.place_ids }}</small>
+
+                <label class="form-label fw-semibold mt-3">Tags</label>
+                <AdminSearchableMultiSelect
+                    v-model="form.tag_ids"
+                    :options="tagOptions"
+                    placeholder="Search tags..."
+                />
+                <small class="text-danger">{{ form.errors.tag_ids }}</small>
+            </div>
 
             <div class="form-check mb-2">
                 <input v-model="form.is_featured" type="checkbox" class="form-check-input" id="featured" />

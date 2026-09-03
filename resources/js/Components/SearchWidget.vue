@@ -1,18 +1,21 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { appUrl } from '../appUrl';
 
-const props = defineProps({ cities: { type: Array, default: () => [] } });
+const props = defineProps({ destinations: { type: Array, default: () => [] } });
 
+const searchForm = ref(null);
 const pickupContainer = ref(null);
+const destinationInput = ref(null);
 const destinationQuery = ref('');
 const destinationOpen = ref(false);
+const activeDestinationIndex = ref(-1);
 const travellersOpen = ref(false);
 const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const form = reactive({
-    city: '',
+    destination_id: '',
     pickup_address: '',
     pickup_place_id: '',
     pickup_lat: '',
@@ -22,9 +25,26 @@ const form = reactive({
     children: 0,
 });
 
-const filteredCities = computed(() => {
+const internalDestinations = computed(() => Array.isArray(props.destinations)
+    ? props.destinations
+    : Object.values(props.destinations || {}));
+
+const popularDestinations = computed(() => [...internalDestinations.value]
+    .sort((first, second) => Number(second.city?.is_spiritual_hub) - Number(first.city?.is_spiritual_hub))
+    .slice(0, 6));
+
+const destinationSuggestions = computed(() => {
     const query = destinationQuery.value.trim().toLowerCase();
-    return query ? props.cities.filter((city) => city.name.toLowerCase().includes(query)) : props.cities;
+
+    if (!query) {
+        return popularDestinations.value;
+    }
+
+    return internalDestinations.value.filter((destination) => [
+        destination.name,
+        destination.city?.name,
+        destination.city?.state?.name,
+    ].some((value) => value?.toLowerCase().includes(query)));
 });
 
 const travellerLabel = computed(() => {
@@ -32,10 +52,72 @@ const travellerLabel = computed(() => {
     return form.children ? `${adults}, ${form.children} ${form.children === 1 ? 'Child' : 'Children'}` : adults;
 });
 
-function selectDestination(city) {
-    form.city = city.slug;
-    destinationQuery.value = city.name;
+function selectDestination(destination) {
+    form.destination_id = destination.id;
+    destinationQuery.value = destination.name;
     destinationOpen.value = false;
+    activeDestinationIndex.value = -1;
+}
+
+function closeOpenMenus(event) {
+    if (!searchForm.value?.contains(event.target)) {
+        destinationOpen.value = false;
+        travellersOpen.value = false;
+    }
+}
+
+function openDestinationMenu() {
+    destinationOpen.value = true;
+    travellersOpen.value = false;
+    activeDestinationIndex.value = -1;
+}
+
+function clearSelectedDestination() {
+    form.destination_id = '';
+    activeDestinationIndex.value = -1;
+    openDestinationMenu();
+}
+
+function clearDestination() {
+    destinationQuery.value = '';
+    clearSelectedDestination();
+    nextTick(() => destinationInput.value?.focus());
+}
+
+function handleDestinationKeydown(event) {
+    if (!destinationSuggestions.value.length && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+        event.preventDefault();
+        openDestinationMenu();
+        return;
+    }
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        openDestinationMenu();
+        activeDestinationIndex.value = Math.min(activeDestinationIndex.value + 1, destinationSuggestions.value.length - 1);
+        return;
+    }
+
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        activeDestinationIndex.value = Math.max(activeDestinationIndex.value - 1, 0);
+        return;
+    }
+
+    if (event.key === 'Enter' && activeDestinationIndex.value >= 0) {
+        event.preventDefault();
+        selectDestination(destinationSuggestions.value[activeDestinationIndex.value]);
+        return;
+    }
+
+    if (event.key === 'Escape') {
+        destinationOpen.value = false;
+        activeDestinationIndex.value = -1;
+    }
+}
+
+function destinationContext(destination) {
+    return [destination.city?.name, destination.city?.state?.name].filter(Boolean).join(', ');
 }
 
 function adjustTraveller(type, amount) {
@@ -91,11 +173,16 @@ function search() {
     router.get(appUrl('/packages'), form);
 }
 
-onMounted(() => initializePickupAutocomplete().catch(() => {}));
+onMounted(() => {
+    document.addEventListener('pointerdown', closeOpenMenus);
+    initializePickupAutocomplete().catch(() => {});
+});
+
+onBeforeUnmount(() => document.removeEventListener('pointerdown', closeOpenMenus));
 </script>
 
 <template>
-    <form class="search-pill" @submit.prevent="search">
+    <form ref="searchForm" class="search-pill" @submit.prevent="search">
         <div class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
                 <label class="form-label d-block">Pickup From</label>
@@ -104,20 +191,44 @@ onMounted(() => initializePickupAutocomplete().catch(() => {}));
             </div>
             <div class="col-6 col-md-2 position-relative">
                 <label class="form-label d-block">Destination</label>
-                <input
-                    v-model="destinationQuery"
-                    class="form-control"
-                    placeholder="Any destination"
-                    autocomplete="off"
-                    @focus="destinationOpen = true"
-                    @input="form.city = ''; destinationOpen = true"
-                />
-                <div v-if="destinationOpen" class="search-dropdown">
-                    <button v-for="city in filteredCities" :key="city.id" type="button" @click="selectDestination(city)">
-                        <span>{{ city.name }}</span>
-                        <small v-if="city.is_spiritual_hub">Popular</small>
+                <div class="destination-input-wrapper">
+                    <input
+                        ref="destinationInput"
+                        v-model="destinationQuery"
+                        class="form-control"
+                        placeholder="Any destination"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        :aria-expanded="destinationOpen"
+                        aria-controls="hero-destination-suggestions"
+                        :aria-activedescendant="destinationSuggestions[activeDestinationIndex] ? `hero-destination-${destinationSuggestions[activeDestinationIndex].id}` : undefined"
+                        @focus="openDestinationMenu"
+                        @input="clearSelectedDestination"
+                        @keydown="handleDestinationKeydown"
+                    />
+                    <button v-if="destinationQuery" type="button" class="destination-clear" aria-label="Clear destination" @click="clearDestination">
+                        <i class="bi bi-x-lg"></i>
                     </button>
-                    <p v-if="!filteredCities.length" class="small text-muted p-2 mb-0">No destination found.</p>
+                </div>
+                <div v-if="destinationOpen" id="hero-destination-suggestions" class="search-dropdown" role="listbox" aria-label="Destination suggestions">
+                    <p v-if="!destinationQuery && destinationSuggestions.length" class="destination-suggestions-label">Popular destinations</p>
+                    <button
+                        v-for="(destination, index) in destinationSuggestions"
+                        :id="`hero-destination-${destination.id}`"
+                        :key="destination.id"
+                        type="button"
+                        role="option"
+                        :aria-selected="index === activeDestinationIndex"
+                        :class="{ 'is-active': index === activeDestinationIndex }"
+                        @click="selectDestination(destination)"
+                    >
+                        <span>
+                            <strong class="d-block">{{ destination.name }}</strong>
+                            <small v-if="destinationContext(destination)" class="d-block">{{ destinationContext(destination) }}</small>
+                        </span>
+                    </button>
+                    <p v-if="!destinationSuggestions.length" class="small text-muted p-2 mb-0">No destination found.</p>
                 </div>
             </div>
             <div class="col-6 col-md-2">
@@ -126,7 +237,7 @@ onMounted(() => initializePickupAutocomplete().catch(() => {}));
             </div>
             <div class="col-8 col-md-3 position-relative">
                 <label class="form-label d-block">Travellers</label>
-                <button type="button" class="form-control text-start" @click="travellersOpen = !travellersOpen">{{ travellerLabel }}</button>
+                <button type="button" class="form-control text-start" @click="destinationOpen = false; travellersOpen = !travellersOpen">{{ travellerLabel }}</button>
                 <div v-if="travellersOpen" class="search-dropdown traveller-dropdown">
                     <div class="traveller-row">
                         <span>Adults</span>
@@ -145,3 +256,11 @@ onMounted(() => initializePickupAutocomplete().catch(() => {}));
         </div>
     </form>
 </template>
+
+<style scoped>
+.destination-input-wrapper { position: relative; }
+.destination-input-wrapper .form-control { padding-right: 1.75rem; }
+.destination-clear { position: absolute; right: 0; bottom: 0.3rem; border: 0; background: transparent; color: var(--gulal-deep); font-size: 0.72rem; }
+.destination-suggestions-label { margin: 0; padding: 0.65rem 0.8rem 0.35rem; color: var(--gulal-deep); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.search-dropdown > button.is-active { background: var(--cream-warm); }
+</style>

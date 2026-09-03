@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import QuickEnquiryModal from '../Components/QuickEnquiryModal.vue';
 import DevotionalDivider from '../Components/DevotionalDivider.vue';
@@ -9,6 +9,7 @@ import WhatsAppFloat from '../Components/WhatsAppFloatButton.vue';
 import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
 import TopBar from '../Components/TopBar.vue';
 import Logo from '../Components/Logo.vue';
+import GlobalSearch from '../Components/GlobalSearch.vue';
 import { appUrl } from '../appUrl';
 import { contactInfo } from '../festiveAssets';
 
@@ -16,6 +17,7 @@ const page = usePage();
 const year = new Date().getFullYear();
 const isQuickEnquiryOpen = ref(false);
 const isTourEnquiryOpen = ref(false);
+const tourCategories = computed(() => page.props.tourCategories || []);
 </script>
 
 <template>
@@ -24,15 +26,37 @@ const isTourEnquiryOpen = ref(false);
         <nav class="svtp-navbar">
             <div class="container d-flex align-items-center justify-content-between">
                 <Link :href="appUrl('/')" class="navbar-brand mb-0"><Logo /></Link>
-                <div class="d-none d-md-flex align-items-center">
-                    <Link :href="appUrl('/packages')" class="nav-link-custom">Packages</Link>
-                    <Link :href="appUrl('/destinations')" class="nav-link-custom">Destinations</Link>
-                    <Link :href="appUrl('/spiritual-wisdom')" class="nav-link-custom">Wisdom</Link>
-                    <Link :href="appUrl('/gallery')" class="nav-link-custom">Gallery</Link>
-                    <Link :href="appUrl('/blog')" class="nav-link-custom">Blog</Link>
-                    <Link :href="appUrl('/about')" class="nav-link-custom">About</Link>
-                    <Link :href="appUrl('/contact')" class="nav-link-custom">Contact</Link>
-                    <button type="button" class="btn btn-svtp ms-3" @click="isTourEnquiryOpen = true">Enquiry</button>
+                <div class="d-flex align-items-center">
+                    <div class="d-none d-md-flex align-items-center">
+                        <Link :href="appUrl('/packages')" class="nav-link-custom">Packages</Link>
+                        <div v-if="tourCategories.length" class="dropdown">
+                            <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tour Categories
+                            </button>
+                            <ul class="dropdown-menu shadow border-0">
+                                <li v-for="category in tourCategories" :key="category.id">
+                                    <Link :href="appUrl(`/packages?category=${category.slug}`)" class="dropdown-item">
+                                        <i class="bi me-2" :class="category.icon || 'bi-map'"></i>{{ category.name }}
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+                        <Link :href="appUrl('/destinations')" class="nav-link-custom">Destinations</Link>
+                        <Link :href="appUrl('/spiritual-wisdom')" class="nav-link-custom">Wisdom</Link>
+                        <Link :href="appUrl('/gallery')" class="nav-link-custom">Gallery</Link>
+                        <Link :href="appUrl('/blog')" class="nav-link-custom">Blog</Link>
+                        <Link :href="appUrl('/about')" class="nav-link-custom">About</Link>
+                        <Link :href="appUrl('/contact')" class="nav-link-custom">Contact</Link>
+                    </div>
+                    <GlobalSearch />
+                    <div v-if="tourCategories.length" class="dropdown d-md-none ms-2">
+                        <button class="btn btn-sm btn-outline-svtp dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Tours</button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><Link :href="appUrl('/packages')" class="dropdown-item">All Tours</Link></li>
+                            <li v-for="category in tourCategories" :key="category.id"><Link :href="appUrl(`/packages?category=${category.slug}`)" class="dropdown-item">{{ category.name }}</Link></li>
+                        </ul>
+                    </div>
+                    <button type="button" class="btn btn-svtp ms-2 d-none d-md-inline-flex" @click="isTourEnquiryOpen = true">Enquiry</button>
                 </div>
             </div>
         </nav>
@@ -69,7 +93,7 @@ const isTourEnquiryOpen = ref(false);
                         <ul class="list-unstyled small">
                             <li class="mb-2"><Link :href="appUrl('/packages')">All Tour Packages</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/destinations')">Explore Braj</Link></li>
-                            <li class="mb-2"><Link :href="appUrl('/packages?category=festival')">Holi Specials</Link></li>
+                            <li v-for="category in tourCategories" :key="category.id" class="mb-2"><Link :href="appUrl(`/packages?category=${category.slug}`)">{{ category.name }}</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/gallery')">Gallery</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/blog')">Blog</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/about')">About Us</Link></li>

@@ -4,18 +4,19 @@ import AppLayout from '../../Layouts/AppLayout.vue';
 import ItineraryAccordion from '../../Components/ItineraryAccordion.vue';
 import StarRating from '../../Components/StarRating.vue';
 import TourPlanEnquiryModal from '../../Components/TourPlanEnquiryModal.vue';
-import { categoryImage } from '../../festiveAssets';
 
 const props = defineProps({ package: Object, reviews: Object, securityQuestion: String });
 
-const gallery = computed(() => {
-    const g = props.package.gallery && props.package.gallery.length
-        ? props.package.gallery
-        : [props.package.cover_image || categoryImage(props.package.category)];
-    return g.filter(Boolean);
-});
+const gallery = computed(() => [...new Set([
+    props.package.cover_image,
+    ...(Array.isArray(props.package.gallery) ? props.package.gallery : []),
+].filter(Boolean))]);
+const itinerary = computed(() => Array.isArray(props.package.day_wise_itinerary) ? props.package.day_wise_itinerary : []);
+const inclusions = computed(() => Array.isArray(props.package.inclusions) ? props.package.inclusions.filter(Boolean) : []);
+const exclusions = computed(() => Array.isArray(props.package.exclusions) ? props.package.exclusions.filter(Boolean) : []);
 
 const activeImage = ref(0);
+const isGalleryOpen = ref(false);
 const isTourEnquiryOpen = ref(false);
 
 const adults = ref(2);
@@ -23,14 +24,26 @@ const children = ref(0);
 const unitPrice = computed(() => Number(props.package.discounted_price || props.package.price || 0));
 const childPrice = computed(() => Math.round(unitPrice.value * 0.6));
 const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.value * childPrice.value));
+
+function previousImage() {
+    activeImage.value = (activeImage.value - 1 + gallery.value.length) % gallery.value.length;
+}
+
+function nextImage() {
+    activeImage.value = (activeImage.value + 1) % gallery.value.length;
+}
 </script>
 
 <template>
     <AppLayout>
         <div class="container py-4">
             <!-- Gallery -->
-            <div class="gallery-hero mb-2">
-                <img :src="gallery[activeImage]" :alt="package.title" />
+            <div v-if="gallery.length" class="gallery-hero mb-2">
+                <button type="button" class="gallery-main-image" aria-label="View image larger" @click="isGalleryOpen = true">
+                    <img :src="gallery[activeImage]" :alt="`${package.title} photo ${activeImage + 1}`" />
+                </button>
+                <button v-if="gallery.length > 1" type="button" class="gallery-control gallery-control-prev" aria-label="Previous image" @click="previousImage"><i class="bi bi-chevron-left"></i></button>
+                <button v-if="gallery.length > 1" type="button" class="gallery-control gallery-control-next" aria-label="Next image" @click="nextImage"><i class="bi bi-chevron-right"></i></button>
             </div>
             <div v-if="gallery.length > 1" class="gallery-thumbs mb-4">
                 <div
@@ -55,28 +68,30 @@ const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.v
                     <p>{{ package.overview }}</p>
 
                     <!-- Spiritual significance -->
-                    <div class="shloka-quote-card my-4">
+<!--                    <div class="shloka-quote-card my-4">
                         <p class="devanagari fs-5 mb-2">॥ वृन्दावनं परित्यज्य पादमेकं न गच्छति ॥</p>
                         <p class="mb-0 small">
                             This journey traces the pastimes of Shree Krishna through {{ package.city?.name || 'Braj' }} —
                             a route walked by pilgrims for centuries in search of the same darshan you're about to experience.
                         </p>
-                    </div>
+                    </div>-->
 
-                    <h4 class="mt-4">Day-wise Itinerary</h4>
-                    <ItineraryAccordion :days="package.day_wise_itinerary || []" />
+                    <template v-if="itinerary.length">
+                        <h4 class="mt-4">Day-wise Itinerary</h4>
+                        <ItineraryAccordion :days="itinerary" />
+                    </template>
 
-                    <div class="row mt-4">
-                        <div class="col-md-6">
+                    <div v-if="inclusions.length || exclusions.length" class="row mt-4">
+                        <div v-if="inclusions.length" class="col-md-6">
                             <h5><i class="bi bi-check-circle-fill text-success me-1"></i>Inclusions</h5>
                             <ul>
-                                <li v-for="(item, i) in package.inclusions || []" :key="i">{{ item }}</li>
+                                <li v-for="(item, i) in inclusions" :key="i">{{ item }}</li>
                             </ul>
                         </div>
-                        <div class="col-md-6">
+                        <div v-if="exclusions.length" class="col-md-6">
                             <h5><i class="bi bi-x-circle-fill text-danger me-1"></i>Exclusions</h5>
                             <ul>
-                                <li v-for="(item, i) in package.exclusions || []" :key="i">{{ item }}</li>
+                                <li v-for="(item, i) in exclusions" :key="i">{{ item }}</li>
                             </ul>
                         </div>
                     </div>
@@ -130,5 +145,11 @@ const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.v
             :tour-package="package"
             @close="isTourEnquiryOpen = false"
         />
+        <div v-if="isGalleryOpen" class="gallery-lightbox" role="dialog" aria-modal="true" :aria-label="`${package.title} gallery`" @click.self="isGalleryOpen = false">
+            <button type="button" class="gallery-lightbox-close" aria-label="Close gallery" @click="isGalleryOpen = false"><i class="bi bi-x-lg"></i></button>
+            <button v-if="gallery.length > 1" type="button" class="gallery-control gallery-control-prev" aria-label="Previous image" @click="previousImage"><i class="bi bi-chevron-left"></i></button>
+            <img :src="gallery[activeImage]" :alt="`${package.title} photo ${activeImage + 1}`" />
+            <button v-if="gallery.length > 1" type="button" class="gallery-control gallery-control-next" aria-label="Next image" @click="nextImage"><i class="bi bi-chevron-right"></i></button>
+        </div>
     </AppLayout>
 </template>

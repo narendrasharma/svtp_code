@@ -5,57 +5,112 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePackageRequest;
 use App\Models\City;
+use App\Models\Destination;
+use App\Models\Place;
+use App\Models\Tag;
+use App\Models\TourCategory;
 use App\Models\TourPackage;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class PackageManagerController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         return Inertia::render('Admin/Packages/Index', [
-            'packages' => TourPackage::with('city')->latest()->paginate(15),
+            'packages' => TourPackage::with(['city', 'category'])->latest()->paginate(15),
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
-        return Inertia::render('Admin/Packages/Form', ['cities' => City::all(['id', 'name'])]);
+        return Inertia::render('Admin/Packages/Form', $this->formOptions());
     }
 
-    public function store(StorePackageRequest $request)
+    public function store(StorePackageRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        $data['slug'] = Str::slug($data['title']) . '-' . Str::random(4);
+        DB::transaction(function () use ($request): void {
+            $data = $this->packageData($request);
+            $data['slug'] = Str::slug($data['title']).'-'.Str::random(4);
 
-        TourPackage::create($data);
+            $package = TourPackage::create($data);
+            $this->syncClassifications($package, $request);
+        });
         Cache::forget('home.featured_packages');
 
         return redirect()->route('admin.packages.index')->with('flash', 'Package created.');
     }
 
-    public function edit(TourPackage $package)
+    public function edit(TourPackage $package): Response
     {
+        $package->load(['category:id,name', 'destinations:id', 'places:id', 'tags:id']);
+
         return Inertia::render('Admin/Packages/Form', [
+            ...$this->formOptions(),
             'package' => $package,
-            'cities' => City::all(['id', 'name']),
         ]);
     }
 
-    public function update(StorePackageRequest $request, TourPackage $package)
+    public function update(StorePackageRequest $request, TourPackage $package): RedirectResponse
     {
-        $package->update($request->validated());
+        DB::transaction(function () use ($request, $package): void {
+            $package->update($this->packageData($request, $package));
+            $this->syncClassifications($package, $request);
+        });
         Cache::forget('home.featured_packages');
 
         return redirect()->route('admin.packages.index')->with('flash', 'Package updated.');
     }
 
-    public function destroy(TourPackage $package)
+    public function destroy(TourPackage $package): RedirectResponse
     {
         $package->delete();
         Cache::forget('home.featured_packages');
 
         return back()->with('flash', 'Package removed.');
+    }
+
+    /**
+     * @return array{cities: mixed, categories: mixed, destinations: mixed, places: mixed, tags: mixed}
+     */
+    private function formOptions(): array
+    {
+        return [
+            'cities' => City::orderBy('name')->get(['id', 'name']),
+            'categories' => TourCategory::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'is_active']),
+            'destinations' => Destination::orderBy('name')->get(['id', 'name']),
+            'places' => Place::with('destination:id,name')
+                ->orderBy('name')->get(['id', 'destination_id', 'name']),
+            'tags' => Tag::orderBy('name')->get(['id', 'name', 'is_active']),
+        ];
+    }
+
+    private function syncClassifications(TourPackage $package, StorePackageRequest $request): void
+    {
+        $package->destinations()->sync($request->validated('destination_ids'));
+        $package->places()->sync($request->validated('place_ids'));
+        $package->tags()->sync($request->validated('tag_ids'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function packageData(StorePackageRequest $request, ?TourPackage $package = null): array
+    {
+        $data = $request->safe()->except(['destination_ids', 'place_ids', 'tag_ids', 'gallery_uploads']);
+        $gallery = $data['gallery'] ?? $package?->gallery ?? [];
+
+        foreach ($request->file('gallery_uploads', []) as $image) {
+            $gallery[] = Storage::disk('public')->url($image->store('packages/gallery', 'public'));
+        }
+
+        $data['gallery'] = array_values(array_filter($gallery));
+
+        return $data;
     }
 }

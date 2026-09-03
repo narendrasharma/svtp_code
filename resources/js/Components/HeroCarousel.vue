@@ -53,21 +53,21 @@ onBeforeUnmount(() => clearInterval(timer));
                             <p class="hero-subtitle">{{ heroSlides[active].subtitle }}</p>
                         </div>
                     </transition>
-
-                    <slot name="search" />
-
-                    <div class="hero-dots">
-                        <button
-                            v-for="(slide, i) in heroSlides"
-                            :key="i"
-                            class="hero-dot"
-                            :class="{ 'is-active': i === active }"
-                            type="button"
-                            :aria-label="`Go to slide ${i + 1}`"
-                            @click="goTo(i)"
-                        ></button>
-                    </div>
                 </div>
+            </div>
+
+            <slot name="search" />
+
+            <div class="hero-dots">
+                <button
+                    v-for="(slide, i) in heroSlides"
+                    :key="i"
+                    class="hero-dot"
+                    :class="{ 'is-active': i === active }"
+                    type="button"
+                    :aria-label="`Go to slide ${i + 1}`"
+                    @click="goTo(i)"
+                ></button>
             </div>
         </div>
     </section>

@@ -15,8 +15,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
-            StateCitySeeder::class,
-            TourPackageSeeder::class,
+            CatalogDemoSeeder::class,
         ]);
     }
 }

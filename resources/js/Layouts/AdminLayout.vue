@@ -11,6 +11,10 @@ import { Link } from '@inertiajs/vue3';
                 <Link :href="appUrl('/admin/dashboard')" class="text-white text-decoration-none">Dashboard</Link>
                 <Link :href="appUrl('/admin/enquiries')" class="text-white text-decoration-none">Enquiries</Link>
                 <Link :href="appUrl('/admin/packages')" class="text-white text-decoration-none">Packages</Link>
+                <Link :href="appUrl('/admin/tour-categories')" class="text-white text-decoration-none">Tour Categories</Link>
+                <Link :href="appUrl('/admin/destinations')" class="text-white text-decoration-none">Destinations</Link>
+                <Link :href="appUrl('/admin/places')" class="text-white text-decoration-none">Places / Attractions</Link>
+                <Link :href="appUrl('/admin/tags')" class="text-white text-decoration-none">Tags</Link>
                 <Link :href="appUrl('/admin/banners')" class="text-white text-decoration-none">Banners</Link>
                 <Link :href="appUrl('/admin/bookings')" class="text-white text-decoration-none">Bookings</Link>
                 <Link :href="appUrl('/admin/reviews')" class="text-white text-decoration-none">Reviews</Link>

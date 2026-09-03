@@ -1,0 +1,32 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#8940
+    [34mall[39m: [
+      [34;4mApp\Models\TourPackage[39;24m {#8958
+        [34mid[39m: [35m21[39m,
+        [34mtitle[39m: [32m"[39m[32mSame Day Gokul, Mathura & Vrindavan Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8947
+        [34mid[39m: [35m22[39m,
+        [34mtitle[39m: [32m"[39m[32m1 Night 2 Days Gokul, Mathura & Vrindavan Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8945
+        [34mid[39m: [35m23[39m,
+        [34mtitle[39m: [32m"[39m[32m2 Nights 3 Days Complete Braj Darshan Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8944
+        [34mid[39m: [35m24[39m,
+        [34mtitle[39m: [32m"[39m[32mGovardhan, Barsana & Nandgaon Braj Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8943
+        [34mid[39m: [35m25[39m,
+        [34mtitle[39m: [32m"[39m[32mAgra & Fatehpur Sikri Same Day Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8942
+        [34mid[39m: [35m26[39m,
+        [34mtitle[39m: [32m"[39m[32mJaipur, Khatu Shyam & Mehandipur Balaji Tour[39m[32m"[39m,
+      },
+      [34;4mApp\Models\TourPackage[39;24m {#8941
+        [34mid[39m: [35m27[39m,
+        [34mtitle[39m: [32m"[39m[32mAyodhya & Varanasi Spiritual Tour[39m[32m"[39m,
+      },
+    ],
+  }

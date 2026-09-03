@@ -325,7 +325,8 @@ a:hover { color: var(--saffron); }
     border-radius: 18px;
     padding: 1.1rem 1.35rem;
     box-shadow: 0 24px 55px rgba(0, 0, 0, 0.35);
-    max-width: 920px;
+    width: 100%;
+    max-width: none;
     border: 1px solid rgba(255,255,255,0.6);
 }
 .search-pill label {
@@ -377,6 +378,17 @@ a:hover { color: var(--saffron); }
 .traveller-row { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; color: var(--ink); }
 .traveller-row div { display: flex; align-items: center; gap: 0.75rem; }
 .traveller-row div button { width: 30px; height: 30px; border: 1px solid var(--gold-soft); border-radius: 50%; background: #fff; }
+
+@media (max-width: 767.98px) {
+    .search-pill .search-dropdown {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        margin-top: 0.4rem;
+        max-height: 180px;
+    }
+}
 
 /* ============================================================
    Top utility bar
@@ -843,6 +855,15 @@ footer.site-footer .footer-social:hover { background: var(--saffron); color: #ff
     height: 420px;
 }
 .gallery-hero img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-main-image { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; }
+.gallery-control {
+    position: absolute; top: 50%; z-index: 2; transform: translateY(-50%);
+    width: 42px; height: 42px; border: 0; border-radius: 50%;
+    background: rgba(37, 19, 27, 0.72); color: #fff; font-size: 1.25rem;
+}
+.gallery-control:hover { background: var(--maroon); }
+.gallery-control-prev { left: 1rem; }
+.gallery-control-next { right: 1rem; }
 .gallery-thumbs {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -859,6 +880,16 @@ footer.site-footer .footer-social:hover { background: var(--saffron); color: #ff
 }
 .gallery-thumb.is-active { border-color: var(--gulal); }
 .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-lightbox {
+    position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center;
+    padding: 3rem 4.5rem; background: rgba(20, 10, 15, 0.93);
+}
+.gallery-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.gallery-lightbox-close {
+    position: absolute; top: 1.25rem; right: 1.25rem; width: 42px; height: 42px;
+    border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.16); color: #fff;
+}
+.gallery-lightbox .gallery-control { position: fixed; }
 
 .booking-sticky {
     position: sticky;
@@ -873,5 +904,9 @@ footer.site-footer .footer-social:hover { background: var(--saffron); color: #ff
 
 @media (max-width: 767px) {
     .gallery-thumbs { grid-template-columns: repeat(3, 1fr); }
+    .gallery-hero { height: 280px; }
+    .gallery-lightbox { padding: 2rem 3.25rem; }
+    .gallery-control-prev { left: 0.5rem; }
+    .gallery-control-next { right: 0.5rem; }
     .booking-sticky { position: static; }
 }
