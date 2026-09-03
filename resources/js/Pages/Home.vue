@@ -9,6 +9,7 @@ import StarRating from '../Components/StarRating.vue';
 import ShlokaTicker from '../Components/ShlokaTicker.vue';
 import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
 import { appUrl } from '../appUrl';
+import DirectorMessage from '../Components/DirectorMessage.vue';
 import {
     whyChooseUs, attractions, bestTimeToVisit, galleryImages,
     blogPosts, faqItems, contactInfo,
@@ -60,6 +61,8 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
 
         <ShlokaTicker />
 
+
+        <DirectorMessage />
         <!-- Featured tours -->
         <section class="container py-5">
             <p class="section-eyebrow text-center">दर्शन यात्रा</p>
