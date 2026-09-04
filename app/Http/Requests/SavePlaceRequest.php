@@ -28,7 +28,8 @@ class SavePlaceRequest extends FormRequest
             'slug' => ['required', 'string', 'max:255', Rule::unique('places')->ignore($this->route('place'))],
             'destination_id' => ['required', 'integer', 'exists:destinations,id'],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'string', 'max:2048'],
+            'image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_image' => ['boolean'],
             'meta_description' => ['nullable', 'string', 'max:255'],
         ];
     }

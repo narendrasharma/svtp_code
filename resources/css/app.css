@@ -388,6 +388,9 @@ a:hover { color: var(--saffron); }
         margin-top: 0.4rem;
         max-height: 180px;
     }
+    .hero-arrow{
+        top:40%;
+    }
 }
 
 /* ============================================================

@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ItineraryAccordion from '../../Components/ItineraryAccordion.vue';
 import StarRating from '../../Components/StarRating.vue';
 import TourPlanEnquiryModal from '../../Components/TourPlanEnquiryModal.vue';
+import { appUrl } from '../../appUrl';
 
 const props = defineProps({ package: Object, reviews: Object, securityQuestion: String });
 
@@ -18,6 +20,10 @@ const exclusions = computed(() => Array.isArray(props.package.exclusions) ? prop
 const activeImage = ref(0);
 const isGalleryOpen = ref(false);
 const isTourEnquiryOpen = ref(false);
+const hoveredRating = ref(0);
+const reviewForm = useForm({ name: '', email: '', rating: 0, comment: '' });
+const averageRating = computed(() => Number(props.package.approved_reviews_avg_rating || 0));
+const approvedReviewCount = computed(() => Number(props.package.approved_reviews_count || 0));
 
 const adults = ref(2);
 const children = ref(0);
@@ -31,6 +37,17 @@ function previousImage() {
 
 function nextImage() {
     activeImage.value = (activeImage.value + 1) % gallery.value.length;
+}
+
+function submitReview() {
+    reviewForm.post(appUrl(`/packages/${props.package.slug}/reviews`), {
+        preserveScroll: true,
+        onSuccess: () => reviewForm.reset('rating', 'comment'),
+    });
+}
+
+function formatReviewDate(value) {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
 }
 </script>
 
@@ -96,13 +113,46 @@ function nextImage() {
                         </div>
                     </div>
 
-                    <h4 class="mt-4">Reviews</h4>
-                    <div v-if="!reviews.data.length" class="text-muted small">No reviews yet — be the first to share your experience.</div>
-                    <div v-for="review in reviews.data" :key="review.id" class="border-bottom py-3">
-                        <StarRating :rating="review.rating" />
-                        <p class="mb-0 mt-1">{{ review.comment }}</p>
-                        <small class="text-muted">— {{ review.user?.name }}</small>
-                    </div>
+                    <section class="reviews-section mt-5">
+                        <div class="reviews-heading">
+                            <div><p class="section-eyebrow mb-1">Traveller experiences</p><h4 class="mb-0">Tour Reviews</h4></div>
+                            <div class="review-summary">
+                                <strong>{{ averageRating ? averageRating.toFixed(1) : '—' }}</strong>
+                                <div><StarRating :rating="averageRating" /><span>{{ approvedReviewCount }} approved review{{ approvedReviewCount === 1 ? '' : 's' }}</span></div>
+                            </div>
+                        </div>
+
+                        <div v-if="!reviews.data.length" class="review-empty">No approved reviews yet. Be the first to share your experience.</div>
+                        <article v-for="review in reviews.data" :key="review.id" class="review-card">
+                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                <div><strong>{{ review.reviewer_name }}</strong><div><StarRating :rating="review.rating" /></div></div>
+                                <time class="text-muted small" :datetime="review.created_at">{{ formatReviewDate(review.created_at) }}</time>
+                            </div>
+                            <p class="mb-0 mt-3">{{ review.comment }}</p>
+                        </article>
+
+                        <nav v-if="reviews.links?.length > 3" class="d-flex flex-wrap gap-1 mt-3" aria-label="Review pages">
+                            <template v-for="link in reviews.links" :key="link.label"><Link v-if="link.url" :href="link.url" class="btn btn-sm" :class="link.active ? 'btn-svtp' : 'btn-outline-secondary'" preserve-scroll v-html="link.label" /><span v-else class="btn btn-sm btn-outline-secondary disabled" v-html="link.label"></span></template>
+                        </nav>
+
+                        <div class="review-form-card mt-4">
+                            <h4 class="mb-1">Share your experience</h4>
+                            <p class="text-muted small">No account is needed. Reviews are checked before appearing publicly.</p>
+                            <form @submit.prevent="submitReview">
+                                <div class="row g-3">
+                                    <div class="col-md-6"><label for="review-name" class="form-label">Name</label><input id="review-name" v-model="reviewForm.name" class="form-control" maxlength="100" autocomplete="name" required><small class="text-danger">{{ reviewForm.errors.name }}</small></div>
+                                    <div class="col-md-6"><label for="review-email" class="form-label">Email <span class="text-muted">(optional, not published)</span></label><input id="review-email" v-model="reviewForm.email" type="email" class="form-control" maxlength="255" autocomplete="email"><small class="text-danger">{{ reviewForm.errors.email }}</small></div>
+                                    <div class="col-12">
+                                        <fieldset><legend class="form-label mb-2">Rating</legend><div class="star-rating-input" @mouseleave="hoveredRating = 0">
+                                            <button v-for="star in 5" :key="star" type="button" :aria-label="`${star} star${star === 1 ? '' : 's'}`" @mouseenter="hoveredRating = star" @focus="hoveredRating = star" @blur="hoveredRating = 0" @click="reviewForm.rating = star"><i class="bi" :class="star <= (hoveredRating || reviewForm.rating) ? 'bi-star-fill' : 'bi-star'"></i></button>
+                                        </div></fieldset><small class="d-block text-danger">{{ reviewForm.errors.rating }}</small>
+                                    </div>
+                                    <div class="col-12"><label for="review-comment" class="form-label">Review</label><textarea id="review-comment" v-model="reviewForm.comment" class="form-control" rows="4" minlength="10" maxlength="2000" placeholder="Tell other travellers about your experience…" required></textarea><small class="text-danger">{{ reviewForm.errors.comment }}</small></div>
+                                </div>
+                                <button class="btn btn-svtp mt-3" :disabled="reviewForm.processing">{{ reviewForm.processing ? 'Submitting…' : 'Submit Review' }}</button>
+                            </form>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="col-lg-4">
@@ -153,3 +203,8 @@ function nextImage() {
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.reviews-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }.review-summary { display: flex; align-items: center; gap: .8rem; }.review-summary > strong { color: var(--maroon); font-family: var(--font-display); font-size: 2.5rem; line-height: 1; }.review-summary span { display: block; margin-top: .15rem; color: #6c757d; font-size: .78rem; }.review-card,.review-form-card,.review-empty { padding: 1.15rem; border: 1px solid rgba(107,16,41,.12); border-radius: 1rem; background: rgba(255,255,255,.7); }.review-card + .review-card { margin-top: .75rem; }.review-empty { color: #6c757d; }.star-rating-input { display: inline-flex; gap: .2rem; }.star-rating-input button { padding: .1rem; border: 0; background: transparent; color: #f59e0b; font-size: 1.8rem; line-height: 1; }.star-rating-input button:focus-visible { border-radius: .25rem; outline: 2px solid var(--maroon); outline-offset: 2px; }
+@media (max-width: 575.98px) { .reviews-heading { align-items: flex-start; flex-direction: column; }.review-summary { width: 100%; }.review-form-card { padding: 1rem; } }
+</style>

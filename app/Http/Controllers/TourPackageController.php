@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Place;
+use App\Models\Review;
 use App\Models\Tag;
 use App\Models\TourCategory;
 use App\Models\TourPackage;
@@ -83,7 +84,17 @@ class TourPackageController extends Controller
             ->loadCount('approvedReviews')
             ->loadAvg('approvedReviews', 'rating');
 
-        $reviews = $package->approvedReviews()->with('user:id,name')->latest()->paginate(5);
+        $reviews = $package->approvedReviews()
+            ->with('user:id,name')
+            ->latest()
+            ->paginate(5)
+            ->through(fn (Review $review): array => [
+                'id' => $review->id,
+                'reviewer_name' => $review->reviewer_name ?: $review->user?->name ?: 'Guest',
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'created_at' => $review->created_at,
+            ]);
 
         return Inertia::render('Packages/Show', compact('package', 'reviews'));
     }

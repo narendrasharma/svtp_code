@@ -10,6 +10,7 @@ import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
 import TopBar from '../Components/TopBar.vue';
 import Logo from '../Components/Logo.vue';
 import GlobalSearch from '../Components/GlobalSearch.vue';
+import PromotionalPopupModal from '../Components/PromotionalPopupModal.vue';
 import { appUrl } from '../appUrl';
 import { contactInfo } from '../festiveAssets';
 
@@ -17,17 +18,24 @@ const page = usePage();
 const year = new Date().getFullYear();
 const isQuickEnquiryOpen = ref(false);
 const isTourEnquiryOpen = ref(false);
+const isMobileMenuOpen = ref(false);
+const isMobileCategoriesOpen = ref(false);
 const tourCategories = computed(() => page.props.tourCategories || []);
+
+function closeMobileMenu() {
+    isMobileMenuOpen.value = false;
+    isMobileCategoriesOpen.value = false;
+}
 </script>
 
 <template>
     <div class="d-flex flex-column min-vh-100">
         <TopBar />
         <nav class="svtp-navbar">
-            <div class="container d-flex align-items-center justify-content-between">
+            <div class="container navbar-shell">
                 <Link :href="appUrl('/')" class="navbar-brand mb-0"><Logo /></Link>
-                <div class="d-flex align-items-center">
-                    <div class="d-none d-md-flex align-items-center">
+                <div class="d-flex min-width-0 align-items-center">
+                    <div class="d-none d-xl-flex align-items-center">
                         <Link :href="appUrl('/packages')" class="nav-link-custom">Packages</Link>
                         <div v-if="tourCategories.length" class="dropdown">
                             <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -49,14 +57,50 @@ const tourCategories = computed(() => page.props.tourCategories || []);
                         <Link :href="appUrl('/contact')" class="nav-link-custom">Contact</Link>
                     </div>
                     <GlobalSearch />
-                    <div v-if="tourCategories.length" class="dropdown d-md-none ms-2">
-                        <button class="btn btn-sm btn-outline-svtp dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Tours</button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><Link :href="appUrl('/packages')" class="dropdown-item">All Tours</Link></li>
-                            <li v-for="category in tourCategories" :key="category.id"><Link :href="appUrl(`/packages?category=${category.slug}`)" class="dropdown-item">{{ category.name }}</Link></li>
-                        </ul>
+                    <button
+                        type="button"
+                        class="mobile-menu-toggle d-xl-none ms-2"
+                        aria-label="Toggle navigation menu"
+                        aria-controls="mobile-navigation"
+                        :aria-expanded="isMobileMenuOpen"
+                        @click="isMobileMenuOpen = !isMobileMenuOpen"
+                    >
+                        <i class="bi" :class="isMobileMenuOpen ? 'bi-x-lg' : 'bi-list'" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn btn-svtp ms-2 d-none d-xl-inline-flex" @click="isTourEnquiryOpen = true">Enquiry</button>
+                </div>
+
+                <div v-if="isMobileMenuOpen" id="mobile-navigation" class="mobile-navigation d-xl-none">
+                    <Link :href="appUrl('/packages')" class="mobile-nav-link" @click="closeMobileMenu">Packages</Link>
+                    <div v-if="tourCategories.length" class="mobile-category-menu">
+                        <button
+                            type="button"
+                            class="mobile-nav-link mobile-category-toggle"
+                            :aria-expanded="isMobileCategoriesOpen"
+                            aria-controls="mobile-tour-categories"
+                            @click="isMobileCategoriesOpen = !isMobileCategoriesOpen"
+                        >
+                            <span>Tour Categories</span>
+                            <i class="bi" :class="isMobileCategoriesOpen ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+                        </button>
+                        <div v-if="isMobileCategoriesOpen" id="mobile-tour-categories" class="mobile-category-links">
+                            <Link
+                                v-for="category in tourCategories"
+                                :key="category.id"
+                                :href="appUrl(`/packages?category=${category.slug}`)"
+                                @click="closeMobileMenu"
+                            >
+                                <i class="bi me-2" :class="category.icon || 'bi-map'" aria-hidden="true"></i>{{ category.name }}
+                            </Link>
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-svtp ms-2 d-none d-md-inline-flex" @click="isTourEnquiryOpen = true">Enquiry</button>
+                    <Link :href="appUrl('/destinations')" class="mobile-nav-link" @click="closeMobileMenu">Destinations</Link>
+                    <Link :href="appUrl('/spiritual-wisdom')" class="mobile-nav-link" @click="closeMobileMenu">Wisdom</Link>
+                    <Link :href="appUrl('/gallery')" class="mobile-nav-link" @click="closeMobileMenu">Gallery</Link>
+                    <Link :href="appUrl('/blog')" class="mobile-nav-link" @click="closeMobileMenu">Blog</Link>
+                    <Link :href="appUrl('/about')" class="mobile-nav-link" @click="closeMobileMenu">About</Link>
+                    <Link :href="appUrl('/contact')" class="mobile-nav-link" @click="closeMobileMenu">Contact</Link>
+                    <button type="button" class="btn btn-svtp mobile-enquiry-button" @click="closeMobileMenu(); isTourEnquiryOpen = true">Enquiry</button>
                 </div>
             </div>
         </nav>
@@ -138,6 +182,7 @@ const tourCategories = computed(() => page.props.tourCategories || []);
             <span>Quick Enquiry</span>
         </button>
         <WhatsAppFloat />
+        <PromotionalPopupModal :popup="page.props.promotionalPopup" />
         <QuickEnquiryModal :open="isQuickEnquiryOpen" @close="isQuickEnquiryOpen = false" />
         <TourPlanEnquiryModal
             :open="isTourEnquiryOpen"
@@ -146,3 +191,86 @@ const tourCategories = computed(() => page.props.tourCategories || []);
         />
     </div>
 </template>
+
+<style scoped>
+.navbar-shell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.min-width-0 {
+    min-width: 0;
+}
+
+.mobile-menu-toggle {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 2.5rem;
+    place-items: center;
+    border: 1px solid rgba(107, 16, 41, 0.16);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--maroon);
+    font-size: 1.3rem;
+}
+
+.mobile-navigation {
+    width: 100%;
+    max-height: calc(100dvh - 5.5rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.75rem 0 0.25rem;
+    scrollbar-gutter: stable;
+}
+
+.mobile-nav-link {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 0.25rem;
+    border: 0;
+    border-bottom: 1px solid rgba(107, 16, 41, 0.09);
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    text-decoration: none;
+}
+
+.mobile-category-links {
+    display: grid;
+    padding: 0.25rem 0 0.45rem 0.75rem;
+}
+
+.mobile-category-links a {
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+    color: var(--maroon);
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+
+.mobile-enquiry-button {
+    width: 100%;
+    margin-top: 0.8rem;
+}
+
+@media (max-width: 575.98px) {
+    .svtp-navbar {
+        padding: 0.65rem 0;
+    }
+
+    .navbar-brand {
+        min-width: 0;
+        max-width: calc(100% - 6.25rem);
+    }
+
+    .navbar-brand :deep(.svtp-logo-image) {
+        width: min(100%, 190px);
+    }
+}
+</style>

@@ -10,7 +10,8 @@ const form = useForm({
     slug: props.destination?.slug ?? '',
     city_id: props.destination?.city_id ?? '',
     description: props.destination?.description ?? '',
-    image: props.destination?.image ?? '',
+    image_upload: null,
+    remove_image: false,
     meta_description: props.destination?.meta_description ?? '',
 });
 
@@ -22,7 +23,19 @@ function submit() {
     const url = props.destination
         ? `${appUrl('/admin/destinations')}/${props.destination.id}`
         : appUrl('/admin/destinations');
-    props.destination ? form.put(url) : form.post(url);
+    if (props.destination) {
+        form.transform((data) => ({ ...data, _method: 'put' })).post(url, { forceFormData: true });
+    } else {
+        form.post(url, { forceFormData: true });
+    }
+}
+
+function selectImage(event) {
+    form.image_upload = event.target.files?.[0] ?? null;
+
+    if (form.image_upload) {
+        form.remove_image = false;
+    }
 }
 </script>
 
@@ -49,9 +62,19 @@ function submit() {
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Introduce this destination to travellers."></textarea>
             <small class="text-danger">{{ form.errors.description }}</small>
 
-            <label class="form-label mt-3">Image URL or public path</label>
-            <input v-model="form.image" class="form-control" placeholder="https://... or /images/vrindavan.jpg">
-            <small class="text-danger">{{ form.errors.image }}</small>
+            <div class="mt-3">
+                <label class="form-label">Image</label>
+                <div v-if="destination?.image && !form.remove_image" class="mb-2">
+                    <img :src="destination.image" :alt="`${destination.name} current image`" class="rounded border" style="width: 180px; height: 110px; object-fit: cover;">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" @click="form.remove_image = true">Remove image</button>
+                    </div>
+                </div>
+                <p v-else-if="destination?.image && form.remove_image" class="small text-muted mb-2">The current image will be removed when you save.</p>
+                <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" @change="selectImage">
+                <small class="d-block text-muted mt-1">JPG, PNG, or WebP; up to 5 MB.</small>
+                <small class="text-danger">{{ form.errors.image_upload }}</small>
+            </div>
 
             <label class="form-label mt-3">SEO description</label>
             <textarea v-model="form.meta_description" class="form-control" rows="2" maxlength="255" placeholder="Optional search-engine description."></textarea>

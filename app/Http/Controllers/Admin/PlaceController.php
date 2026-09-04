@@ -7,6 +7,7 @@ use App\Http\Requests\SavePlaceRequest;
 use App\Models\Destination;
 use App\Models\Place;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +29,13 @@ class PlaceController extends Controller
 
     public function store(SavePlaceRequest $request): RedirectResponse
     {
-        Place::create($request->validated());
+        $data = $request->safe()->except(['image_upload', 'remove_image']);
+
+        if ($request->hasFile('image_upload')) {
+            $data['image'] = Storage::disk('public')->url($request->file('image_upload')->store('places', 'public'));
+        }
+
+        Place::create($data);
 
         return redirect()->route('admin.places.index')->with('flash', 'Place created.');
     }
@@ -43,7 +50,20 @@ class PlaceController extends Controller
 
     public function update(SavePlaceRequest $request, Place $place): RedirectResponse
     {
-        $place->update($request->validated());
+        $data = $request->safe()->except(['image_upload', 'remove_image']);
+        $oldImage = $place->image;
+
+        if ($request->hasFile('image_upload')) {
+            $data['image'] = Storage::disk('public')->url($request->file('image_upload')->store('places', 'public'));
+        } elseif ($request->boolean('remove_image')) {
+            $data['image'] = null;
+        }
+
+        $place->update($data);
+
+        if (array_key_exists('image', $data) && $oldImage !== $data['image']) {
+            $this->deleteManagedImage($oldImage);
+        }
 
         return redirect()->route('admin.places.index')->with('flash', 'Place updated.');
     }
@@ -53,5 +73,14 @@ class PlaceController extends Controller
         $place->delete();
 
         return back()->with('flash', 'Place removed.');
+    }
+
+    private function deleteManagedImage(?string $image): void
+    {
+        $path = $image ? parse_url($image, PHP_URL_PATH) : null;
+
+        if (is_string($path) && str_starts_with($path, '/storage/places/')) {
+            Storage::disk('public')->delete(substr($path, strlen('/storage/')));
+        }
     }
 }

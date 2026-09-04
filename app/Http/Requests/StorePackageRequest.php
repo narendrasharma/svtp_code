@@ -34,6 +34,8 @@ class StorePackageRequest extends FormRequest
             'gallery.*' => ['nullable', 'string', 'max:2048'],
             'gallery_uploads' => ['nullable', 'array', 'max:12'],
             'gallery_uploads.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover_image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_cover_image' => ['boolean'],
             'category_id' => ['nullable', 'integer', 'exists:tour_categories,id'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],

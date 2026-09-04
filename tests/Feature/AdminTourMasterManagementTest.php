@@ -9,6 +9,8 @@ use App\Models\State;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -27,6 +29,7 @@ class AdminTourMasterManagementTest extends TestCase
 
     public function test_admin_can_manage_destinations_with_an_optional_city(): void
     {
+        Storage::fake('public');
         $admin = User::factory()->create(['role' => 'admin']);
         $city = $this->createCity();
 
@@ -40,9 +43,13 @@ class AdminTourMasterManagementTest extends TestCase
             'name' => 'Vrindavan',
             'slug' => 'vrindavan',
             'city_id' => $city->id,
+            'image_upload' => UploadedFile::fake()->image('vrindavan.jpg'),
         ])->assertRedirect(route('admin.destinations.index', absolute: false));
 
         $destination = Destination::firstOrFail();
+        $image = $destination->image;
+        $this->assertStringStartsWith('/storage/destinations/', $image);
+        Storage::disk('public')->assertExists('destinations/'.basename($image));
 
         $this->actingAs($admin)->put(route('admin.destinations.update', $destination, absolute: false), [
             'name' => 'Vrindavan Dham',
@@ -54,7 +61,18 @@ class AdminTourMasterManagementTest extends TestCase
             'id' => $destination->id,
             'name' => 'Vrindavan Dham',
             'city_id' => null,
+            'image' => $image,
         ]);
+
+        $this->actingAs($admin)->put(route('admin.destinations.update', $destination, absolute: false), [
+            'name' => 'Vrindavan Dham',
+            'slug' => 'vrindavan-dham',
+            'city_id' => null,
+            'remove_image' => true,
+        ])->assertRedirect(route('admin.destinations.index', absolute: false));
+
+        $this->assertNull($destination->refresh()->image);
+        Storage::disk('public')->assertMissing('destinations/'.basename($image));
 
         $this->actingAs($admin)->delete(route('admin.destinations.destroy', $destination, absolute: false))->assertRedirect();
         $this->assertModelMissing($destination);
@@ -62,6 +80,7 @@ class AdminTourMasterManagementTest extends TestCase
 
     public function test_admin_can_manage_places_for_a_destination(): void
     {
+        Storage::fake('public');
         $admin = User::factory()->create(['role' => 'admin']);
         $destination = Destination::create(['name' => 'Vrindavan', 'slug' => 'vrindavan']);
 
@@ -69,9 +88,13 @@ class AdminTourMasterManagementTest extends TestCase
             'name' => 'Banke Bihari Temple',
             'slug' => 'banke-bihari-temple',
             'destination_id' => $destination->id,
+            'image_upload' => UploadedFile::fake()->image('temple.webp'),
         ])->assertRedirect(route('admin.places.index', absolute: false));
 
         $place = Place::firstOrFail();
+        $image = $place->image;
+        $this->assertStringStartsWith('/storage/places/', $image);
+        Storage::disk('public')->assertExists('places/'.basename($image));
 
         $this->actingAs($admin)->put(route('admin.places.update', $place, absolute: false), [
             'name' => 'Shri Banke Bihari Temple',
@@ -79,7 +102,21 @@ class AdminTourMasterManagementTest extends TestCase
             'destination_id' => $destination->id,
         ])->assertRedirect(route('admin.places.index', absolute: false));
 
-        $this->assertDatabaseHas('places', ['id' => $place->id, 'name' => 'Shri Banke Bihari Temple']);
+        $this->assertDatabaseHas('places', [
+            'id' => $place->id,
+            'name' => 'Shri Banke Bihari Temple',
+            'image' => $image,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.places.update', $place, absolute: false), [
+            'name' => 'Shri Banke Bihari Temple',
+            'slug' => 'shri-banke-bihari-temple',
+            'destination_id' => $destination->id,
+            'remove_image' => true,
+        ])->assertRedirect(route('admin.places.index', absolute: false));
+
+        $this->assertNull($place->refresh()->image);
+        Storage::disk('public')->assertMissing('places/'.basename($image));
 
         $this->actingAs($admin)->delete(route('admin.places.destroy', $place, absolute: false))->assertRedirect();
         $this->assertModelMissing($place);

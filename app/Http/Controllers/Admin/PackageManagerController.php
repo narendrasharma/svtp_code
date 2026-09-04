@@ -102,7 +102,14 @@ class PackageManagerController extends Controller
      */
     private function packageData(StorePackageRequest $request, ?TourPackage $package = null): array
     {
-        $data = $request->safe()->except(['destination_ids', 'place_ids', 'tag_ids', 'gallery_uploads']);
+        $data = $request->safe()->except([
+            'destination_ids',
+            'place_ids',
+            'tag_ids',
+            'gallery_uploads',
+            'cover_image_upload',
+            'remove_cover_image',
+        ]);
         $gallery = $data['gallery'] ?? $package?->gallery ?? [];
 
         foreach ($request->file('gallery_uploads', []) as $image) {
@@ -111,6 +118,34 @@ class PackageManagerController extends Controller
 
         $data['gallery'] = array_values(array_filter($gallery));
 
+        if ($request->hasFile('cover_image_upload')) {
+            $data['cover_image'] = Storage::disk('public')->url($request->file('cover_image_upload')->store('packages/covers', 'public'));
+        } elseif ($package && $request->boolean('remove_cover_image')) {
+            $data['cover_image'] = null;
+        }
+
+        if ($package) {
+            $removedImages = array_diff($package->gallery ?? [], $data['gallery']);
+
+            foreach ($removedImages as $removedImage) {
+                $this->deleteManagedImage($removedImage, 'packages/gallery');
+            }
+
+            if (array_key_exists('cover_image', $data) && $package->cover_image !== $data['cover_image']) {
+                $this->deleteManagedImage($package->cover_image, 'packages/covers');
+            }
+        }
+
         return $data;
+    }
+
+    private function deleteManagedImage(?string $image, string $directory): void
+    {
+        $path = $image ? parse_url($image, PHP_URL_PATH) : null;
+        $prefix = '/storage/'.$directory.'/';
+
+        if (is_string($path) && str_starts_with($path, $prefix)) {
+            Storage::disk('public')->delete(substr($path, strlen('/storage/')));
+        }
     }
 }

@@ -4,9 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class SaveDestinationRequest extends FormRequest
+class SavePromotionalPopupRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,13 +23,11 @@ class SaveDestinationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', Rule::unique('destinations')->ignore($this->route('destination'))],
-            'city_id' => ['nullable', 'integer', 'exists:cities,id'],
-            'description' => ['nullable', 'string'],
             'image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remove_image' => ['boolean'],
-            'meta_description' => ['nullable', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'cta_url' => ['nullable', 'string', 'max:2048', 'regex:/^(https?:\/\/|\/)[^\s]+$/i'],
+            'is_active' => ['boolean'],
         ];
     }
 }

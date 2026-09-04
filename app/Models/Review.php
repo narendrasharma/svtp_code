@@ -6,9 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
-    protected $fillable = ['user_id', 'package_id', 'booking_id', 'rating', 'comment', 'is_approved'];
+    protected $fillable = [
+        'user_id', 'reviewer_name', 'reviewer_email', 'package_id', 'booking_id', 'rating', 'comment', 'is_approved',
+    ];
 
-    protected $casts = ['is_approved' => 'boolean'];
+    protected $casts = [
+        'rating' => 'integer',
+        'is_approved' => 'boolean',
+    ];
 
     public function user()
     {

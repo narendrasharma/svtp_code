@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DestinationController as AdminDestinationControll
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\PackageManagerController;
 use App\Http\Controllers\Admin\PlaceController;
+use App\Http\Controllers\Admin\PromotionalPopupController;
 use App\Http\Controllers\Admin\ReviewModerationController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TourCategoryController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PlaceController as PublicPlaceController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TourPackageController;
 use App\Models\Review;
@@ -31,6 +33,9 @@ Route::get('/search', GlobalSearchController::class)
 
 Route::get('/packages', [TourPackageController::class, 'index'])->name('packages.index');
 Route::get('/packages/{package:slug}', [TourPackageController::class, 'show'])->name('packages.show');
+Route::post('/packages/{package:slug}/reviews', [ReviewController::class, 'storePublic'])
+    ->middleware('throttle:3,10')
+    ->name('packages.reviews.store');
 
 Route::get('/about', fn () => Inertia::render('Static/About'))->name('about');
 Route::get('/our-team', fn () => Inertia::render('Static/Team'))->name('team');
@@ -51,7 +56,9 @@ Route::get('/testimonials', function () {
     return Inertia::render('Static/Testimonials', [
         'testimonials' => Review::where('is_approved', true)
             ->with('user:id,name', 'package:id,title')
-            ->latest()->take(24)->get(),
+            ->latest()
+            ->take(24)
+            ->get(['id', 'user_id', 'package_id', 'reviewer_name', 'rating', 'comment', 'created_at']),
     ]);
 })->name('testimonials');
 
@@ -68,6 +75,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
 
@@ -88,6 +97,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
     Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
+    Route::get('/promotional-popup', [PromotionalPopupController::class, 'index'])->name('promotional-popup.index');
+    Route::post('/promotional-popup', [PromotionalPopupController::class, 'store'])->name('promotional-popup.store');
+
     Route::get('/bookings', [BookingManagerController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/create', [BookingManagerController::class, 'create'])->name('bookings.create');
     Route::post('/bookings', [BookingManagerController::class, 'store'])->name('bookings.store');
@@ -97,7 +109,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/bookings/{booking}/status', [BookingManagerController::class, 'updateStatus'])->name('bookings.status');
 
     Route::get('/reviews', [ReviewModerationController::class, 'index'])->name('reviews.index');
+    Route::get('/reviews/{review}', [ReviewModerationController::class, 'show'])->name('reviews.show');
     Route::patch('/reviews/{review}/approve', [ReviewModerationController::class, 'approve'])->name('reviews.approve');
+    Route::patch('/reviews/{review}/reject', [ReviewModerationController::class, 'reject'])->name('reviews.reject');
     Route::delete('/reviews/{review}', [ReviewModerationController::class, 'destroy'])->name('reviews.destroy');
 });
 

@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PromotionalPopup;
 use App\Models\TourCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -44,6 +47,20 @@ class HandleInertiaRequests extends Middleware
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug', 'icon']),
+            'promotionalPopup' => fn () => Cache::remember('active.promotional_popup', 3600, function (): ?array {
+                $popup = PromotionalPopup::query()
+                    ->where('is_active', true)
+                    ->whereNotNull('image_path')
+                    ->latest('id')
+                    ->first(['id', 'image_path', 'title', 'cta_url']);
+
+                return $popup ? [
+                    'id' => $popup->id,
+                    'image_url' => Storage::disk('public')->url($popup->image_path),
+                    'title' => $popup->title,
+                    'cta_url' => $popup->cta_url,
+                ] : null;
+            }),
         ];
     }
 

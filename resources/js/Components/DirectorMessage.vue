@@ -6,7 +6,7 @@ const directorImage = appUrl('/team/kanhaiya.jpeg');
 </script>
 
 <template>
-    <section class="director-message-section container py-5">
+    <section class="director-message-section py-5">
         <div class="container">
             <div class="director-card">
                 <div class="director-content">
@@ -386,15 +386,26 @@ const directorImage = appUrl('/team/kanhaiya.jpeg');
     }
 
     .photo-frame {
-        width: min(100%, 430px);
+        width: min(100%, 520px);
     }
 
     .photo-frame img {
-        height: 420px;
+        height: auto;
+        object-fit: contain;
+    }
+
+    .photo-name-card {
+        position: static;
+        margin: 0;
+        border-radius: 0 0 18px 18px;
     }
 
     .local-trust-badge {
-        right: 8%;
+        position: relative;
+        right: auto;
+        bottom: auto;
+        width: min(calc(100% - 30px), 430px);
+        margin: -10px auto 0;
     }
 }
 
@@ -413,15 +424,7 @@ const directorImage = appUrl('/team/kanhaiya.jpeg');
         font-size: 2rem;
     }
 
-    .photo-frame img {
-        height: 340px;
-    }
-
     .local-trust-badge {
-        position: relative;
-        right: auto;
-        bottom: auto;
-        z-index: 3;
         width: calc(100% - 30px);
         margin: -15px auto 0;
     }
@@ -438,6 +441,20 @@ const directorImage = appUrl('/team/kanhaiya.jpeg');
     .director-actions .btn {
         flex: 1;
         text-align: center;
+    }
+}
+
+@media (max-width: 399.98px) {
+    .director-card {
+        padding-inline: 16px;
+    }
+
+    .director-heading {
+        font-size: 1.75rem;
+    }
+
+    .director-actions {
+        flex-direction: column;
     }
 }
 </style>

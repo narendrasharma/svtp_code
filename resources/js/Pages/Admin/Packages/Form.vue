@@ -35,6 +35,8 @@ const form = useForm({
     exclusions: Array.isArray(props.package?.exclusions) ? [...props.package.exclusions] : [],
     gallery: Array.isArray(props.package?.gallery) ? [...props.package.gallery] : [],
     gallery_uploads: [],
+    cover_image_upload: null,
+    remove_cover_image: false,
     is_featured: props.package?.is_featured ?? false,
     is_active: props.package?.is_active ?? true,
     destination_ids: props.package?.destinations?.map((destination) => destination.id) ?? [],
@@ -111,6 +113,14 @@ function selectGalleryUploads(event) {
     form.gallery_uploads = Array.from(event.target.files || []);
 }
 
+function selectCoverImage(event) {
+    form.cover_image_upload = event.target.files?.[0] ?? null;
+
+    if (form.cover_image_upload) {
+        form.remove_cover_image = false;
+    }
+}
+
 function prepareContentForSubmission() {
     form.day_wise_itinerary = form.day_wise_itinerary
         .map((day, index) => ({
@@ -120,7 +130,7 @@ function prepareContentForSubmission() {
         }))
         .filter((day) => day.title || day.points.length);
 
-    ['inclusions', 'exclusions', 'gallery'].forEach((field) => {
+    ['inclusions', 'exclusions'].forEach((field) => {
         form[field] = form[field].map((item) => item.trim()).filter(Boolean);
     });
 }
@@ -129,7 +139,8 @@ function submit() {
     prepareContentForSubmission();
 
     if (props.package) {
-        form.put(`${appUrl('/admin/packages')}/${props.package.id}`, { forceFormData: true });
+        form.transform((data) => ({ ...data, _method: 'put' }))
+            .post(`${appUrl('/admin/packages')}/${props.package.id}`, { forceFormData: true });
     } else {
         form.post(appUrl('/admin/packages'), { forceFormData: true });
     }
@@ -204,18 +215,44 @@ function submit() {
                     <small class="text-danger">{{ form.errors.day_wise_itinerary }}</small>
                 </div>
 
-                <div v-for="field in ['inclusions', 'exclusions', 'gallery']" :key="field" class="mb-3">
+                <div v-for="field in ['inclusions', 'exclusions']" :key="field" class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="form-label fw-semibold mb-0">{{ field === 'gallery' ? 'Gallery Image URLs' : field[0].toUpperCase() + field.slice(1) }}</label>
+                        <label class="form-label fw-semibold mb-0">{{ field[0].toUpperCase() + field.slice(1) }}</label>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @click="addListItem(field)">Add Item</button>
                     </div>
                     <div v-for="(_, index) in form[field]" :key="index" class="input-group input-group-sm mb-2">
-                        <input v-model="form[field][index]" class="form-control" :placeholder="field === 'gallery' ? 'https://… or /storage/…' : 'Add an item'" />
+                        <input v-model="form[field][index]" class="form-control" placeholder="Add an item" />
                         <button type="button" class="btn btn-outline-danger" :aria-label="`Remove ${field} item`" @click="removeListItem(field, index)">
                             <i class="bi bi-dash"></i>
                         </button>
                     </div>
                     <small class="text-danger">{{ form.errors[field] }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Cover Image</label>
+                    <div v-if="package?.cover_image && !form.remove_cover_image" class="mb-2">
+                        <img :src="package.cover_image" :alt="`${package.title} cover image`" class="rounded border" style="width: 220px; height: 125px; object-fit: cover;">
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" @click="form.remove_cover_image = true">Remove cover image</button>
+                        </div>
+                    </div>
+                    <p v-else-if="package?.cover_image && form.remove_cover_image" class="small text-muted mb-2">The current cover image will be removed when you save.</p>
+                    <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" @change="selectCoverImage" />
+                    <small class="text-danger">{{ form.errors.cover_image_upload }}</small>
+                </div>
+
+                <div v-if="form.gallery.length" class="mb-3">
+                    <label class="form-label fw-semibold">Existing Gallery Images</label>
+                    <div class="row g-2">
+                        <div v-for="(image, index) in form.gallery" :key="`${image}-${index}`" class="col-6 col-sm-4">
+                            <div class="border rounded p-2 h-100">
+                                <img :src="image" :alt="`${package?.title ?? 'Package'} gallery image ${index + 1}`" class="rounded w-100" style="height: 100px; object-fit: cover;">
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-2" @click="removeListItem('gallery', index)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-danger">{{ form.errors.gallery }}</small>
                 </div>
 
                 <div class="mb-3">

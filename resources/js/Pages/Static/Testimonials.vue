@@ -42,7 +42,7 @@ defineProps({ testimonials: { type: Array, default: () => [] } });
                         <p class="testimonial-mark mb-1">॥</p>
                         <StarRating :rating="t.rating" />
                         <p class="mt-2 mb-3">{{ t.comment }}</p>
-                        <p class="fw-semibold mb-0">— {{ t.user?.name }}</p>
+                        <p class="fw-semibold mb-0">— {{ t.reviewer_name || t.user?.name || 'Guest' }}</p>
                         <small class="text-muted">{{ t.package?.title }}</small>
                     </div>
                 </div>

@@ -76,6 +76,7 @@ class TourCategoryManagementTest extends TestCase
             'category_id' => $templeCategory->id,
             'gallery' => ['https://example.test/existing-image.jpg'],
             'gallery_uploads' => [UploadedFile::fake()->image('temple.jpg', 1600, 900)],
+            'cover_image_upload' => UploadedFile::fake()->image('cover.jpg', 1600, 900),
             'destination_ids' => [],
             'place_ids' => [],
             'tag_ids' => [],
@@ -86,18 +87,37 @@ class TourCategoryManagementTest extends TestCase
         $this->assertSame('https://example.test/existing-image.jpg', $templePackage->gallery[0]);
         $this->assertStringStartsWith('/storage/packages/gallery/', $templePackage->gallery[1]);
         Storage::disk('public')->assertExists('packages/gallery/'.basename($templePackage->gallery[1]));
+        $uploadedGalleryImage = $templePackage->gallery[1];
+        $coverImage = $templePackage->cover_image;
+        $this->assertStringStartsWith('/storage/packages/covers/', $coverImage);
+        Storage::disk('public')->assertExists('packages/covers/'.basename($coverImage));
 
         $this->actingAs($admin)->put(route('admin.packages.update', $templePackage, absolute: false), [
             ...$this->packagePayload($city),
             'category_id' => $templeCategory->id,
-            'gallery' => ['https://example.test/updated-image.jpg'],
+            'gallery' => ['https://example.test/existing-image.jpg'],
             'destination_ids' => [],
             'place_ids' => [],
             'tag_ids' => [],
         ])->assertRedirect(route('admin.packages.index', absolute: false));
 
         $templePackage->refresh();
-        $this->assertSame(['https://example.test/updated-image.jpg'], $templePackage->gallery);
+        $this->assertSame(['https://example.test/existing-image.jpg'], $templePackage->gallery);
+        $this->assertSame($coverImage, $templePackage->cover_image);
+        Storage::disk('public')->assertMissing('packages/gallery/'.basename($uploadedGalleryImage));
+
+        $this->actingAs($admin)->put(route('admin.packages.update', $templePackage, absolute: false), [
+            ...$this->packagePayload($city),
+            'category_id' => $templeCategory->id,
+            'gallery' => ['https://example.test/existing-image.jpg'],
+            'remove_cover_image' => true,
+            'destination_ids' => [],
+            'place_ids' => [],
+            'tag_ids' => [],
+        ])->assertRedirect(route('admin.packages.index', absolute: false));
+
+        $this->assertNull($templePackage->refresh()->cover_image);
+        Storage::disk('public')->assertMissing('packages/covers/'.basename($coverImage));
 
         TourPackage::factory()->create([
             'city_id' => $city->id,

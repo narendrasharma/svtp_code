@@ -235,4 +235,22 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
+## Token and Execution Efficiency
+
+Work efficiently and minimize unnecessary token/tool usage.
+
+- Inspect only files relevant to the requested task.
+- Do not explore unrelated parts of the project.
+- Make the smallest necessary change.
+- Do not run the full test suite unless explicitly requested or the change is high-risk.
+- For CSS, layout, responsive, copy, and simple Vue UI changes, do not run PHPUnit/Pest feature or unit tests.
+- Run only targeted tests when backend business logic is changed and testing is genuinely useful.
+- Do not repeatedly run the same tests/build commands.
+- Do not run `npm run build` after every minor edit unless needed to verify compilation.
+- Do not create new tests unless explicitly requested or the change introduces important business logic.
+- Do not perform unrelated refactoring or cleanup.
+- Do not re-read large files unnecessarily.
+- Keep explanations and final summaries concise.
+- If the requested change is straightforward, implement it directly instead of performing broad investigation.
+
 </laravel-boost-guidelines>

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePublicReviewRequest;
 use App\Models\Booking;
+use App\Models\TourPackage;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request, Booking $booking)
+    public function store(Request $request, Booking $booking): RedirectResponse
     {
         $this->authorize('view', $booking);
 
@@ -23,5 +26,18 @@ class ReviewController extends Controller
         ]);
 
         return back()->with('flash', 'Thanks for your feedback — it will appear once reviewed.');
+    }
+
+    public function storePublic(StorePublicReviewRequest $request, TourPackage $package): RedirectResponse
+    {
+        $package->reviews()->create([
+            'reviewer_name' => $request->validated('name'),
+            'reviewer_email' => $request->validated('email'),
+            'rating' => $request->validated('rating'),
+            'comment' => $request->validated('comment'),
+            'is_approved' => false,
+        ]);
+
+        return back()->with('flash', 'Thank you. Your review was submitted and is awaiting moderation.');
     }
 }
