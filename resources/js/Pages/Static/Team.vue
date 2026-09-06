@@ -9,6 +9,7 @@ const teamMembers = [
     { name: 'Ashok', role: 'Travel Consultant', image: appUrl('/team/ashok.jpeg') },
     { name: 'Suneel', role: 'Travel Consultant', image: appUrl('/team/Suneel.jpeg') },
     { name: 'Chaube', role: 'Travel Consultant', image: appUrl('/team/chaube.jpeg') },
+    //{ name: 'Chaube', role: 'Travel Consultant', image: appUrl('/team/chaube.jpeg') },
 ];
 </script>
 

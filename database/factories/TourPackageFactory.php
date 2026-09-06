@@ -32,7 +32,7 @@ class TourPackageFactory extends Factory
             'overview' => fake()->paragraph(),
             'inclusions' => ['Private AC vehicle', 'Local assistance'],
             'exclusions' => ['Meals', 'Monument entry fees'],
-            'category' => fake()->randomElement(['braj', 'temple', 'up_circuit', 'festival']),
+            'category' => \App\Models\TourCategory::factory(),
             'is_featured' => false,
             'is_active' => true,
         ];

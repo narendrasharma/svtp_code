@@ -2,6 +2,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../appUrl';
+import Pagination from "@/Components/Pagination.vue";
 
 defineProps({ destinations: Object });
 
@@ -20,9 +21,11 @@ function removeDestination(destination) {
         </div>
         <div class="table-responsive mt-3">
             <table class="table align-middle">
-                <thead><tr><th>Name</th><th>City</th><th>Places</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
+                <thead><tr><th>#</th><th>Name</th><th>City</th><th>Places</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
-                    <tr v-for="destination in destinations.data" :key="destination.id">
+                    <tr v-for="(destination,index) in destinations.data" :key="destination.id">
+
+                        <td>{{destinations.from+index}}</td>
                         <td><strong>{{ destination.name }}</strong><br><small class="text-muted">{{ destination.slug }}</small></td>
                         <td>{{ destination.city?.name || '—' }}</td>
                         <td>{{ destination.places_count }}</td>
@@ -37,8 +40,7 @@ function removeDestination(destination) {
             </table>
         </div>
         <div class="d-flex justify-content-between">
-            <Link v-if="destinations.prev_page_url" :href="destinations.prev_page_url" class="btn btn-outline-secondary">Previous</Link><span v-else></span>
-            <Link v-if="destinations.next_page_url" :href="destinations.next_page_url" class="btn btn-outline-secondary">Next</Link>
+            <Pagination :links="destinations.links" />
         </div>
     </AdminLayout>
 </template>

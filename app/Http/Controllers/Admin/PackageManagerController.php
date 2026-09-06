@@ -23,7 +23,7 @@ class PackageManagerController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Packages/Index', [
-            'packages' => TourPackage::with(['city', 'category'])->latest()->paginate(15),
+            'packages' => TourPackage::with(['city', 'category'])->latest()->paginate(10),
         ]);
     }
 

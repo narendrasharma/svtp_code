@@ -53,7 +53,47 @@ watch(() => page.url, () => { isSidebarOpen.value = false; });
             </div>
         </aside>
 
-        <main class="admin-main"><div class="admin-content"><slot /></div></main>
+        <!-- success message -->
+        <div
+            v-if="page.props.flash?.message"
+            class="alert alert-success alert-dismissible fade show text-center mb-0 rounded-0"
+            role="alert"
+        >
+            {{ page.props.flash.message }}
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+        </div>
+
+
+        <!-- Validation errors -->
+        <div
+            v-if="Object.keys(page.props.errors || {}).length"
+            class="alert alert-danger alert-dismissible fade show mb-0 rounded-0"
+        >
+            <div class="fw-semibold">Please correct the following errors:</div>
+
+            <ul class="mb-0">
+                <li v-for="(error, field) in page.props.errors" :key="field">
+                    {{ error }}
+                </li>
+            </ul>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+        </div>
+
+        <main class="admin-main">
+            <div class="admin-content"><slot />
+            </div></main>
     </div>
 </template>
 

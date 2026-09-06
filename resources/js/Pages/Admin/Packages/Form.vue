@@ -5,6 +5,101 @@ import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import axios from 'axios';
+import { Ckeditor } from '@ckeditor/ckeditor5-vue';
+
+import {
+    ClassicEditor,
+    Essentials,
+    Paragraph,
+    Heading,
+    Bold,
+    Italic,
+    Link,
+    List,
+    BlockQuote,
+    Undo,
+
+    Image,
+    ImageToolbar,
+    ImageCaption,
+    ImageStyle,
+    ImageResize,
+    ImageUpload,
+    SimpleUploadAdapter,
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
+
+const editor = ClassicEditor;
+
+const editorConfig = {
+    licenseKey: 'GPL',
+
+    plugins: [
+        Essentials,
+        Paragraph,
+        Heading,
+        Bold,
+        Italic,
+        Link,
+        List,
+        BlockQuote,
+        Undo,
+
+        Image,
+        ImageToolbar,
+        ImageCaption,
+        ImageStyle,
+        ImageResize,
+        ImageUpload,
+        SimpleUploadAdapter,
+    ],
+
+    toolbar: [
+        'undo',
+        'redo',
+        '|',
+        'heading',
+        '|',
+        'bold',
+        'italic',
+        'link',
+        '|',
+        'bulletedList',
+        'numberedList',
+        'blockQuote',
+        '|',
+        'imageUpload',
+
+    ],
+    simpleUpload: {
+        uploadUrl: appUrl('/admin/editor/upload-image'),
+
+        headers: {
+            'X-CSRF-TOKEN': document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content'),
+        },
+    },
+
+    image: {
+        upload: {
+            types: ['jpeg', 'png', 'webp'],
+        },
+
+        toolbar: [
+            'imageTextAlternative',
+            'toggleImageCaption',
+            '|',
+            'imageStyle:inline',
+            'imageStyle:block',
+            'imageStyle:side',
+        ],
+    },
+};
+
+
+
 
 const props = defineProps({
     package: { type: Object, default: null },
@@ -180,7 +275,23 @@ function submit() {
                 </button>
             </div>
 
+<!--
             <textarea v-model="form.overview" class="form-control mb-2" rows="4" placeholder="Overview"></textarea>
+-->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Package Overview</label>
+
+                <Ckeditor
+                    v-model="form.overview"
+                    :editor="editor"
+                    :config="editorConfig"
+                />
+
+                <small class="text-danger">
+                    {{ form.errors.overview }}
+                </small>
+            </div>
+
 
             <div class="border rounded p-3 mb-3">
                 <h5 class="mb-3">Package Content</h5>

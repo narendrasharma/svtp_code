@@ -18,8 +18,14 @@ class HomeController extends Controller
             ->withAvg('approvedReviews', 'rating')
             ->take(6)->get();
 
-        $banners = Cache::remember('home.banners', 3600, fn () => Banner::active()->get());
-
+       // $banners = Cache::remember('home.banners', 4, fn () => Banner::active()->get());
+        $banners = Cache::remember(
+            'home.banners',
+            4,
+            fn () => Banner::active()
+                ->orderBy('sort_order')
+                ->get()
+        );
         $destinations = Cache::remember(
             'home.destinations.autocomplete',
             3600,

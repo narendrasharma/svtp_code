@@ -82,7 +82,12 @@ function formatReviewDate(value) {
                         <p class="text-muted mb-0"><i class="bi bi-calendar3 me-1"></i>{{ package.duration_days }} Days / {{ package.duration_nights }} Nights</p>
                         <StarRating v-if="package.approved_reviews_avg_rating" :rating="package.approved_reviews_avg_rating" />
                     </div>
-                    <p>{{ package.overview }}</p>
+<!--                    <p>{{ package.overview }}</p>-->
+
+                    <div
+                        class="tour-content"
+                        v-html="package.overview"
+                    ></div>
 
                     <!-- Spiritual significance -->
 <!--                    <div class="shloka-quote-card my-4">
@@ -182,7 +187,7 @@ function formatReviewDate(value) {
                         <button type="button" class="btn btn-svtp w-100 mt-3" @click="isTourEnquiryOpen = true">
                             <i class="bi bi-chat-square-text-fill me-1"></i>Enquire Now
                         </button>
-                        <a href="https://wa.me/917017621518" target="_blank" rel="noopener" class="btn btn-outline-svtp w-100 mt-2">
+                        <a href="https://wa.me/918923427393" target="_blank" rel="noopener" class="btn btn-outline-svtp w-100 mt-2">
                             <i class="bi bi-whatsapp me-1"></i>Ask on WhatsApp
                         </a>
                     </div>
@@ -207,4 +212,20 @@ function formatReviewDate(value) {
 <style scoped>
 .reviews-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }.review-summary { display: flex; align-items: center; gap: .8rem; }.review-summary > strong { color: var(--maroon); font-family: var(--font-display); font-size: 2.5rem; line-height: 1; }.review-summary span { display: block; margin-top: .15rem; color: #6c757d; font-size: .78rem; }.review-card,.review-form-card,.review-empty { padding: 1.15rem; border: 1px solid rgba(107,16,41,.12); border-radius: 1rem; background: rgba(255,255,255,.7); }.review-card + .review-card { margin-top: .75rem; }.review-empty { color: #6c757d; }.star-rating-input { display: inline-flex; gap: .2rem; }.star-rating-input button { padding: .1rem; border: 0; background: transparent; color: #f59e0b; font-size: 1.8rem; line-height: 1; }.star-rating-input button:focus-visible { border-radius: .25rem; outline: 2px solid var(--maroon); outline-offset: 2px; }
 @media (max-width: 575.98px) { .reviews-heading { align-items: flex-start; flex-direction: column; }.review-summary { width: 100%; }.review-form-card { padding: 1rem; } }
+
+.tour-content h2,
+.tour-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.tour-content p {
+    line-height: 1.8;
+}
+
+.tour-content ul,
+.tour-content ol {
+    padding-left: 1.5rem;
+}
+
 </style>

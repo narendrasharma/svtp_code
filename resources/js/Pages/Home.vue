@@ -41,7 +41,7 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
 
 <template>
     <AppLayout>
-        <HeroCarousel>
+        <HeroCarousel :banners="banners">
             <template #search>
                 <SearchWidget :destinations="destinations" />
             </template>

@@ -2,6 +2,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../appUrl';
+import Pagination from "@/Components/Pagination.vue";
 
 defineProps({ places: Object });
 
@@ -18,9 +19,10 @@ function removePlace(place) {
         </div>
         <div class="table-responsive mt-3">
             <table class="table align-middle">
-                <thead><tr><th>Name</th><th>Destination</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
+                <thead><tr><th>#</th><th>Name</th><th>Destination</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
-                    <tr v-for="place in places.data" :key="place.id">
+                    <tr v-for="(place,index) in places.data" :key="place.id">
+                        <td>{{places.from+index}}</td>
                         <td><strong>{{ place.name }}</strong><br><small class="text-muted">{{ place.slug }}</small></td>
                         <td>{{ place.destination.name }}</td>
                         <td>{{ place.tour_packages_count }}</td>
@@ -34,8 +36,7 @@ function removePlace(place) {
             </table>
         </div>
         <div class="d-flex justify-content-between">
-            <Link v-if="places.prev_page_url" :href="places.prev_page_url" class="btn btn-outline-secondary">Previous</Link><span v-else></span>
-            <Link v-if="places.next_page_url" :href="places.next_page_url" class="btn btn-outline-secondary">Next</Link>
+            <Pagination :links="places.links" />
         </div>
     </AdminLayout>
 </template>

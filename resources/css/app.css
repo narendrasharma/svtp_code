@@ -1,6 +1,12 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
+/*ckeditor image oversizzing fix*/
+.tour-content figure.image > img {
+    max-width: 100%;
+    height: auto;
+}
+
 :root {
     /* ---------- Festive palette ---------- */
     --ink: #2B1810;
@@ -24,8 +30,8 @@
     --cream-warm: #FCEFDD;
     --blush: #E3A9AE;
 
-    --font-display: 'Cormorant Garamond', 'Georgia', serif;
-    --font-body: 'Jost', 'Segoe UI', sans-serif;
+    --font-display: 'Playfair Display', 'Georgia', serif;
+    --font-body: 'Poppins', 'Segoe UI', sans-serif;
     --font-devanagari: 'Noto Serif Devanagari', serif;
 
     --festive-gradient: linear-gradient(120deg, var(--saffron) 0%, var(--gulal) 55%, var(--turmeric) 100%);
@@ -34,18 +40,31 @@
 
 * { box-sizing: border-box; }
 
+#nprogress .bar {
+    height: 3px;
+    z-index: 2000;
+}
+
 body {
     font-family: var(--font-body);
+    font-weight: 400;
     background-color: var(--cream);
     color: var(--ink);
     letter-spacing: 0.01em;
 }
 
-h1, h2, h3, h4, .brand-heading {
+h1, h2, h3, h4, h5, h6, .brand-heading {
     font-family: var(--font-display);
     color: var(--maroon);
     font-weight: 600;
     letter-spacing: 0.01em;
+}
+
+h1 { font-weight: 700; }
+h2, h3 { font-weight: 600; }
+
+button, input, select, textarea, nav, .navbar, .btn, label {
+    font-family: var(--font-body);
 }
 
 a { color: var(--maroon); text-decoration: none; }
@@ -200,22 +219,65 @@ a:hover { color: var(--saffron); }
     font-weight: 700;
     color: var(--maroon);
 }
-.svtp-navbar .nav-link-custom {
-    color: var(--ink);
-    font-size: 0.95rem;
-    margin-left: 1.5rem;
-    position: relative;
+@media (min-width: 1200px) {
+    .svtp-navbar .nav-link-custom {
+        display: inline-flex;
+        position: relative;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: 1.25rem;
+        padding: 0.25rem 0;
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        font-weight: 500;
+        line-height: 1.4;
+        white-space: nowrap;
+        transition: color 0.2s ease;
+    }
+
+    .svtp-navbar .nav-link-custom::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: -0.3rem;
+        left: 0;
+        height: 2px;
+        border-radius: 999px;
+        background: var(--gulal-deep);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.22s ease;
+    }
+
+    .svtp-navbar .nav-link-custom:hover,
+    .svtp-navbar .dropdown.show > .nav-link-custom,
+    .svtp-navbar .nav-link-custom.is-active {
+        color: var(--gulal-deep);
+    }
+
+    .svtp-navbar .nav-link-custom.is-active {
+        font-weight: 600;
+    }
+
+    .svtp-navbar .nav-link-custom.is-active::before {
+        transform: scaleX(1);
+    }
+
+    .svtp-navbar .dropdown-toggle::after {
+        display: none;
+    }
+
+    .svtp-navbar .nav-chevron {
+        font-size: 0.68rem;
+        line-height: 1;
+        transition: transform 0.2s ease;
+    }
+
+    .svtp-navbar .dropdown.show .nav-chevron {
+        transform: rotate(180deg);
+    }
 }
-.svtp-navbar .nav-link-custom::after {
-    content: '';
-    position: absolute;
-    left: 0; bottom: -4px;
-    width: 0; height: 2px;
-    background: var(--gulal);
-    transition: width 0.25s ease;
-}
-.svtp-navbar .nav-link-custom:hover::after { width: 100%; }
-.svtp-navbar .nav-link-custom:hover { color: var(--maroon); }
 
 /* ============================================================
    Hero slider
@@ -592,7 +654,7 @@ a:hover { color: var(--saffron); }
 }
 
 .package-card-body { padding: 1.25rem 1.4rem 1.5rem; }
-.price-tag { font-family: var(--font-display); color: var(--maroon); font-size: 1.55rem; font-weight: 700; }
+.price-tag { font-family: var(--font-body); color: var(--maroon); font-size: 1.55rem; font-weight: 700; }
 .price-tag-strike { text-decoration: line-through; color: #aaa; font-size: 0.95rem; }
 
 /* ============================================================

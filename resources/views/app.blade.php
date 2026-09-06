@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ Vite::asset('resources/images/favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title inertia>{{ config('app.name', 'Shree Vrindavan Tour Packages') }}</title>
     @routes
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -17,7 +17,7 @@ class DestinationController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Destinations/Index', [
-            'destinations' => Destination::with('city')->withCount(['places', 'tourPackages'])->latest()->paginate(15),
+            'destinations' => Destination::with('city')->withCount(['places', 'tourPackages'])->latest()->paginate(10),
         ]);
     }
 

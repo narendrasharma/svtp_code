@@ -14,7 +14,7 @@ class TagController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Tags/Index', [
-            'tags' => Tag::withCount('tourPackages')->latest()->paginate(15),
+            'tags' => Tag::withCount('tourPackages')->latest()->paginate(10),
         ]);
     }
 

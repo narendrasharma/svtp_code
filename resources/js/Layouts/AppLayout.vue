@@ -21,6 +21,26 @@ const isTourEnquiryOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 const isMobileCategoriesOpen = ref(false);
 const tourCategories = computed(() => page.props.tourCategories || []);
+const currentPath = computed(() => page.url.split('?')[0]);
+const hasCategoryFilter = computed(() => new URLSearchParams(page.url.split('?')[1] || '').has('category'));
+
+function isActiveSection(section) {
+    const path = currentPath.value;
+
+    if (section === 'packages') {
+        return path.startsWith('/packages') && !(path === '/packages' && hasCategoryFilter.value);
+    }
+
+    if (section === 'tour-categories') {
+        return path === '/packages' && hasCategoryFilter.value;
+    }
+
+    if (section === 'destinations') {
+        return path.startsWith('/destinations') || path.startsWith('/places/');
+    }
+
+    return path === `/${section}` || path.startsWith(`/${section}/`);
+}
 
 function closeMobileMenu() {
     isMobileMenuOpen.value = false;
@@ -36,10 +56,11 @@ function closeMobileMenu() {
                 <Link :href="appUrl('/')" class="navbar-brand mb-0"><Logo /></Link>
                 <div class="d-flex min-width-0 align-items-center">
                     <div class="d-none d-xl-flex align-items-center">
-                        <Link :href="appUrl('/packages')" class="nav-link-custom">Packages</Link>
+                        <Link :href="appUrl('/packages')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('packages') }" :aria-current="isActiveSection('packages') ? 'page' : undefined">Packages</Link>
                         <div v-if="tourCategories.length" class="dropdown">
-                            <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Tour Categories
+                            <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" :class="{ 'is-active': isActiveSection('tour-categories') }" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span>Tour Categories</span>
+                                <i class="bi bi-chevron-down nav-chevron" aria-hidden="true"></i>
                             </button>
                             <ul class="dropdown-menu shadow border-0">
                                 <li v-for="category in tourCategories" :key="category.id">
@@ -49,12 +70,12 @@ function closeMobileMenu() {
                                 </li>
                             </ul>
                         </div>
-                        <Link :href="appUrl('/destinations')" class="nav-link-custom">Destinations</Link>
-                        <Link :href="appUrl('/spiritual-wisdom')" class="nav-link-custom">Wisdom</Link>
-                        <Link :href="appUrl('/gallery')" class="nav-link-custom">Gallery</Link>
-                        <Link :href="appUrl('/blog')" class="nav-link-custom">Blog</Link>
-                        <Link :href="appUrl('/about')" class="nav-link-custom">About</Link>
-                        <Link :href="appUrl('/contact')" class="nav-link-custom">Contact</Link>
+                        <Link :href="appUrl('/destinations')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('destinations') }" :aria-current="isActiveSection('destinations') ? 'page' : undefined">Destinations</Link>
+                        <Link :href="appUrl('/spiritual-wisdom')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('spiritual-wisdom') }" :aria-current="isActiveSection('spiritual-wisdom') ? 'page' : undefined">Wisdom</Link>
+                        <Link :href="appUrl('/gallery')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('gallery') }" :aria-current="isActiveSection('gallery') ? 'page' : undefined">Gallery</Link>
+                        <Link :href="appUrl('/blog')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('blog') }" :aria-current="isActiveSection('blog') ? 'page' : undefined">Blog</Link>
+                        <Link :href="appUrl('/about')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('about') }" :aria-current="isActiveSection('about') ? 'page' : undefined">About</Link>
+                        <Link :href="appUrl('/contact')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('contact') }" :aria-current="isActiveSection('contact') ? 'page' : undefined">Contact</Link>
                     </div>
                     <GlobalSearch />
                     <button

@@ -2,6 +2,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../appUrl';
+import Pagination from "@/Components/Pagination.vue";
 
 defineProps({ categories: Object });
 
@@ -20,9 +21,10 @@ function removeCategory(category) {
         </div>
         <div class="table-responsive mt-3">
             <table class="table align-middle">
-                <thead><tr><th>Name</th><th>Order</th><th>Status</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
+                <thead><tr><th>#</th><th>Name</th><th>Order</th><th>Status</th><th>Tours</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
-                    <tr v-for="category in categories.data" :key="category.id">
+                    <tr v-for="(category,index) in categories.data" :key="category.id">
+                        <td>{{categories.from+index}}</td>
                         <td>
                             <i v-if="category.icon" class="bi me-1" :class="category.icon"></i>
                             <strong>{{ category.name }}</strong><br><small class="text-muted">{{ category.slug }}</small>
@@ -40,8 +42,7 @@ function removeCategory(category) {
             </table>
         </div>
         <div class="d-flex justify-content-between">
-            <Link v-if="categories.prev_page_url" :href="categories.prev_page_url" class="btn btn-outline-secondary">Previous</Link><span v-else></span>
-            <Link v-if="categories.next_page_url" :href="categories.next_page_url" class="btn btn-outline-secondary">Next</Link>
+            <Pagination :links="categories.links" />
         </div>
     </AdminLayout>
 </template>

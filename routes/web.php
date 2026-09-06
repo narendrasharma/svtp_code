@@ -22,6 +22,7 @@ use App\Http\Controllers\PlaceController as PublicPlaceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TourPackageController;
+use App\Http\Controllers\Admin\EditorUploadController;
 use App\Models\Review;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -74,11 +75,18 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post(
+        '/editor/upload-image',
+        [EditorUploadController::class, 'store']
+    )->name('editor.upload-image');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
+    Route::delete('/enquiries/{enquiry}', [\App\Http\Controllers\Admin\EnquiryController::class, 'destroy'])->name('enquiries.destroy');
+
 
     Route::get('/packages', [PackageManagerController::class, 'index'])->name('packages.index');
     Route::get('/packages/create', [PackageManagerController::class, 'create'])->name('packages.create');
@@ -96,6 +104,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
     Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
     Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+    Route::patch('/admin/banners/{banner}/order', [BannerController::class, 'updateOrder']);
+
 
     Route::get('/promotional-popup', [PromotionalPopupController::class, 'index'])->name('promotional-popup.index');
     Route::post('/promotional-popup', [PromotionalPopupController::class, 'store'])->name('promotional-popup.store');

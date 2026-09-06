@@ -13,7 +13,7 @@ import { contactInfo } from '../../festiveAssets';
                 <div class="col-lg-5">
                     <div class="glass-card p-4 h-100">
                         <h4 class="text-svtp mb-4">Contact Details</h4>
-                        <p><strong>CEO / Travel Consultant</strong><br>{{ contactInfo.ceo }}<br><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a></p>
+                        <p><strong>CEO / Travel Consultant</strong><br>{{ contactInfo.ceo }}<br><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a>, <a :href="contactInfo.phone2Href">{{ contactInfo.phone2 }}</a></p>
                             <p><strong>Head – Tech &amp; Digital Operations</strong><br>{{ contactInfo.marketingHead }}<br><a :href="contactInfo.marketingPhoneHref">{{ contactInfo.marketingPhone }}</a></p>
                         <p>
                             <strong>Travel Consultants</strong><br>

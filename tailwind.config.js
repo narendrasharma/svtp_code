@@ -13,8 +13,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
-                display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+                display: ['"Playfair Display"', 'Georgia', 'serif'],
                 devanagari: ['"Noto Serif Devanagari"', 'serif'],
             },
             colors: {
