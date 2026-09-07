@@ -43,9 +43,6 @@ class BannerController extends Controller
     }
 
 
-    /**
-     * Update banner sort order
-     * */
     public function updateOrder(Request $request, Banner $banner)
     {
         $data = $request->validate([

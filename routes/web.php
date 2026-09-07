@@ -104,7 +104,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
     Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
     Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
-    Route::patch('/admin/banners/{banner}/order', [BannerController::class, 'updateOrder']);
+    Route::patch('/banners/{banner}/order', [BannerController::class, 'updateOrder']);
 
 
     Route::get('/promotional-popup', [PromotionalPopupController::class, 'index'])->name('promotional-popup.index');
