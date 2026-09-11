@@ -2,12 +2,17 @@
 import AppLayout from '../../Layouts/AppLayout.vue';
 import StarRating from '../../Components/StarRating.vue';
 import { reviewsSummary } from '../../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 
 defineProps({ testimonials: { type: Array, default: () => [] } });
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Customer Reviews & Testimonials"
+            description="Read genuine travel experiences and reviews shared by our customers."
+        />
         <section class="trust-strip py-5 mb-4">
             <div class="container text-center">
                 <p class="section-eyebrow text-white opacity-75">भक्तों के अनुभव</p>

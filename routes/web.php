@@ -23,9 +23,31 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TourPackageController;
 use App\Http\Controllers\Admin\EditorUploadController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Models\Destination;
+use App\Models\Place;
 use App\Models\Review;
+use App\Models\TourPackage;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('/sitemap.xml', function () {
+    $packages = TourPackage::query()
+        ->select('slug', 'updated_at')
+        ->get();
+
+    $destinations = Destination::query()
+        ->select('slug', 'updated_at')
+        ->get();
+
+    $places = Place::query()
+        ->select('slug', 'updated_at')
+        ->get();
+
+    return response()
+        ->view('sitemap', compact('packages', 'destinations', 'places'))
+        ->header('Content-Type', 'application/xml');
+});
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/search', GlobalSearchController::class)
@@ -123,6 +145,43 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/reviews/{review}/approve', [ReviewModerationController::class, 'approve'])->name('reviews.approve');
     Route::patch('/reviews/{review}/reject', [ReviewModerationController::class, 'reject'])->name('reviews.reject');
     Route::delete('/reviews/{review}', [ReviewModerationController::class, 'destroy'])->name('reviews.destroy');
+
+
+    //admin settings routes
+    Route::get(
+        '/settings',
+        [SettingController::class, 'index']
+    )->name('settings.index');
+
+
+    Route::post(
+        '/settings/basic',
+        [SettingController::class, 'updateBasic']
+    )->name('settings.basic.update');
+
+
+    Route::post(
+        '/settings/logo',
+        [SettingController::class, 'updateLogo']
+    )->name('settings.logo.update');
+
+
+    Route::post(
+        '/settings/contact',
+        [SettingController::class, 'updateContact']
+    )->name('settings.contact.update');
+
+
+    Route::post(
+        '/settings/social',
+        [SettingController::class, 'updateSocial']
+    )->name('settings.social.update');
+
+    Route::post(
+        '/settings/seo',
+        [SettingController::class, 'updateSeo']
+    )->name('settings.seo.update');
+
 });
 
 require __DIR__.'/auth.php'; // Breeze/Fortify-style login, register, password reset routes go here

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\PromotionalPopup;
+use App\Models\Setting;
 use App\Models\TourCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -41,6 +42,101 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'message' => fn () => $request->session()->get('flash'),
             ],
+            'siteSettings' => function () {
+
+                $settings = Setting::getAllSettings();
+
+                return [
+                    'site_name' =>
+                        $settings['site_name']
+                        ?? config('app.name'),
+
+                    'site_tagline' =>
+                        $settings['site_tagline']
+                        ?? null,
+
+                    'copyright_text' =>
+                        $settings['copyright_text']
+                        ?? 'All rights reserved.',
+
+                    'site_logo' =>
+                        $settings['site_logo']
+                        ?? null,
+
+                    'site_favicon' =>
+                        $settings['site_favicon']
+                        ?? null,
+
+                    'primary_phone' =>
+                        $settings['primary_phone']
+                        ?? null,
+
+                    'secondary_phone' =>
+                        $settings['secondary_phone']
+                        ?? null,
+
+                    'contact_email' =>
+                        $settings['contact_email']
+                        ?? null,
+
+                    'website_url' =>
+                        $settings['website_url']
+                        ?? null,
+
+                    'office_address' =>
+                        $settings['office_address']
+                        ?? null,
+
+                    'google_maps_url' =>
+                        $settings['google_maps_url']
+                        ?? null,
+
+                    'facebook_url' =>
+                        $settings['facebook_url']
+                        ?? null,
+
+                    'instagram_url' =>
+                        $settings['instagram_url']
+                        ?? null,
+
+                    'youtube_url' =>
+                        $settings['youtube_url']
+                        ?? null,
+
+                    'whatsapp_number' =>
+                        $settings['whatsapp_number']
+                        ?? null,
+
+                    'whatsapp_message' =>
+                        $settings['whatsapp_message']
+                        ?? null,
+                    'seo_meta_title' =>
+                        $settings['seo_meta_title']
+                        ?? null,
+
+                    'seo_meta_description' =>
+                        $settings['seo_meta_description']
+                        ?? null,
+
+                    'seo_meta_keywords' =>
+                        $settings['seo_meta_keywords']
+                        ?? null,
+
+                    'seo_og_image' =>
+                        $settings['seo_og_image']
+                        ?? null,
+
+                    'seo_index' =>
+                        ($settings['seo_index'] ?? '1') === '1',
+
+                    'seo_follow' =>
+                        ($settings['seo_follow'] ?? '1') === '1',
+
+                    'google_site_verification' =>
+                        $settings['google_site_verification']
+                        ?? null,
+                ];
+            },
             'securityQuestion' => $this->securityQuestion($request),
             'tourCategories' => fn () => TourCategory::active()
                 ->whereHas('tourPackages', fn ($query) => $query->active())

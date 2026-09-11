@@ -14,6 +14,7 @@ import {
     whyChooseUs, attractions, bestTimeToVisit, galleryImages,
     blogPosts, faqItems, contactInfo,
 } from '../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 
 defineProps({
     featured: { type: Array, default: () => [] },
@@ -41,6 +42,7 @@ function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
 
 <template>
     <AppLayout>
+        <SeoHead />
         <HeroCarousel :banners="banners">
             <template #search>
                 <SearchWidget :destinations="destinations" />

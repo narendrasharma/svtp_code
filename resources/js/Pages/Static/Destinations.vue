@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { appUrl } from '../../appUrl';
+import SeoHead from "@/Components/SeoHead.vue";
 
 defineProps({ destinations: { type: Array, default: () => [] } });
 
@@ -14,9 +15,10 @@ function imageUrl(image) {
 
 <template>
     <AppLayout>
-        <Head title="Braj Destinations">
-            <meta head-key="description" name="description" content="Explore Vrindavan, Mathura and sacred Braj destinations, their attractions and available tour packages.">
-        </Head>
+        <SeoHead
+            title="Destinations"
+            description="Explore popular travel destinations, attractions and available tour packages."
+        />
 
         <section class="trust-strip py-5 mb-4">
             <div class="container text-center">

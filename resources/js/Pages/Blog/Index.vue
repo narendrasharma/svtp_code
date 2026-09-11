@@ -2,10 +2,15 @@
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { appUrl } from '../../appUrl';
 import { blogPosts } from '../../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Travel Blog"
+            description="Discover travel guides, destination inspiration, tips and useful information for your next journey."
+        />
         <section class="trust-strip py-5 mb-4">
             <div class="container text-center">
                 <p class="section-eyebrow text-white opacity-75">यात्रा गाइड</p>

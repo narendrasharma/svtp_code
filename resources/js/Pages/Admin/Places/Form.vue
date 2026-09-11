@@ -13,6 +13,7 @@ const form = useForm({
     image_upload: null,
     remove_image: false,
     meta_description: props.place?.meta_description ?? '',
+    meta_title: props.place?.meta_title ?? '',
 });
 
 watch(() => form.name, (name) => {
@@ -74,9 +75,78 @@ function selectImage(event) {
                 <small class="text-danger">{{ form.errors.image_upload }}</small>
             </div>
 
-            <label class="form-label mt-3">SEO description</label>
-            <textarea v-model="form.meta_description" class="form-control" rows="2" maxlength="255" placeholder="Optional search-engine description."></textarea>
-            <small class="text-danger">{{ form.errors.meta_description }}</small>
+
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-search me-2"></i>
+                        SEO Settings
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Meta Title
+                        </label>
+
+                        <input
+                            v-model="form.meta_title"
+                            type="text"
+                            class="form-control"
+                            maxlength="70"
+                            placeholder="Leave blank to generate automatically"
+                        >
+
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">
+                                If empty, the place name will be used automatically.
+                            </small>
+
+                            <small class="text-muted">
+                                {{ form.meta_title.length }}/70
+                            </small>
+                        </div>
+
+                        <small class="text-danger">
+                            {{ form.errors.meta_title }}
+                        </small>
+                    </div>
+
+
+                    <div>
+                        <label class="form-label">
+                            Meta Description
+                        </label>
+
+                        <textarea
+                            v-model="form.meta_description"
+                            class="form-control"
+                            rows="3"
+                            maxlength="170"
+                            placeholder="Describe this destination for search engines"
+                        ></textarea>
+
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">
+                                If empty, the place description will be used automatically.
+                            </small>
+
+                            <small class="text-muted">
+                                {{ form.meta_description.length }}/170
+                            </small>
+                        </div>
+
+                        <small class="text-danger">
+                            {{ form.errors.meta_description }}
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+
 
             <div class="d-flex gap-2 mt-4">
                 <button class="btn btn-svtp" :disabled="form.processing">Save Place</button>

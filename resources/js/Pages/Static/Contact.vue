@@ -1,10 +1,15 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { contactInfo } from '../../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Contact Us"
+            description="Contact our travel team for bookings, custom tour packages and travel assistance."
+        />
         <div class="container py-5">
             <p class="section-eyebrow">संपर्क करें</p>
             <h1 class="brand-heading">Contact {{ contactInfo.companyName }}</h1>

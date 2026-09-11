@@ -30,7 +30,12 @@ class SavePlaceRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remove_image' => ['boolean'],
-            'meta_description' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:170'],
+            'meta_title' => [
+                'nullable',
+                'string',
+                'max:70',
+            ],
         ];
     }
 }

@@ -13,7 +13,7 @@ class Place extends Model
     /** @use HasFactory<PlaceFactory> */
     use HasFactory;
 
-    protected $fillable = ['destination_id', 'name', 'slug', 'description', 'image', 'meta_description'];
+    protected $fillable = ['destination_id', 'name', 'slug', 'description', 'image', 'meta_description', 'meta_title'];
 
     public function destination(): BelongsTo
     {

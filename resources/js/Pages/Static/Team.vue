@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { appUrl } from '../../appUrl';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const teamMembers = [
     { name: 'Kanhaiya Upadhyay', role: 'CEO', image: appUrl('/team/kanhaiya.jpeg') },
@@ -15,6 +16,10 @@ const teamMembers = [
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Our Team"
+            description="Meet the travel professionals behind our tours, support and customer experiences."
+        />
         <main class="team-page">
             <section class="team-hero">
                 <div class="container text-center">

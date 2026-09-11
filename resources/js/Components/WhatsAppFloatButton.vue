@@ -1,17 +1,46 @@
 <script setup>
-const whatsappNumber = '918923427393';
-const message = encodeURIComponent('Radhe Radhe! I would like to know more about your Vrindavan tour packages.');
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+
+const page = usePage();
+
+const settings = computed(() => page.props.siteSettings ?? {});
+
+const whatsappNumber = computed(() => {
+    return settings.value.whatsapp_number
+        ?.replace(/\D/g, '') || '';
+});
+
+const message = computed(() => {
+    return encodeURIComponent(
+        settings.value.whatsapp_message ||
+        'Hello! I would like to know more about your tour packages.'
+    );
+});
+
+const whatsappUrl = computed(() => {
+    if (!whatsappNumber.value) {
+        return null;
+    }
+
+    return `https://wa.me/${whatsappNumber.value}?text=${message.value}`;
+});
 </script>
+
 
 <template>
     <a
-        :href="`https://wa.me/${whatsappNumber}?text=${message}`"
+        v-if="whatsappUrl"
+        :href="whatsappUrl"
         target="_blank"
         rel="noopener"
         class="whatsapp-float"
         aria-label="Chat on WhatsApp"
     >
         <i class="bi bi-whatsapp"></i>
-        <span class="visually-hidden">WhatsApp</span>
+
+        <span class="visually-hidden">
+            WhatsApp
+        </span>
     </a>
 </template>

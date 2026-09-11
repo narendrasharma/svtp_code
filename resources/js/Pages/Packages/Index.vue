@@ -1,10 +1,11 @@
-<script setup>
+    <script setup>
 import { appUrl } from '../../appUrl';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PackageCard from '../../Components/PackageCard.vue';
 import { router } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import { whyChooseUs, faqItems, attractions } from '../../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const openFaq = ref(0);
 function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
@@ -88,6 +89,10 @@ function resetFilters() {
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Tour Packages"
+            description="Browse our available tour packages, itineraries, destinations and travel experiences."
+        />
         <section class="trust-strip py-5 mb-4">
             <div class="container text-center">
                 <p class="section-eyebrow text-white opacity-75">दर्शन यात्रा निर्देशिका</p>

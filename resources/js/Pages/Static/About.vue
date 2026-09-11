@@ -1,9 +1,14 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import SeoHead from "@/Components/SeoHead.vue";
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="About Us"
+            description="Learn about our travel services, experience and commitment to creating memorable journeys."
+        />
         <div class="container py-5">
             <h1 class="brand-heading">About Shree Vrindavan Tour Packages</h1>
             <p>

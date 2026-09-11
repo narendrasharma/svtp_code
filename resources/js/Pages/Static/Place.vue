@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PackageCard from '../../Components/PackageCard.vue';
 import { appUrl } from '../../appUrl';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const props = defineProps({ place: { type: Object, required: true } });
 
@@ -19,9 +20,14 @@ const seoDescription = computed(() => props.place.meta_description
 
 <template>
     <AppLayout>
-        <Head :title="`${place.name} Tours & Visitor Guide`">
-            <meta head-key="description" name="description" :content="seoDescription">
-        </Head>
+        <SeoHead
+            :title="
+        place.meta_title ||
+        `${place.name} Tours & Visitor Guide`
+    "
+            :description="seoDescription"
+            :image="place.image"
+        />
 
         <main>
             <section class="place-hero" :class="{ 'has-image': image }">

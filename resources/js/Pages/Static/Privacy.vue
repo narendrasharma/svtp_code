@@ -1,9 +1,14 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import SeoHead from "@/Components/SeoHead.vue";
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Privacy Policy"
+            noindex
+        />
         <div class="container py-5" style="max-width: 800px;">
             <h1 class="brand-heading">Privacy Policy</h1>
             <p class="text-muted small">Placeholder content — replace with your actual privacy policy before launch.</p>

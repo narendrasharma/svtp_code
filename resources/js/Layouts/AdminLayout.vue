@@ -12,6 +12,7 @@ const navigation = [
     ['Tags', '/admin/tags', 'bi-tags'], ['Banners', '/admin/banners', 'bi-images'],
     ['Promotional Popup', '/admin/promotional-popup', 'bi-window-stack'],
     ['Bookings', '/admin/bookings', 'bi-calendar-check'], ['Reviews', '/admin/reviews', 'bi-star'],
+    ['Settings', '/admin/settings', 'bi-gear'],
 ].map(([label, path, icon]) => ({ label, path, icon }));
 const adminName = computed(() => page.props.auth?.user?.name ?? 'Administrator');
 

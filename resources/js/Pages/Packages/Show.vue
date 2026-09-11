@@ -6,6 +6,7 @@ import ItineraryAccordion from '../../Components/ItineraryAccordion.vue';
 import StarRating from '../../Components/StarRating.vue';
 import TourPlanEnquiryModal from '../../Components/TourPlanEnquiryModal.vue';
 import { appUrl } from '../../appUrl';
+import SeoHead from '../../Components/SeoHead.vue';
 
 const props = defineProps({ package: Object, reviews: Object, securityQuestion: String });
 
@@ -31,6 +32,24 @@ const unitPrice = computed(() => Number(props.package.discounted_price || props.
 const childPrice = computed(() => Math.round(unitPrice.value * 0.6));
 const totalPrice = computed(() => (adults.value * unitPrice.value) + (children.value * childPrice.value));
 
+
+const seoDescription = computed(() => {
+    if (props.package.meta_description) {
+        return props.package.meta_description;
+    }
+
+    if (props.package.overview) {
+        const text = props.package.overview
+            .replace(/<[^>]*>/g, '')
+            .trim();
+
+        return text.length > 160
+            ? `${text.substring(0, 157)}...`
+            : text;
+    }
+
+    return `Discover ${props.package.title}, itinerary, pricing and booking information.`;
+});
 function previousImage() {
     activeImage.value = (activeImage.value - 1 + gallery.value.length) % gallery.value.length;
 }
@@ -53,6 +72,15 @@ function formatReviewDate(value) {
 
 <template>
     <AppLayout>
+        <SeoHead
+            :title="
+        package.meta_title ||
+        package.title
+    "
+            :description="seoDescription"
+            :image="package.cover_image"
+            type="article"
+        />
         <div class="container py-4">
             <!-- Gallery -->
             <div v-if="gallery.length" class="gallery-hero mb-2">

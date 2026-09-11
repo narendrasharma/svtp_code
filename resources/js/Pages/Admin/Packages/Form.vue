@@ -111,6 +111,8 @@ const props = defineProps({
 });
 
 const form = useForm({
+    meta_title: props.package?.meta_title ?? '',
+    meta_description: props.package?.meta_description ?? '',
     title: props.package?.title ?? '',
     city_id: props.package?.city_id ?? '',
     duration_days: props.package?.duration_days ?? 1,
@@ -409,6 +411,79 @@ function submit() {
                 <input v-model="form.is_featured" type="checkbox" class="form-check-input" id="featured" />
                 <label class="form-check-label" for="featured">Featured</label>
             </div>
+
+
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-search me-2"></i>
+                        SEO Settings
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Meta Title
+                        </label>
+
+                        <input
+                            v-model="form.meta_title"
+                            type="text"
+                            class="form-control"
+                            maxlength="70"
+                            placeholder="Leave blank to generate automatically"
+                        >
+
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">
+                                If empty, the package name will be used automatically.
+                            </small>
+
+                            <small class="text-muted">
+                                {{ form.meta_title.length }}/70
+                            </small>
+                        </div>
+
+                        <small class="text-danger">
+                            {{ form.errors.meta_title }}
+                        </small>
+                    </div>
+
+
+                    <div>
+                        <label class="form-label">
+                            Meta Description
+                        </label>
+
+                        <textarea
+                            v-model="form.meta_description"
+                            class="form-control"
+                            rows="3"
+                            maxlength="170"
+                            placeholder="Describe this package for search engines"
+                        ></textarea>
+
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">
+                                If empty, the package overview will be used automatically.
+                            </small>
+
+                            <small class="text-muted">
+                                {{ form.meta_description.length }}/170
+                            </small>
+                        </div>
+
+                        <small class="text-danger">
+                            {{ form.errors.meta_description }}
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+
 
             <button class="btn btn-svtp" :disabled="form.processing">Save Package</button>
         </form>

@@ -15,6 +15,11 @@ import { appUrl } from '../appUrl';
 import { contactInfo } from '../festiveAssets';
 
 const page = usePage();
+
+const settings = computed(() => {
+    return page.props.siteSettings ?? {};
+});
+
 const year = new Date().getFullYear();
 const isQuickEnquiryOpen = ref(false);
 const isTourEnquiryOpen = ref(false);
@@ -140,16 +145,66 @@ function closeMobileMenu() {
                 <div class="row g-4">
                     <div class="col-lg-4 col-md-6">
                         <p class="devanagari mb-2" style="color: var(--gold-soft); font-size: 1.15rem;">॥ राधे राधे ॥</p>
-                        <h6>Shree Vrindavan Tour Packages</h6>
-                        <p class="small opacity-75 mb-3">
-                            Guided pilgrimages across Braj Bhoomi — Vrindavan, Mathura, Gokul, Barsana and Govardhan —
-                            with transparent pricing and real online booking.
+                        <h6> {{ settings.site_name }}</h6>
+                        <p
+                            v-if="settings.site_tagline"
+                            class="small opacity-75 mb-3"
+                        >
+                            {{ settings.site_tagline }}
                         </p>
                         <div class="d-flex gap-2">
-                            <a href="#" class="footer-social" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                            <a href="#" class="footer-social" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                            <a href="#" class="footer-social" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
-                            <a href="https://wa.me/918923427393" target="_blank" rel="noopener" class="footer-social" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+
+                            <a
+                                v-if="settings.facebook_url"
+                                :href="settings.facebook_url"
+                                target="_blank"
+                                rel="noopener"
+                                class="footer-social"
+                                aria-label="Facebook"
+                            >
+                                <i class="bi bi-facebook"></i>
+                            </a>
+
+
+                            <a
+                                v-if="settings.instagram_url"
+                                :href="settings.instagram_url"
+                                target="_blank"
+                                rel="noopener"
+                                class="footer-social"
+                                aria-label="Instagram"
+                            >
+                                <i class="bi bi-instagram"></i>
+                            </a>
+
+
+                            <a
+                                v-if="settings.youtube_url"
+                                :href="settings.youtube_url"
+                                target="_blank"
+                                rel="noopener"
+                                class="footer-social"
+                                aria-label="YouTube"
+                            >
+                                <i class="bi bi-youtube"></i>
+                            </a>
+
+
+                            <a
+                                v-if="settings.whatsapp_number"
+                                :href="
+            `https://wa.me/${
+                settings.whatsapp_number.replace(/\D/g, '')
+            }`
+        "
+                                target="_blank"
+                                rel="noopener"
+                                class="footer-social"
+                                aria-label="WhatsApp"
+                            >
+                                <i class="bi bi-whatsapp"></i>
+                            </a>
+
                         </div>
                     </div>
 
@@ -178,11 +233,84 @@ function closeMobileMenu() {
                     </div>
 
                     <div class="col-lg-3 col-md-6">
-                        <h6>Reach Us</h6>
-                        <p class="small mb-2"><i class="bi bi-geo-alt-fill me-2"></i><a :href="contactInfo.mapUrl" target="_blank" rel="noopener">{{ contactInfo.headOffice }}</a></p>
-                        <p class="small mb-2"><i class="bi bi-telephone-fill me-2"></i><a :href="contactInfo.phoneHref">{{ contactInfo.phone }}</a></p>
-                        <p class="small mb-2"><i class="bi bi-envelope-fill me-2"></i><a :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a></p>
-                        <p class="small mb-0"><i class="bi bi-whatsapp me-2"></i><a href="https://wa.me/918923427393" target="_blank" rel="noopener">Chat with us</a></p>
+
+                        <h6>
+                            Reach Us
+                        </h6>
+
+
+                        <p
+                            v-if="settings.office_address"
+                            class="small mb-2"
+                        >
+                            <i class="bi bi-geo-alt-fill me-2"></i>
+
+                            <a
+                                v-if="settings.google_maps_url"
+                                :href="settings.google_maps_url"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                {{ settings.office_address }}
+                            </a>
+
+                            <span v-else>
+            {{ settings.office_address }}
+        </span>
+                        </p>
+
+
+                        <p
+                            v-if="settings.primary_phone"
+                            class="small mb-2"
+                        >
+                            <i class="bi bi-telephone-fill me-2"></i>
+
+                            <a
+                                :href="
+                `tel:${
+                    settings.primary_phone.replace(/[^\d+]/g, '')
+                }`
+            "
+                            >
+                                {{ settings.primary_phone }}
+                            </a>
+                        </p>
+
+
+                        <p
+                            v-if="settings.contact_email"
+                            class="small mb-2"
+                        >
+                            <i class="bi bi-envelope-fill me-2"></i>
+
+                            <a
+                                :href="`mailto:${settings.contact_email}`"
+                            >
+                                {{ settings.contact_email }}
+                            </a>
+                        </p>
+
+
+                        <p
+                            v-if="settings.whatsapp_number"
+                            class="small mb-0"
+                        >
+                            <i class="bi bi-whatsapp me-2"></i>
+
+                            <a
+                                :href="
+                `https://wa.me/${
+                    settings.whatsapp_number.replace(/\D/g, '')
+                }`
+            "
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                Chat with us
+                            </a>
+                        </p>
+
                     </div>
                 </div>
             </div>
@@ -194,7 +322,9 @@ function closeMobileMenu() {
             </div>
 
             <div class="container py-3 text-center small opacity-75">
-                © {{ year }} Shree Vrindavan Tour Packages. All rights reserved.
+                © {{ year }}
+                {{ settings.site_name }}.
+                {{ settings.copyright_text }}
             </div>
         </footer>
 

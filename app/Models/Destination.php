@@ -14,7 +14,15 @@ class Destination extends Model
     /** @use HasFactory<DestinationFactory> */
     use HasFactory;
 
-    protected $fillable = ['city_id', 'name', 'slug', 'description', 'image', 'meta_description'];
+    protected $fillable = [
+        'city_id',
+        'name',
+        'slug',
+        'description',
+        'image',
+        'meta_description',
+        'meta_title',
+    ];
 
     public function city(): BelongsTo
     {

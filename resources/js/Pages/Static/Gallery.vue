@@ -2,12 +2,17 @@
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { galleryImages } from '../../festiveAssets';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const active = ref(null);
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Travel Gallery"
+            description="Explore memorable destinations, tours and travel experiences through our photo gallery."
+        />
         <section class="trust-strip py-5 mb-4">
             <div class="container text-center">
                 <p class="section-eyebrow text-white opacity-75">फोटो गैलरी</p>

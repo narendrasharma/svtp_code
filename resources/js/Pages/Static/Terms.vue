@@ -1,9 +1,14 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import SeoHead from "@/Components/SeoHead.vue";
 </script>
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Terms & Conditions"
+            noindex
+        />
         <div class="container py-5" style="max-width: 800px;">
             <h1 class="brand-heading">Terms &amp; Conditions</h1>
             <p class="text-muted small">Placeholder content — replace with your actual terms before launch.</p>

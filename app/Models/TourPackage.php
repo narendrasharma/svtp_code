@@ -17,7 +17,7 @@ class TourPackage extends Model
         'title', 'slug', 'city_id', 'duration_days', 'duration_nights',
         'price', 'discounted_price', 'overview', 'day_wise_itinerary',
         'inclusions', 'exclusions', 'gallery', 'cover_image',
-        'is_featured', 'is_active', 'category', 'category_id', 'meta_description',
+        'is_featured', 'is_active', 'category', 'category_id', 'meta_description','meta_title'
     ];
 
     protected $casts = [

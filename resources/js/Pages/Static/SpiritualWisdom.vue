@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { dailyShlokas, culturalTrivia, festivalGuidesDetailed } from '../../festiveAssets';
 import { appUrl } from '../../appUrl';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
 const todaysShloka = dailyShlokas[dayOfYear % dailyShlokas.length];
@@ -15,6 +16,10 @@ function toggleTrivia(i) {
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Spiritual Wisdom"
+            description="Explore spiritual teachings, devotional insights and inspiration."
+        />
         <!-- Hero -->
         <section class="trust-strip py-5">
             <div class="container text-center">

@@ -1,5 +1,6 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import SeoHead from "@/Components/SeoHead.vue";
 
 const faqs = [
     { q: 'How do I book a tour?', a: 'Choose a package, select your travel date and number of travelers, then pay securely via Razorpay or Paytm.' },
@@ -11,6 +12,10 @@ const faqs = [
 
 <template>
     <AppLayout>
+        <SeoHead
+            title="Frequently Asked Questions"
+            description="Find answers about tour bookings, payments, cancellations, travel arrangements and our services."
+        />
         <div class="container py-5" style="max-width: 720px;">
             <h1 class="brand-heading mb-4">Frequently Asked Questions</h1>
             <div class="accordion" id="faqAccordion">
