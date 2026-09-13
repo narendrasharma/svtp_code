@@ -33,7 +33,7 @@ defineProps({
             <div class="col-md-3"><div class="card p-3"><small>Total Users</small><h3>{{ stats.total_users }}</h3></div></div>
 
             <div v-if="stats.total_vendors !== undefined" class="col-md-3">
-                <div class="card p-3"><small>Total Vendors</small><h3>{{ stats.total_vendors }}</h3></div></div>
+                <div class="card p-3"><small>Total Vendors</small><h3>{{ stats.total_vendors }}</h3></div>
             </div>
         </div>
 
