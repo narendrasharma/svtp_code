@@ -11,6 +11,7 @@ use App\Models\TourCategory;
 use App\Models\TourPackage;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -71,19 +72,29 @@ class DashboardController extends Controller
         // -----------------------------------------------------------------
         $sixMonthsAgo = Carbon::now()->subMonths(6)->startOfMonth();
 
-        $packageCreationRaw = TourPackage::selectRaw('YEAR(created_at) as yr, MONTH(created_at) as mo, COUNT(*) as cnt')
+        // Use the query builder (DB) to avoid returning Eloquent models,
+        // which would expose query methods like where() on the result items.
+        $packageCreationRaw = DB::table('tour_packages')
+            ->selectRaw('YEAR(created_at) as yr, MONTH(created_at) as mo, COUNT(*) as cnt')
             ->where('created_at', '>=', $sixMonthsAgo)
             ->groupBy('yr', 'mo')
             ->orderBy('yr')
             ->orderBy('mo')
             ->get();
 
-        // Transform to a format suitable for the chart component
+        // Transform to a format suitable for the chart component.
+        // We need to match each of the last six months to the aggregated data.
         $packageCreationChart = collect();
         for ($i = 0; $i < 6; $i++) {
-            $date = Carbon::now()->subMonths(5 - $i)->startOfMonth(); // oldest first
+            // Oldest month first.
+            $date  = Carbon::now()->subMonths(5 - $i)->startOfMonth();
             $label = $date->format('M Y');
-            $match = $packageCreationRaw->firstWhere('yr', $date->year)->firstWhere('mo', $date->month);
+
+            // Find the aggregated row for this year/month.
+            $match = $packageCreationRaw->firstWhere(function ($item) use ($date) {
+                return $item->yr == $date->year && $item->mo == $date->month;
+            });
+
             $value = $match ? $match->cnt : 0;
             $packageCreationChart->push(['label' => $label, 'value' => $value]);
         }
