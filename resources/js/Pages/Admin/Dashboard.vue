@@ -57,7 +57,19 @@ defineProps({
                     <tr v-for="pkg in recentTourPackages" :key="pkg.id">
                         <td>{{ pkg.title }}</td>
                         <td>₹{{ pkg.price }}</td>
-                        <td>{{ pkg.duration }}</td>
+                        <td>
+                            <!-- Combine days and nights into a readable format -->
+                            <span v-if="pkg.duration_days && pkg.duration_nights">
+                                {{ pkg.duration_days }}d {{ pkg.duration_nights }}n
+                            </span>
+                            <span v-else-if="pkg.duration_days">
+                                {{ pkg.duration_days }}d
+                            </span>
+                            <span v-else-if="pkg.duration_nights">
+                                {{ pkg.duration_nights }}n
+                            </span>
+                            <span v-else>—</span>
+                        </td>
                         <td>
                             <span v-if="pkg.is_active" class="badge bg-success">Active</span>
                             <span v-else class="badge bg-secondary">Inactive</span>

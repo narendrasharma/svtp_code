@@ -36,9 +36,19 @@ class DashboardController extends Controller
         // -----------------------------------------------------------------
         // 1. Recent Tour Packages (latest 5)
         // -----------------------------------------------------------------
+        // The table does NOT have a single "duration" column.
+        // Use the real columns: duration_days and duration_nights.
         $recentTourPackages = TourPackage::orderByDesc('created_at')
             ->take(5)
-            ->get(['id', 'title', 'price', 'duration', 'is_active', 'created_at']);
+            ->get([
+                'id',
+                'title',
+                'price',
+                'duration_days',
+                'duration_nights',
+                'is_active',
+                'created_at',
+            ]);
 
         // -----------------------------------------------------------------
         // 2. Top Destinations (by number of related tour packages)
