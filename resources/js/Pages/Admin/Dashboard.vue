@@ -59,13 +59,13 @@ defineProps({
                         <td>₹{{ pkg.price }}</td>
                         <td>
                             <!-- Combine days and nights into a readable format -->
-                            <span v-if="pkg.duration_days && pkg.duration_nights">
+                            <span v-if="pkg.duration_days !== undefined && pkg.duration_nights !== undefined">
                                 {{ pkg.duration_days }}d {{ pkg.duration_nights }}n
                             </span>
-                            <span v-else-if="pkg.duration_days">
+                            <span v-else-if="pkg.duration_days !== undefined">
                                 {{ pkg.duration_days }}d
                             </span>
-                            <span v-else-if="pkg.duration_nights">
+                            <span v-else-if="pkg.duration_nights !== undefined">
                                 {{ pkg.duration_nights }}n
                             </span>
                             <span v-else>—</span>
