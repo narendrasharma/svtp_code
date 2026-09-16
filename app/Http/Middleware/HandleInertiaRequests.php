@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\PromotionalPopup;
 use App\Models\Setting;
 use App\Models\TourCategory;
+use App\Services\PublicMenuService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -47,97 +48,77 @@ class HandleInertiaRequests extends Middleware
                 $settings = Setting::getAllSettings();
 
                 return [
-                    'site_name' =>
-                        $settings['site_name']
+                    'site_name' => $settings['site_name']
                         ?? config('app.name'),
 
-                    'site_tagline' =>
-                        $settings['site_tagline']
+                    'site_tagline' => $settings['site_tagline']
                         ?? null,
 
-                    'copyright_text' =>
-                        $settings['copyright_text']
+                    'copyright_text' => $settings['copyright_text']
                         ?? 'All rights reserved.',
 
-                    'site_logo' =>
-                        $settings['site_logo']
+                    'site_logo' => $settings['site_logo']
                         ?? null,
 
-                    'site_favicon' =>
-                        $settings['site_favicon']
+                    'site_favicon' => $settings['site_favicon']
                         ?? null,
 
-                    'primary_phone' =>
-                        $settings['primary_phone']
+                    'primary_phone' => $settings['primary_phone']
                         ?? null,
 
-                    'secondary_phone' =>
-                        $settings['secondary_phone']
+                    'secondary_phone' => $settings['secondary_phone']
                         ?? null,
 
-                    'contact_email' =>
-                        $settings['contact_email']
+                    'contact_email' => $settings['contact_email']
                         ?? null,
 
-                    'website_url' =>
-                        $settings['website_url']
+                    'website_url' => $settings['website_url']
                         ?? null,
 
-                    'office_address' =>
-                        $settings['office_address']
+                    'office_address' => $settings['office_address']
                         ?? null,
 
-                    'google_maps_url' =>
-                        $settings['google_maps_url']
+                    'google_maps_url' => $settings['google_maps_url']
                         ?? null,
 
-                    'facebook_url' =>
-                        $settings['facebook_url']
+                    'facebook_url' => $settings['facebook_url']
                         ?? null,
 
-                    'instagram_url' =>
-                        $settings['instagram_url']
+                    'instagram_url' => $settings['instagram_url']
                         ?? null,
 
-                    'youtube_url' =>
-                        $settings['youtube_url']
+                    'youtube_url' => $settings['youtube_url']
                         ?? null,
 
-                    'whatsapp_number' =>
-                        $settings['whatsapp_number']
+                    'whatsapp_number' => $settings['whatsapp_number']
                         ?? null,
 
-                    'whatsapp_message' =>
-                        $settings['whatsapp_message']
+                    'whatsapp_message' => $settings['whatsapp_message']
                         ?? null,
-                    'seo_meta_title' =>
-                        $settings['seo_meta_title']
+                    'seo_meta_title' => $settings['seo_meta_title']
                         ?? null,
 
-                    'seo_meta_description' =>
-                        $settings['seo_meta_description']
+                    'seo_meta_description' => $settings['seo_meta_description']
                         ?? null,
 
-                    'seo_meta_keywords' =>
-                        $settings['seo_meta_keywords']
+                    'seo_meta_keywords' => $settings['seo_meta_keywords']
                         ?? null,
 
-                    'seo_og_image' =>
-                        $settings['seo_og_image']
+                    'seo_og_image' => $settings['seo_og_image']
                         ?? null,
 
-                    'seo_index' =>
-                        ($settings['seo_index'] ?? '1') === '1',
+                    'seo_index' => ($settings['seo_index'] ?? '1') === '1',
 
-                    'seo_follow' =>
-                        ($settings['seo_follow'] ?? '1') === '1',
+                    'seo_follow' => ($settings['seo_follow'] ?? '1') === '1',
 
-                    'google_site_verification' =>
-                        $settings['google_site_verification']
+                    'google_site_verification' => $settings['google_site_verification']
                         ?? null,
                 ];
             },
             'securityQuestion' => $this->securityQuestion($request),
+            'navigation' => fn () => $request->routeIs('admin.*')
+                ? ['header' => [], 'footer' => []]
+                : app(PublicMenuService::class)->navigation(),
             'tourCategories' => fn () => TourCategory::active()
                 ->whereHas('tourPackages', fn ($query) => $query->active())
                 ->orderBy('sort_order')

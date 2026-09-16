@@ -5,11 +5,16 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BookingManagerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DestinationController as AdminDestinationController;
+use App\Http\Controllers\Admin\EditorUploadController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
+use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\MenuItemController;
 use App\Http\Controllers\Admin\PackageManagerController;
+use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\PlaceController;
 use App\Http\Controllers\Admin\PromotionalPopupController;
 use App\Http\Controllers\Admin\ReviewModerationController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TourCategoryController;
 use App\Http\Controllers\BookingController;
@@ -18,12 +23,11 @@ use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlaceController as PublicPlaceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\TourPackageController;
-use App\Http\Controllers\Admin\EditorUploadController;
-use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\TourPackageController; // <-- NEW IMPORT
 use App\Models\Destination;
 use App\Models\Place;
 use App\Models\Review;
@@ -107,8 +111,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/enquiries', [AdminEnquiryController::class, 'index'])->name('enquiries.index');
-    Route::delete('/enquiries/{enquiry}', [\App\Http\Controllers\Admin\EnquiryController::class, 'destroy'])->name('enquiries.destroy');
-
+    Route::delete('/enquiries/{enquiry}', [AdminEnquiryController::class, 'destroy'])->name('enquiries.destroy');
 
     Route::get('/packages', [PackageManagerController::class, 'index'])->name('packages.index');
     Route::get('/packages/create', [PackageManagerController::class, 'create'])->name('packages.create');
@@ -128,7 +131,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
     Route::patch('/banners/{banner}/order', [BannerController::class, 'updateOrder']);
 
-
     Route::get('/promotional-popup', [PromotionalPopupController::class, 'index'])->name('promotional-popup.index');
     Route::post('/promotional-popup', [PromotionalPopupController::class, 'store'])->name('promotional-popup.store');
 
@@ -146,31 +148,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/reviews/{review}/reject', [ReviewModerationController::class, 'reject'])->name('reviews.reject');
     Route::delete('/reviews/{review}', [ReviewModerationController::class, 'destroy'])->name('reviews.destroy');
 
-
-    //admin settings routes
+    // admin settings routes
     Route::get(
         '/settings',
         [SettingController::class, 'index']
     )->name('settings.index');
-
 
     Route::post(
         '/settings/basic',
         [SettingController::class, 'updateBasic']
     )->name('settings.basic.update');
 
-
     Route::post(
         '/settings/logo',
         [SettingController::class, 'updateLogo']
     )->name('settings.logo.update');
 
-
     Route::post(
         '/settings/contact',
         [SettingController::class, 'updateContact']
     )->name('settings.contact.update');
-
 
     Route::post(
         '/settings/social',
@@ -182,6 +179,31 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         [SettingController::class, 'updateSeo']
     )->name('settings.seo.update');
 
+    Route::resource('pages', AdminPageController::class)->except(['show']);
+    Route::resource('menus', MenuController::class)->except(['show']);
+
+    Route::prefix('menus/{menu}')->name('menus.')->group(function () {
+        Route::get('items', [MenuItemController::class, 'index'])->name('items.index');
+        Route::get('items/create', [MenuItemController::class, 'create'])->name('items.create');
+        Route::put('items/reorder', [MenuItemController::class, 'reorder'])->name('items.reorder');
+        Route::post('items/pages', [MenuItemController::class, 'addPages'])->name('items.pages');
+        Route::post('items', [MenuItemController::class, 'store'])->name('items.store');
+        Route::get('items/{menuItem}/edit', [MenuItemController::class, 'edit'])->name('items.edit');
+        Route::put('items/{menuItem}', [MenuItemController::class, 'update'])->name('items.update');
+        Route::delete('items/{menuItem}', [MenuItemController::class, 'destroy'])->name('items.destroy');
+    });
 });
 
 require __DIR__.'/auth.php'; // Breeze/Fortify-style login, register, password reset routes go here
+
+/*
+ * -------------------------------------------------------------------------
+ * PUBLIC CMS PAGE RENDERING
+ * -------------------------------------------------------------------------
+ * This catch‑all route must be placed **after** all other public routes so
+ * that it does not shadow static routes (about, contact, etc.) or admin
+ * routes. It resolves a single‑segment slug to a CMS page.
+ */
+Route::get('/{slug}', [PageController::class, 'show'])
+    ->where('slug', '[A-Za-z0-9\-\_]+')
+    ->name('page.show');

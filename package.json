@@ -32,6 +32,7 @@
         "chart.js": "^4.5.1",
         "ckeditor5": "^48.5.0",
         "qrcode.vue": "^3.10.0",
+        "sortablejs": "^1.15.7",
         "vue": "^3.5.42"
     }
 }

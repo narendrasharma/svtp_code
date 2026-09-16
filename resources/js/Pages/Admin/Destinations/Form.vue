@@ -14,6 +14,10 @@ const form = useForm({
     remove_image: false,
     meta_description: props.destination?.meta_description ?? '',
     meta_title: props.destination?.meta_title ?? '',
+    // -----------------------------------------------------------------
+    // Active flag – default to true for new destinations, keep existing value when editing
+    // -----------------------------------------------------------------
+    is_active: props.destination?.is_active ?? true,
 });
 
 watch(() => form.name, (name) => {
@@ -75,6 +79,17 @@ function selectImage(event) {
                 <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" @change="selectImage">
                 <small class="d-block text-muted mt-1">JPG, PNG, or WebP; up to 5 MB.</small>
                 <small class="text-danger">{{ form.errors.image_upload }}</small>
+            </div>
+
+            <!-- -----------------------------------------------------------------
+                 Active / Inactive toggle – uses the same Bootstrap switch style
+                 ----------------------------------------------------------------- -->
+            <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" id="isActiveSwitch" v-model="form.is_active">
+                <label class="form-check-label" for="isActiveSwitch">
+                    {{ form.is_active ? 'Active' : 'Inactive' }}
+                </label>
+                <small class="text-danger">{{ form.errors.is_active }}</small>
             </div>
 
             <div class="card mt-4">

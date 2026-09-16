@@ -22,6 +22,17 @@ class Destination extends Model
         'image',
         'meta_description',
         'meta_title',
+        // -----------------------------------------------------------------
+        // Added active flag – allows admin to mark a destination as active
+        // -----------------------------------------------------------------
+        'is_active',
+    ];
+
+    // -----------------------------------------------------------------
+    // Cast is_active to boolean for consistent handling throughout the app
+    // -----------------------------------------------------------------
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function city(): BelongsTo

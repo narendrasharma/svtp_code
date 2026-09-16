@@ -1,0 +1,22 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "model": "azureoss/gpt-oss-120b",
+    "provider": {
+        "azureoss": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Azure GPT OSS",
+            "options": {
+                "baseURL": "https://krezy1om-8701-resource.openai.azure.com/openai/v1",
+
+            },
+            "models": {
+                "gpt-oss-120b": {
+                    "name": "GPT OSS 120B"
+                },
+                "gpt-4.1-nano": {
+                    "name": "GPT-4.1 Nano"
+                }
+            }
+        }
+    }
+}

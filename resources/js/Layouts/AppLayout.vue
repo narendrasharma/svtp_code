@@ -10,6 +10,7 @@ import TrustBadgeMarquee from '../Components/TrustBadgeMarquee.vue';
 import TopBar from '../Components/TopBar.vue';
 import Logo from '../Components/Logo.vue';
 import GlobalSearch from '../Components/GlobalSearch.vue';
+import PublicMenuItem from '../Components/PublicMenuItem.vue';
 import PromotionalPopupModal from '../Components/PromotionalPopupModal.vue';
 import { appUrl } from '../appUrl';
 import { contactInfo } from '../festiveAssets';
@@ -26,6 +27,8 @@ const isTourEnquiryOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 const isMobileCategoriesOpen = ref(false);
 const tourCategories = computed(() => page.props.tourCategories || []);
+const headerMenu = computed(() => page.props.navigation?.header || []);
+const footerMenu = computed(() => page.props.navigation?.footer || []);
 const currentPath = computed(() => page.url.split('?')[0]);
 const hasCategoryFilter = computed(() => new URLSearchParams(page.url.split('?')[1] || '').has('category'));
 
@@ -61,6 +64,8 @@ function closeMobileMenu() {
                 <Link :href="appUrl('/')" class="navbar-brand mb-0"><Logo /></Link>
                 <div class="d-flex min-width-0 align-items-center">
                     <div class="d-none d-xl-flex align-items-center">
+                        <ul v-if="headerMenu.length" class="d-flex align-items-center list-unstyled mb-0"><PublicMenuItem v-for="item in headerMenu" :key="item.id" :item="item" /></ul>
+                        <template v-else>
                         <Link :href="appUrl('/packages')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('packages') }" :aria-current="isActiveSection('packages') ? 'page' : undefined">Packages</Link>
                         <div v-if="tourCategories.length" class="dropdown">
                             <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" :class="{ 'is-active': isActiveSection('tour-categories') }" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -81,6 +86,7 @@ function closeMobileMenu() {
                         <Link :href="appUrl('/blog')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('blog') }" :aria-current="isActiveSection('blog') ? 'page' : undefined">Blog</Link>
                         <Link :href="appUrl('/about')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('about') }" :aria-current="isActiveSection('about') ? 'page' : undefined">About</Link>
                         <Link :href="appUrl('/contact')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('contact') }" :aria-current="isActiveSection('contact') ? 'page' : undefined">Contact</Link>
+                        </template>
                     </div>
                     <GlobalSearch />
                     <button
@@ -97,6 +103,8 @@ function closeMobileMenu() {
                 </div>
 
                 <div v-if="isMobileMenuOpen" id="mobile-navigation" class="mobile-navigation d-xl-none">
+                    <ul v-if="headerMenu.length" class="list-unstyled mb-0"><PublicMenuItem v-for="item in headerMenu" :key="item.id" :item="item" mode="mobile" @navigate="closeMobileMenu" /></ul>
+                    <template v-else>
                     <Link :href="appUrl('/packages')" class="mobile-nav-link" @click="closeMobileMenu">Packages</Link>
                     <div v-if="tourCategories.length" class="mobile-category-menu">
                         <button
@@ -126,6 +134,7 @@ function closeMobileMenu() {
                     <Link :href="appUrl('/blog')" class="mobile-nav-link" @click="closeMobileMenu">Blog</Link>
                     <Link :href="appUrl('/about')" class="mobile-nav-link" @click="closeMobileMenu">About</Link>
                     <Link :href="appUrl('/contact')" class="mobile-nav-link" @click="closeMobileMenu">Contact</Link>
+                    </template>
                     <button type="button" class="btn btn-svtp mobile-enquiry-button" @click="closeMobileMenu(); isTourEnquiryOpen = true">Enquiry</button>
                 </div>
             </div>
@@ -210,7 +219,8 @@ function closeMobileMenu() {
 
                     <div class="col-lg-2 col-md-6">
                         <h6>Explore</h6>
-                        <ul class="list-unstyled small">
+                        <ul v-if="footerMenu.length" class="list-unstyled small"><PublicMenuItem v-for="item in footerMenu" :key="item.id" :item="item" mode="footer" /></ul>
+                        <ul v-else class="list-unstyled small">
                             <li class="mb-2"><Link :href="appUrl('/packages')">All Tour Packages</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/destinations')">Explore Braj</Link></li>
                             <li v-for="category in tourCategories" :key="category.id" class="mb-2"><Link :href="appUrl(`/packages?category=${category.slug}`)">{{ category.name }}</Link></li>

@@ -6,12 +6,20 @@ import { computed, ref, watch } from 'vue';
 const page = usePage();
 const isSidebarOpen = ref(false);
 const navigation = [
-    ['Dashboard', '/admin/dashboard', 'bi-speedometer2'], ['Enquiries', '/admin/enquiries', 'bi-chat-left-text'],
-    ['Packages', '/admin/packages', 'bi-map'], ['Tour Categories', '/admin/tour-categories', 'bi-grid'],
-    ['Destinations', '/admin/destinations', 'bi-geo-alt'], ['Places / Attractions', '/admin/places', 'bi-pin-map'],
-    ['Tags', '/admin/tags', 'bi-tags'], ['Banners', '/admin/banners', 'bi-images'],
+    ['Dashboard', '/admin/dashboard', 'bi-speedometer2'],
+    ['Enquiries', '/admin/enquiries', 'bi-chat-left-text'],
+    ['Packages', '/admin/packages', 'bi-map'],
+    ['Tour Categories', '/admin/tour-categories', 'bi-grid'],
+    ['Destinations', '/admin/destinations', 'bi-geo-alt'],
+    ['Places / Attractions', '/admin/places', 'bi-pin-map'],
+    ['Tags', '/admin/tags', 'bi-tags'],
+    // New content‑management items
+    ['Pages', '/admin/pages', 'bi-file-earmark-text'],
+    ['Menu Manager', '/admin/menus', 'bi-list'],
+    ['Banners', '/admin/banners', 'bi-images'],
     ['Promotional Popup', '/admin/promotional-popup', 'bi-window-stack'],
-    ['Bookings', '/admin/bookings', 'bi-calendar-check'], ['Reviews', '/admin/reviews', 'bi-star'],
+    ['Bookings', '/admin/bookings', 'bi-calendar-check'],
+    ['Reviews', '/admin/reviews', 'bi-star'],
     ['Settings', '/admin/settings', 'bi-gear'],
 ].map(([label, path, icon]) => ({ label, path, icon }));
 const adminName = computed(() => page.props.auth?.user?.name ?? 'Administrator');

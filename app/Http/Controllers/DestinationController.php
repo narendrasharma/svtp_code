@@ -10,16 +10,25 @@ class DestinationController extends Controller
 {
     public function index(): Response
     {
+        // Only show active destinations to the public
+        $destinations = Destination::with('city:id,name')
+            ->withCount(['places', 'tourPackages' => fn ($query) => $query->active()])
+            ->where('is_active', true) // <-- hide inactive destinations
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Static/Destinations', [
-            'destinations' => Destination::with('city:id,name')
-                ->withCount(['places', 'tourPackages' => fn ($query) => $query->active()])
-                ->orderBy('name')
-                ->get(),
+            'destinations' => $destinations,
         ]);
     }
 
     public function show(Destination $destination): Response
     {
+        // If the destination is inactive, treat it as not found
+        if (! $destination->is_active) {
+            abort(404);
+        }
+
         $destination->load([
             'city:id,name',
             'places' => fn ($query) => $query->orderBy('name'),

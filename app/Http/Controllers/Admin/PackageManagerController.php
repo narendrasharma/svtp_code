@@ -11,6 +11,7 @@ use App\Models\Tag;
 use App\Models\TourCategory;
 use App\Models\TourPackage;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -20,10 +21,88 @@ use Inertia\Response;
 
 class PackageManagerController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        // Base query with required relationships
+        $query = TourPackage::with(['city', 'category']);
+
+        // -----------------------------------------------------------------
+        // Search (title, slug, code/reference if column exists)
+        // -----------------------------------------------------------------
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%");
+                // If a package code/reference column exists, include it safely
+                if (in_array('code', \Schema::getColumnListing((new TourPackage)->getTable()))) {
+                    $q->orWhere('code', 'like', "%{$search}%");
+                }
+            });
+        }
+
+        // -----------------------------------------------------------------
+        // Status filter (active / inactive)
+        // -----------------------------------------------------------------
+        if ($status = $request->query('status')) {
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Category filter – use the actual relationship (many‑to‑one or many‑to‑many)
+        // -----------------------------------------------------------------
+        if ($category = $request->query('category')) {
+            $query->whereHas('category', function ($q) use ($category) {
+                $q->where('id', $category);
+            });
+        }
+
+        // -----------------------------------------------------------------
+        // City filter – use the actual relationship (many‑to‑one or many‑to‑many)
+        // -----------------------------------------------------------------
+        if ($city = $request->query('city')) {
+            $query->whereHas('city', function ($q) use ($city) {
+                $q->where('id', $city);
+            });
+        }
+
+        // -----------------------------------------------------------------
+        // Sorting
+        // -----------------------------------------------------------------
+        $sortable = ['title', 'price', 'created_at', 'is_active'];
+        $sort = $request->query('sort');
+        $direction = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+
+        if (in_array($sort, $sortable)) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        // -----------------------------------------------------------------
+        // Per‑page selector
+        // -----------------------------------------------------------------
+        $perPage = (int) $request->query('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+
+        $packages = $query->paginate($perPage)->appends($request->query());
+
         return Inertia::render('Admin/Packages/Index', [
-            'packages' => TourPackage::with(['city', 'category'])->latest()->paginate(10),
+            'packages' => $packages,
+            'categories' => TourCategory::orderBy('name')->get(['id', 'name']),
+            'cities' => City::orderBy('name')->get(['id', 'name']),
+            'filters' => [
+                'search' => $search ?? '',
+                'status' => $status ?? 'all',
+                'category' => $category ?? '',
+                'city' => $city ?? '',
+                'per_page' => $perPage,
+                'sort' => $sort ?? '',
+                'direction' => $direction ?? '',
+            ],
         ]);
     }
 

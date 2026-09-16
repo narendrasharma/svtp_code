@@ -36,6 +36,12 @@ class SaveDestinationRequest extends FormRequest
                 'string',
                 'max:70',
             ],
+            // -----------------------------------------------------------------
+            // Updated rule – always validate the active flag as a boolean.
+            // This ensures the field is always present in the request payload,
+            // even when the checkbox is unchecked (value will be false).
+            // -----------------------------------------------------------------
+            'is_active' => ['required', 'boolean'],
         ];
     }
 }
