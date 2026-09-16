@@ -13,7 +13,6 @@ const expanded = reactive(new Set());
 const itemErrors = reactive({});
 const busy = ref(false);
 const dragging = ref(false);
-const status = ref('');
 const structureError = ref('');
 const search = ref('');
 const highlighted = reactive(new Set());
@@ -51,26 +50,28 @@ const stopNavigationGuard = router.on('before', event => {
     if (event.detail.visit.method === 'get' && dirty.value && !window.confirm('Leave the builder? Unsaved changes will be lost.')) event.preventDefault();
 });
 onBeforeUnmount(() => { window.removeEventListener('beforeunload', warnBeforeUnload); stopNavigationGuard(); clearTimeout(highlightTimer); });
-function options(message, onSuccess = () => {}) {
+// Success feedback is delivered by the global admin toast system (which reads
+// the server flash). This helper only tracks the in-flight state; dirty flags
+// are reset by each action's own onSuccess so a failed save keeps dirty state.
+function options(onSuccess = () => {}) {
     busy.value = true;
-    status.value = '';
-    return { preserveScroll: true, onSuccess: () => { status.value = message; onSuccess(); }, onFinish: () => { busy.value = false; } };
+    return { preserveScroll: true, onSuccess, onFinish: () => { busy.value = false; } };
 }
 function saveSettings() {
-    settings.put(endpoint, options('Menu settings saved.', () => settings.defaults()));
+    settings.put(endpoint, options(() => settings.defaults()));
 }
 function addPages() {
     const knownIds = new Set(props.items.map(item => item.id));
-    pagesForm.post(`${endpoint}/items/pages`, options('Pages added to the menu.', () => { pagesForm.reset(); markNewItems(knownIds); }));
+    pagesForm.post(`${endpoint}/items/pages`, options(() => { pagesForm.reset(); markNewItems(knownIds); }));
 }
 function addCustom() {
     const knownIds = new Set(props.items.map(item => item.id));
-    custom.post(`${endpoint}/items`, options('Custom link added.', () => { custom.reset(); markNewItems(knownIds); }));
+    custom.post(`${endpoint}/items`, options(() => { custom.reset(); markNewItems(knownIds); }));
 }
 function saveItem(item) {
     itemErrors[item.id] = {};
     router.put(`${endpoint}/items/${item.id}`, { ...drafts[item.id], type: item.type, page_id: item.page_id, parent_id: item.parent_id, sort_order: item.sort_order }, {
-        ...options('Link saved.', () => {
+        ...options(() => {
             const saved = props.items.find(entry => entry.id === item.id);
             if (saved) drafts[item.id] = { title: saved.title, url: saved.url, target: saved.target, is_active: !!saved.is_active };
         }), onError: errors => { itemErrors[item.id] = errors; },
@@ -78,7 +79,7 @@ function saveItem(item) {
 }
 function removeItem(item) {
     if (!window.confirm(`Remove “${item.title}” and all its nested links?`)) return;
-    router.delete(`${endpoint}/items/${item.id}`, options('Link removed.'));
+    router.delete(`${endpoint}/items/${item.id}`, options());
 }
 function move(id, parentId, index) {
     if (busy.value) return;
@@ -103,8 +104,8 @@ function move(id, parentId, index) {
     structureError.value = '';
     let saved = false;
     router.put(`${endpoint}/items/reorder`, { items: structure.value.map(({ id, parent_id, sort_order }) => ({ id, parent_id, sort_order })) }, {
-        ...options('Menu order saved.'),
-        onSuccess: () => { saved = true; status.value = 'Menu order saved.'; },
+        ...options(),
+        onSuccess: () => { saved = true; },
         onFinish: () => {
             busy.value = false;
             if (!saved) {
@@ -143,7 +144,6 @@ function switchMenu(event) {
             <div aria-live="polite" class="d-flex flex-wrap align-items-center gap-3 small mb-3">
                 <span v-if="dirty || busy" class="text-warning"><i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>Unsaved changes</span>
                 <span v-if="busy" class="text-muted">Saving…</span>
-                <span v-else-if="status" class="text-success">{{ status }}</span>
             </div>
             <div class="builder-columns">
                 <aside>
