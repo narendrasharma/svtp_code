@@ -60,6 +60,22 @@ return [
             'report' => false,
         ],
 
+        'vendor_kyc' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/vendor-kyc'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'support' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/support'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

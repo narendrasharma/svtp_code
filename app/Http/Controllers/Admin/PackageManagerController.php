@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\TourModerationStatus;
+use App\Events\TourModerated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePackageRequest;
 use App\Models\City;
@@ -24,7 +26,7 @@ class PackageManagerController extends Controller
     public function index(Request $request): Response
     {
         // Base query with required relationships
-        $query = TourPackage::with(['city', 'category']);
+        $query = TourPackage::with(['city', 'category', 'vendorProfile', 'creator']);
 
         // -----------------------------------------------------------------
         // Search (title, slug, code/reference if column exists)
@@ -48,6 +50,26 @@ class PackageManagerController extends Controller
                 $query->where('is_active', true);
             } elseif ($status === 'inactive') {
                 $query->where('is_active', false);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Moderation status filter
+        // -----------------------------------------------------------------
+        if ($moderation = $request->query('moderation_status')) {
+            if (in_array($moderation, TourModerationStatus::values())) {
+                $query->where('moderation_status', $moderation);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Owner filter (admin vs vendor)
+        // -----------------------------------------------------------------
+        if ($owner = $request->query('owner')) {
+            if ($owner === 'admin') {
+                $query->whereNull('vendor_profile_id');
+            } elseif ($owner === 'vendor') {
+                $query->whereNotNull('vendor_profile_id');
             }
         }
 
@@ -97,12 +119,15 @@ class PackageManagerController extends Controller
             'filters' => [
                 'search' => $search ?? '',
                 'status' => $status ?? 'all',
+                'moderation_status' => $moderation ?? '',
+                'owner' => $owner ?? '',
                 'category' => $category ?? '',
                 'city' => $city ?? '',
                 'per_page' => $perPage,
                 'sort' => $sort ?? '',
                 'direction' => $direction ?? '',
             ],
+            'moderationStatuses' => collect(TourModerationStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
         ]);
     }
 
@@ -116,29 +141,54 @@ class PackageManagerController extends Controller
         DB::transaction(function () use ($request): void {
             $data = $this->packageData($request);
             $data['slug'] = Str::slug($data['title']).'-'.Str::random(4);
+            $data['vendor_profile_id'] = null;
+            $data['created_by'] = $request->user()->id;
+            $data['moderation_status'] = TourModerationStatus::Approved;
+            $data['is_active'] = $request->boolean('is_active', true);
 
             $package = TourPackage::create($data);
             $this->syncClassifications($package, $request);
+            $this->recordHistory($package, null, TourModerationStatus::Approved->value, $request->user()->id, 'Admin created');
         });
         Cache::forget('home.featured_packages');
 
         return redirect()->route('admin.packages.index')->with('flash', 'Package created.');
     }
 
+    public function show(TourPackage $package): Response
+    {
+        $package->load(['city', 'category', 'vendorProfile', 'creator:id,name', 'reviewer:id,name', 'destinations:id,name', 'places:id,name', 'tags:id,name', 'moderationHistories.changer:id,name']);
+        $vendorKyc = null;
+        if ($package->vendorProfile) {
+            $vendorUser = $package->vendorProfile->user;
+            $latestVer = $vendorUser?->vendorVerifications()->latest()->first();
+            $vendorKyc = $latestVer?->status?->value ?? $latestVer?->status;
+        }
+
+        return Inertia::render('Admin/Packages/Show', [
+            'package' => $package,
+            'vendorKycStatus' => $vendorKyc,
+            'moderationStatuses' => collect(TourModerationStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
+        ]);
+    }
+
     public function edit(TourPackage $package): Response
     {
-        $package->load(['category:id,name', 'destinations:id', 'places:id', 'tags:id']);
+        $package->load(['category:id,name', 'destinations:id', 'places:id', 'tags:id', 'vendorProfile:id,business_name', 'creator:id,name']);
 
         return Inertia::render('Admin/Packages/Form', [
             ...$this->formOptions(),
             'package' => $package,
+            'moderationStatuses' => collect(TourModerationStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
         ]);
     }
 
     public function update(StorePackageRequest $request, TourPackage $package): RedirectResponse
     {
         DB::transaction(function () use ($request, $package): void {
-            $package->update($this->packageData($request, $package));
+            $data = $this->packageData($request, $package);
+            // Admin can update moderation_status directly if needed, but keep approved by default
+            $package->update($data);
             $this->syncClassifications($package, $request);
         });
         Cache::forget('home.featured_packages');
@@ -148,10 +198,85 @@ class PackageManagerController extends Controller
 
     public function destroy(TourPackage $package): RedirectResponse
     {
+        if ($package->bookings()->exists()) {
+            return back()->withErrors(['package' => 'Cannot delete package with bookings. Deactivate instead.']);
+        }
+        // Cleanup images
+        foreach ($package->gallery ?? [] as $img) {
+            $this->deleteManagedImage($img, 'packages/gallery');
+        }
+        $this->deleteManagedImage($package->cover_image, 'packages/covers');
+        $package->destinations()->detach();
+        $package->places()->detach();
+        $package->tags()->detach();
         $package->delete();
         Cache::forget('home.featured_packages');
 
         return back()->with('flash', 'Package removed.');
+    }
+
+    public function approve(Request $request, TourPackage $package): RedirectResponse
+    {
+        $request->validate(['note' => ['nullable', 'string', 'max:1000']]);
+        $from = $package->moderation_status instanceof TourModerationStatus ? $package->moderation_status->value : $package->moderation_status;
+        $package->update([
+            'moderation_status' => TourModerationStatus::Approved,
+            'is_active' => true,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_note' => $request->input('note'),
+        ]);
+        $this->recordHistory($package, $from, TourModerationStatus::Approved->value, $request->user()->id, $request->input('note'));
+        Cache::forget('home.featured_packages');
+        TourModerated::dispatch($package->refresh(), 'approved');
+
+        return back()->with('success', 'Tour approved and published.');
+    }
+
+    public function requestChanges(Request $request, TourPackage $package): RedirectResponse
+    {
+        $request->validate(['note' => ['required', 'string', 'max:1000']]);
+        $from = $package->moderation_status instanceof TourModerationStatus ? $package->moderation_status->value : $package->moderation_status;
+        $package->update([
+            'moderation_status' => TourModerationStatus::ChangesRequested,
+            'is_active' => false,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_note' => $request->input('note'),
+        ]);
+        $this->recordHistory($package, $from, TourModerationStatus::ChangesRequested->value, $request->user()->id, $request->input('note'));
+        Cache::forget('home.featured_packages');
+        TourModerated::dispatch($package->refresh(), 'changes_requested');
+
+        return back()->with('success', 'Changes requested.');
+    }
+
+    public function reject(Request $request, TourPackage $package): RedirectResponse
+    {
+        $request->validate(['note' => ['required', 'string', 'max:1000']]);
+        $from = $package->moderation_status instanceof TourModerationStatus ? $package->moderation_status->value : $package->moderation_status;
+        $package->update([
+            'moderation_status' => TourModerationStatus::Rejected,
+            'is_active' => false,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_note' => $request->input('note'),
+        ]);
+        $this->recordHistory($package, $from, TourModerationStatus::Rejected->value, $request->user()->id, $request->input('note'));
+        Cache::forget('home.featured_packages');
+        TourModerated::dispatch($package->refresh(), 'rejected');
+
+        return back()->with('success', 'Tour rejected.');
+    }
+
+    private function recordHistory(TourPackage $package, ?string $from, string $to, ?int $userId, ?string $note): void
+    {
+        $package->moderationHistories()->create([
+            'from_status' => $from,
+            'to_status' => $to,
+            'changed_by' => $userId,
+            'note' => $note,
+        ]);
     }
 
     /**

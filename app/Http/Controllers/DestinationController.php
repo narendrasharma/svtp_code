@@ -12,7 +12,7 @@ class DestinationController extends Controller
     {
         // Only show active destinations to the public
         $destinations = Destination::with('city:id,name')
-            ->withCount(['places', 'tourPackages' => fn ($query) => $query->active()])
+            ->withCount(['places', 'tourPackages' => fn ($query) => $query->publiclyVisible()])
             ->where('is_active', true) // <-- hide inactive destinations
             ->orderBy('name')
             ->get();
@@ -32,7 +32,7 @@ class DestinationController extends Controller
         $destination->load([
             'city:id,name',
             'places' => fn ($query) => $query->orderBy('name'),
-            'tourPackages' => fn ($query) => $query->active()
+            'tourPackages' => fn ($query) => $query->publiclyVisible()
                 ->with('city:id,name')
                 ->withCount('approvedReviews')
                 ->withAvg('approvedReviews', 'rating')

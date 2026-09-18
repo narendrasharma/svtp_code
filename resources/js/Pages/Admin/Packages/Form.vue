@@ -1,6 +1,6 @@
 <script setup>
 import { appUrl } from '../../../appUrl';
-import AdminSearchableMultiSelect from '../../../Components/AdminSearchableMultiSelect.vue';
+import SmartMultiSelect from '../../../Components/SmartMultiSelect.vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -381,7 +381,7 @@ function submit() {
                 <h5 class="mb-3">Tour Classification</h5>
 
                 <label class="form-label fw-semibold">Destinations</label>
-                <AdminSearchableMultiSelect
+                <SmartMultiSelect
                     v-model="form.destination_ids"
                     :options="destinationOptions"
                     placeholder="Search destinations..."
@@ -390,7 +390,7 @@ function submit() {
 
                 <label class="form-label fw-semibold mt-3">Places / Attractions</label>
                 <p class="small text-muted mb-2">Selecting destinations narrows this list while keeping existing place assignments visible.</p>
-                <AdminSearchableMultiSelect
+                <SmartMultiSelect
                     v-model="form.place_ids"
                     :options="placeOptions"
                     placeholder="Search places or destinations..."
@@ -399,7 +399,7 @@ function submit() {
                 <small class="text-danger">{{ form.errors.place_ids }}</small>
 
                 <label class="form-label fw-semibold mt-3">Tags</label>
-                <AdminSearchableMultiSelect
+                <SmartMultiSelect
                     v-model="form.tag_ids"
                     :options="tagOptions"
                     placeholder="Search tags..."

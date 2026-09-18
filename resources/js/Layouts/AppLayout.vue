@@ -12,6 +12,7 @@ import Logo from '../Components/Logo.vue';
 import GlobalSearch from '../Components/GlobalSearch.vue';
 import PublicMenuItem from '../Components/PublicMenuItem.vue';
 import PromotionalPopupModal from '../Components/PromotionalPopupModal.vue';
+import ImpersonationBanner from '../Components/ImpersonationBanner.vue';
 import { appUrl } from '../appUrl';
 import { contactInfo } from '../festiveAssets';
 
@@ -31,6 +32,17 @@ const headerMenu = computed(() => page.props.navigation?.header || []);
 const footerMenu = computed(() => page.props.navigation?.footer || []);
 const currentPath = computed(() => page.url.split('?')[0]);
 const hasCategoryFilter = computed(() => new URLSearchParams(page.url.split('?')[1] || '').has('category'));
+const authUser = computed(() => page.props.auth?.user ?? null);
+const isAdmin = computed(() => authUser.value?.role === 'admin');
+const isVendor = computed(() => authUser.value?.role === 'vendor');
+const isCustomer = computed(() => authUser.value?.role === 'customer');
+const isGuest = computed(() => !authUser.value);
+// Phase 11.5A: public tour navigation hides when the tours module is off.
+const toursEnabled = computed(() => {
+    const modules = page.props.platformModules ?? [];
+    const tours = modules.find((m) => m.key === 'tours');
+    return tours ? !!tours.enabled : true;
+});
 
 function isActiveSection(section) {
     const path = currentPath.value;
@@ -58,6 +70,7 @@ function closeMobileMenu() {
 
 <template>
     <div class="d-flex flex-column min-vh-100">
+        <ImpersonationBanner />
         <TopBar />
         <nav class="svtp-navbar">
             <div class="container navbar-shell">
@@ -66,8 +79,8 @@ function closeMobileMenu() {
                     <div class="d-none d-xl-flex align-items-center">
                         <ul v-if="headerMenu.length" class="d-flex align-items-center list-unstyled mb-0"><PublicMenuItem v-for="item in headerMenu" :key="item.id" :item="item" /></ul>
                         <template v-else>
-                        <Link :href="appUrl('/packages')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('packages') }" :aria-current="isActiveSection('packages') ? 'page' : undefined">Packages</Link>
-                        <div v-if="tourCategories.length" class="dropdown">
+                        <Link v-if="toursEnabled" :href="appUrl('/packages')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('packages') }" :aria-current="isActiveSection('packages') ? 'page' : undefined">Packages</Link>
+                        <div v-if="toursEnabled && tourCategories.length" class="dropdown">
                             <button class="nav-link-custom border-0 bg-transparent dropdown-toggle" :class="{ 'is-active': isActiveSection('tour-categories') }" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span>Tour Categories</span>
                                 <i class="bi bi-chevron-down nav-chevron" aria-hidden="true"></i>
@@ -80,7 +93,7 @@ function closeMobileMenu() {
                                 </li>
                             </ul>
                         </div>
-                        <Link :href="appUrl('/destinations')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('destinations') }" :aria-current="isActiveSection('destinations') ? 'page' : undefined">Destinations</Link>
+                        <Link v-if="toursEnabled" :href="appUrl('/destinations')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('destinations') }" :aria-current="isActiveSection('destinations') ? 'page' : undefined">Destinations</Link>
                         <Link :href="appUrl('/spiritual-wisdom')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('spiritual-wisdom') }" :aria-current="isActiveSection('spiritual-wisdom') ? 'page' : undefined">Wisdom</Link>
                         <Link :href="appUrl('/gallery')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('gallery') }" :aria-current="isActiveSection('gallery') ? 'page' : undefined">Gallery</Link>
                         <Link :href="appUrl('/blog')" class="nav-link-custom" :class="{ 'is-active': isActiveSection('blog') }" :aria-current="isActiveSection('blog') ? 'page' : undefined">Blog</Link>
@@ -100,13 +113,36 @@ function closeMobileMenu() {
                         <i class="bi" :class="isMobileMenuOpen ? 'bi-x-lg' : 'bi-list'" aria-hidden="true"></i>
                     </button>
                     <button type="button" class="btn btn-svtp ms-2 d-none d-xl-inline-flex" @click="isTourEnquiryOpen = true">Enquiry</button>
+                    <!-- Guest -->
+                    <template v-if="isGuest">
+                        <Link :href="appUrl('/vendor/apply')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-shop me-1"></i>Become a Vendor</Link>
+                        <Link :href="appUrl('/admin')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-box-arrow-in-right me-1"></i>Sign In</Link>
+                        <Link :href="appUrl('/register')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-1"><i class="bi bi-person-plus me-1"></i>Create Account</Link>
+                    </template>
+                    <!-- Admin -->
+                    <template v-else-if="isAdmin">
+                        <Link :href="appUrl('/admin/dashboard')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</Link>
+                        <Link :href="appUrl('/account')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-person-circle me-1"></i>My Account</Link>
+                    </template>
+                    <!-- Vendor -->
+                    <template v-else-if="isVendor">
+                        <Link :href="appUrl('/vendor')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-shop me-1"></i>Vendor Dashboard</Link>
+                        <Link :href="appUrl('/account')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-person-circle me-1"></i>My Account</Link>
+                        <Link :href="appUrl('/account/bookings')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-calendar-check me-1"></i>My Bookings</Link>
+                    </template>
+                    <!-- Customer -->
+                    <template v-else-if="isCustomer">
+                        <Link :href="appUrl('/vendor/apply')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-shop me-1"></i>Become a Vendor</Link>
+                        <Link :href="appUrl('/account')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-person-circle me-1"></i>My Account</Link>
+                        <Link :href="appUrl('/account/bookings')" class="nav-link-custom d-none d-xl-inline-flex align-items-center ms-2"><i class="bi bi-calendar-check me-1"></i>My Bookings</Link>
+                    </template>
                 </div>
 
                 <div v-if="isMobileMenuOpen" id="mobile-navigation" class="mobile-navigation d-xl-none">
                     <ul v-if="headerMenu.length" class="list-unstyled mb-0"><PublicMenuItem v-for="item in headerMenu" :key="item.id" :item="item" mode="mobile" @navigate="closeMobileMenu" /></ul>
                     <template v-else>
-                    <Link :href="appUrl('/packages')" class="mobile-nav-link" @click="closeMobileMenu">Packages</Link>
-                    <div v-if="tourCategories.length" class="mobile-category-menu">
+                    <Link v-if="toursEnabled" :href="appUrl('/packages')" class="mobile-nav-link" @click="closeMobileMenu">Packages</Link>
+                    <div v-if="toursEnabled && tourCategories.length" class="mobile-category-menu">
                         <button
                             type="button"
                             class="mobile-nav-link mobile-category-toggle"
@@ -128,7 +164,7 @@ function closeMobileMenu() {
                             </Link>
                         </div>
                     </div>
-                    <Link :href="appUrl('/destinations')" class="mobile-nav-link" @click="closeMobileMenu">Destinations</Link>
+                    <Link v-if="toursEnabled" :href="appUrl('/destinations')" class="mobile-nav-link" @click="closeMobileMenu">Destinations</Link>
                     <Link :href="appUrl('/spiritual-wisdom')" class="mobile-nav-link" @click="closeMobileMenu">Wisdom</Link>
                     <Link :href="appUrl('/gallery')" class="mobile-nav-link" @click="closeMobileMenu">Gallery</Link>
                     <Link :href="appUrl('/blog')" class="mobile-nav-link" @click="closeMobileMenu">Blog</Link>
@@ -136,6 +172,34 @@ function closeMobileMenu() {
                     <Link :href="appUrl('/contact')" class="mobile-nav-link" @click="closeMobileMenu">Contact</Link>
                     </template>
                     <button type="button" class="btn btn-svtp mobile-enquiry-button" @click="closeMobileMenu(); isTourEnquiryOpen = true">Enquiry</button>
+                    <!-- Mobile: Guest -->
+                    <template v-if="isGuest">
+                        <Link :href="appUrl('/vendor/apply')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-shop me-2"></i>Become a Vendor</Link>
+                        <Link :href="appUrl('/admin')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</Link>
+                        <Link :href="appUrl('/register')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-person-plus me-2"></i>Create Account</Link>
+                    </template>
+                    <!-- Mobile: Admin -->
+                    <template v-else-if="isAdmin">
+                        <Link :href="appUrl('/admin/dashboard')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</Link>
+                        <Link :href="appUrl('/account')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-person-circle me-2"></i>My Account</Link>
+                        <Link :href="appUrl('/account/bookings')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-calendar-check me-2"></i>My Bookings</Link>
+                    </template>
+                    <!-- Mobile: Vendor -->
+                    <template v-else-if="isVendor">
+                        <Link :href="appUrl('/vendor')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-shop me-2"></i>Vendor Dashboard</Link>
+                        <Link :href="appUrl('/account')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-person-circle me-2"></i>My Account</Link>
+                        <Link :href="appUrl('/account/bookings')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-calendar-check me-2"></i>My Bookings</Link>
+                    </template>
+                    <!-- Mobile: Customer -->
+                    <template v-else-if="isCustomer">
+                        <Link :href="appUrl('/vendor/apply')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-shop me-2"></i>Become a Vendor</Link>
+                        <Link :href="appUrl('/account')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-person-circle me-2"></i>My Account</Link>
+                        <Link :href="appUrl('/account/bookings')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-calendar-check me-2"></i>My Bookings</Link>
+                    </template>
+                    <!-- Fallback for any authenticated without role -->
+                    <template v-else>
+                        <Link :href="appUrl('/account')" class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-person-circle me-2"></i>My Account</Link>
+                    </template>
                 </div>
             </div>
         </nav>
@@ -221,9 +285,11 @@ function closeMobileMenu() {
                         <h6>Explore</h6>
                         <ul v-if="footerMenu.length" class="list-unstyled small"><PublicMenuItem v-for="item in footerMenu" :key="item.id" :item="item" mode="footer" /></ul>
                         <ul v-else class="list-unstyled small">
-                            <li class="mb-2"><Link :href="appUrl('/packages')">All Tour Packages</Link></li>
-                            <li class="mb-2"><Link :href="appUrl('/destinations')">Explore Braj</Link></li>
+                            <li v-if="toursEnabled" class="mb-2"><Link :href="appUrl('/packages')">All Tour Packages</Link></li>
+                            <li v-if="toursEnabled" class="mb-2"><Link :href="appUrl('/destinations')">Explore Braj</Link></li>
+                            <template v-if="toursEnabled">
                             <li v-for="category in tourCategories" :key="category.id" class="mb-2"><Link :href="appUrl(`/packages?category=${category.slug}`)">{{ category.name }}</Link></li>
+                            </template>
                             <li class="mb-2"><Link :href="appUrl('/gallery')">Gallery</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/blog')">Blog</Link></li>
                             <li class="mb-2"><Link :href="appUrl('/about')">About Us</Link></li>

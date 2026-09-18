@@ -5,7 +5,10 @@ namespace App\Http\Middleware;
 use App\Models\PromotionalPopup;
 use App\Models\Setting;
 use App\Models\TourCategory;
+use App\Services\ImpersonationService;
 use App\Services\PublicMenuService;
+use App\Support\AdminNavigation;
+use App\Support\ModuleManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +43,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Phase 9: cheap unread badge for bells (single count query,
+            // guests get zero). Recent items load only on the page itself.
+            'notificationsUnreadCount' => fn () => $request->user()
+                ? $request->user()->unreadNotifications()->count()
+                : 0,
             'flash' => [
                 'message' => fn () => $request->session()->get('flash'),
                 'success' => fn () => $request->session()->get('success'),
@@ -124,7 +132,7 @@ class HandleInertiaRequests extends Middleware
                 ? ['header' => [], 'footer' => []]
                 : app(PublicMenuService::class)->navigation(),
             'tourCategories' => fn () => TourCategory::active()
-                ->whereHas('tourPackages', fn ($query) => $query->active())
+                ->whereHas('tourPackages', fn ($query) => $query->publiclyVisible())
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug', 'icon']),
@@ -142,6 +150,22 @@ class HandleInertiaRequests extends Middleware
                     'cta_url' => $popup->cta_url,
                 ] : null;
             }),
+            'impersonation' => fn () => app(ImpersonationService::class)->getBannerData($request),
+            'platformVersion' => config('platform.version'),
+            'platformName' => config('platform.name'),
+            // Phase 11.5A platform core: server-filtered admin navigation
+            // (module-aware + permission-aware), effective staff
+            // permissions, module states and permission-aware quick
+            // actions. Only resolved for staff on admin routes.
+            'adminNavigation' => fn () => $this->adminNavigation($request),
+            'staffPermissions' => fn () => $this->staffPermissions($request),
+            'isSuperAdmin' => function () use ($request): bool {
+                $user = $request->user();
+
+                return $user !== null && $user->isAdmin() && $user->isSuperAdmin();
+            },
+            'platformModules' => fn () => app(ModuleManager::class)->all(),
+            'quickActions' => fn () => $this->quickActions($request),
         ];
     }
 
@@ -159,5 +183,91 @@ class HandleInertiaRequests extends Middleware
         }
 
         return $request->session()->get('enquiry_math_question');
+    }
+
+    /**
+     * Server-filtered admin navigation for the sidebar, sidebar search
+     * and command palette. Guests and non-staff get an empty set.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function adminNavigation(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->isAdmin()) {
+            return [];
+        }
+
+        return AdminNavigation::filteredFor($user);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function staffPermissions(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->isAdmin()) {
+            return [];
+        }
+
+        return $user->staffPermissionNames();
+    }
+
+    /**
+     * Permission-aware "+ New" quick actions. Only currently implemented
+     * destinations — never future Taxi/Hotel actions.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function quickActions(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->isAdmin()) {
+            return [];
+        }
+
+        $modules = app(ModuleManager::class);
+
+        $candidates = [
+            ['id' => 'tour', 'label' => 'New Tour', 'route' => 'admin.packages.create', 'permission' => 'tours.create', 'module' => ModuleManager::TOURS, 'icon' => 'bi-map'],
+            ['id' => 'booking', 'label' => 'New Booking', 'route' => 'admin.bookings.desk', 'permission' => 'bookings.create', 'module' => null, 'icon' => 'bi-calendar-check'],
+            ['id' => 'taxi-booking', 'label' => 'New Taxi Booking', 'route' => 'admin.taxi.bookings.create', 'permission' => 'taxi.bookings.create', 'module' => ModuleManager::TAXI, 'icon' => 'bi-taxi-front'],
+            ['id' => 'lead', 'label' => 'New Lead', 'route' => 'admin.leads.create', 'permission' => 'leads.create', 'module' => null, 'icon' => 'bi-person-lines-fill'],
+            ['id' => 'quotation', 'label' => 'New Quotation', 'route' => 'admin.quotations.create', 'permission' => 'quotations.create', 'module' => null, 'icon' => 'bi-file-earmark-text'],
+            ['id' => 'coupon', 'label' => 'New Coupon', 'route' => 'admin.coupons.create', 'permission' => 'marketing.coupons', 'module' => null, 'icon' => 'bi-ticket-perforated'],
+            ['id' => 'staff', 'label' => 'New Staff', 'route' => 'admin.staff.create', 'permission' => 'staff.create', 'module' => null, 'icon' => 'bi-person-badge'],
+            ['id' => 'page', 'label' => 'New Page', 'route' => 'admin.pages.create', 'permission' => 'content.pages', 'module' => null, 'icon' => 'bi-file-earmark-text'],
+        ];
+
+        $actions = [];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate['module'] !== null && $modules->isDisabled($candidate['module'])) {
+                continue;
+            }
+
+            if (! $user->can($candidate['permission'])) {
+                continue;
+            }
+
+            try {
+                $url = route($candidate['route'], absolute: false);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $actions[] = [
+                'id' => $candidate['id'],
+                'label' => $candidate['label'],
+                'url' => $url,
+                'icon' => $candidate['icon'],
+            ];
+        }
+
+        return $actions;
     }
 }

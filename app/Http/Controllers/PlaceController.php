@@ -12,7 +12,7 @@ class PlaceController extends Controller
     {
         $place->load([
             'destination.city:id,name',
-            'tourPackages' => fn ($query) => $query->active()
+            'tourPackages' => fn ($query) => $query->publiclyVisible()
                 ->with('city:id,name')
                 ->withCount('approvedReviews')
                 ->withAvg('approvedReviews', 'rating')

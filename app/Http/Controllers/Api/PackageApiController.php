@@ -11,7 +11,7 @@ class PackageApiController extends Controller
 {
     public function index(Request $request)
     {
-        $packages = TourPackage::active()->with('city')
+        $packages = TourPackage::publiclyVisible()->with('city')
             ->when($request->city, fn ($q) => $q->whereHas('city', fn ($c) => $c->where('slug', $request->city)))
             ->paginate(10);
 

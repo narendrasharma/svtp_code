@@ -5,11 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePublicReviewRequest;
 use App\Models\Booking;
 use App\Models\TourPackage;
+use App\Services\ReviewService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct(protected ReviewService $reviews) {}
+
+    /**
+     * Verified booking review (Phase 9): policy + eligibility + one review
+     * per booking (DB unique). Moderation still applies (is_approved false).
+     */
     public function store(Request $request, Booking $booking): RedirectResponse
     {
         $this->authorize('view', $booking);
@@ -19,11 +29,7 @@ class ReviewController extends Controller
             'comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $booking->review()->updateOrCreate([], $data + [
-            'user_id' => $booking->user_id,
-            'package_id' => $booking->package_id,
-            'is_approved' => false, // moderated by admin before it appears publicly
-        ]);
+        $this->reviews->submitBookingReview($request->user(), $booking->refresh(), $data);
 
         return back()->with('flash', 'Thanks for your feedback — it will appear once reviewed.');
     }

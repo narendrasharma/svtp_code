@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Destination;
 use App\Models\Place;
 use App\Models\TourPackage;
+use App\Support\ModuleManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,12 @@ class GlobalSearchController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
+        // Phase 11.5A: the public catalogue search only covers the tours
+        // module today — it goes quiet while tours are disabled.
+        if (app(ModuleManager::class)->isDisabled(ModuleManager::TOURS)) {
+            return response()->json($this->emptyResults());
+        }
+
         $query = $request->input('q', '');
 
         if (! is_string($query)) {
@@ -35,7 +42,7 @@ class GlobalSearchController extends Controller
         }
 
         $tours = TourPackage::query()
-            ->active()
+            ->publiclyVisible()
             ->with('city:id,name')
             ->where(function (Builder $query) use ($fullTextSearch, $search): void {
                 $this->whereKeywords($query, ['title', 'overview', 'meta_description'], $fullTextSearch, $search)

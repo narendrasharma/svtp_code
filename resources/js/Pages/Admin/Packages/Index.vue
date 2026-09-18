@@ -11,12 +11,15 @@ const props = defineProps({
     categories: { type: Array, required: true },
     cities: { type: Array, required: true },
     filters: { type: Object, required: true },
+    moderationStatuses: { type: Array, default: () => [] },
 });
 
 // Reactive copy of incoming filters for UI binding
 const localFilters = ref({
     search: props.filters.search ?? '',
     status: props.filters.status ?? 'all',
+    moderation_status: props.filters.moderation_status ?? '',
+    owner: props.filters.owner ?? '',
     category: props.filters.category ?? '',
     city: props.filters.city ?? '',
     per_page: props.filters.per_page ?? 10,
@@ -44,6 +47,8 @@ function applyFilters() {
     if (localFilters.value.search) query.search = localFilters.value.search;
     if (localFilters.value.status && localFilters.value.status !== 'all')
         query.status = localFilters.value.status;
+    if (localFilters.value.moderation_status) query.moderation_status = localFilters.value.moderation_status;
+    if (localFilters.value.owner) query.owner = localFilters.value.owner;
     if (localFilters.value.category) query.category = localFilters.value.category;
     if (localFilters.value.city) query.city = localFilters.value.city;
     if (localFilters.value.per_page) query.per_page = localFilters.value.per_page;
@@ -80,6 +85,8 @@ function resetFilters() {
     localFilters.value = {
         search: '',
         status: 'all',
+        moderation_status: '',
+        owner: '',
         category: '',
         city: '',
         per_page: 10,
@@ -148,6 +155,29 @@ function formatCreated(dateString) {
                 <option value="inactive">Inactive</option>
             </select>
 
+            <!-- Moderation filter -->
+            <select
+                class="form-select form-select-sm"
+                v-model="localFilters.moderation_status"
+                @change="applyFilters"
+                style="width: 150px;"
+            >
+                <option value="">All moderation</option>
+                <option v-for="s in moderationStatuses" :key="s.value" :value="s.value">{{ s.label }}</option>
+            </select>
+
+            <!-- Owner filter -->
+            <select
+                class="form-select form-select-sm"
+                v-model="localFilters.owner"
+                @change="applyFilters"
+                style="width: 130px;"
+            >
+                <option value="">All owners</option>
+                <option value="admin">Admin</option>
+                <option value="vendor">Vendor</option>
+            </select>
+
             <!-- Category filter -->
             <select
                 class="form-select form-select-sm"
@@ -205,42 +235,54 @@ function formatCreated(dateString) {
                                 {{ localFilters.direction === 'asc' ? '↑' : '↓' }}
                             </span>
                         </th>
+                        <th>Vendor</th>
                         <th>City</th>
-                        <th class="cursor-pointer" @click="sort('price')">
-                            Price
-                            <span v-if="localFilters.sort === 'price'">
-                                {{ localFilters.direction === 'asc' ? '↑' : '↓' }}
-                            </span>
-                        </th>
-                        <th class="cursor-pointer" @click="sort('is_active')">
-                            Status
-                            <span v-if="localFilters.sort === 'is_active'">
-                                {{ localFilters.direction === 'asc' ? '↑' : '↓' }}
-                            </span>
-                        </th>
+                        <th>Price</th>
+                        <th>Moderation</th>
+                        <th>Public</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(p, index) in packages.data" :key="p.id">
                         <td>{{ packages.from + index }}</td>
-                        <td>{{ p.title }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ p.title }}</div>
+                            <div class="small text-muted">{{ p.slug }}</div>
+                        </td>
+                        <td class="small">
+                            <span v-if="p.vendor_profile">{{ p.vendor_profile.business_name }}</span>
+                            <span v-else class="text-muted">Admin</span>
+                        </td>
                         <td>{{ p.city?.name }}</td>
                         <td>₹{{ p.discounted_price || p.price }}</td>
                         <td>
-                            <span class="badge" :class="p.is_active ? 'bg-success' : 'bg-secondary'">
-                                {{ p.is_active ? 'Active' : 'Hidden' }}
+                            <span class="badge" :class="{
+                                'bg-secondary': p.moderation_status === 'draft',
+                                'bg-warning text-dark': p.moderation_status === 'pending_review',
+                                'bg-success': p.moderation_status === 'approved',
+                                'bg-info text-dark': p.moderation_status === 'changes_requested',
+                                'bg-danger': p.moderation_status === 'rejected'
+                            }">{{ p.moderation_status }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" :class="p.is_active && p.moderation_status === 'approved' ? 'bg-success' : 'bg-secondary'">
+                                {{ p.is_active && p.moderation_status === 'approved' ? 'Visible' : 'Hidden' }}
                             </span>
                         </td>
-                        <td class="text-end">
-                            <!-- Edit button with icon -->
+                        <td class="text-end text-nowrap">
                             <Link
-                                class="btn btn-sm btn-outline-secondary me-2"
+                                class="btn btn-sm btn-outline-primary me-1"
+                                :href="`${appUrl('/admin/packages')}/${p.id}`"
+                            >
+                                <i class="bi bi-eye"></i>
+                            </Link>
+                            <Link
+                                class="btn btn-sm btn-outline-secondary me-1"
                                 :href="`${appUrl('/admin/packages')}/${p.id}/edit`"
                             >
                                 <i class="bi bi-pencil"></i>
                             </Link>
-                            <!-- Delete button with icon -->
                             <button
                                 type="button"
                                 class="btn btn-sm btn-outline-danger"
@@ -251,7 +293,7 @@ function formatCreated(dateString) {
                         </td>
                     </tr>
                     <tr v-if="!packages.data.length">
-                        <td colspan="6" class="text-center text-muted py-4">No packages added yet.</td>
+                        <td colspan="8" class="text-center text-muted py-4">No packages added yet.</td>
                     </tr>
                 </tbody>
             </table>

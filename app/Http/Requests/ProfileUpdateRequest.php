@@ -26,6 +26,12 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'phone' => ['nullable', 'string', 'max:20'],
+            // Marketing consent only — transactional and security mail
+            // never consults these flags.
+            'marketing_email_opt_in' => ['sometimes', 'boolean'],
+            'marketing_sms_opt_in' => ['sometimes', 'boolean'],
+            'marketing_whatsapp_opt_in' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Middleware\BlockSensitiveActionsDuringImpersonation;
+use App\Http\Middleware\EnsureModuleEnabled;
+use App\Http\Middleware\EnsureStaffPermission;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsVendor;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias(['admin' => EnsureUserIsAdmin::class]);
+        $middleware->alias([
+            'admin' => EnsureUserIsAdmin::class,
+            'vendor' => EnsureUserIsVendor::class,
+            'block.impersonated.sensitive' => BlockSensitiveActionsDuringImpersonation::class,
+            // Phase 11.5A platform core.
+            'module' => EnsureModuleEnabled::class,
+            'staff.permissions' => EnsureStaffPermission::class,
+        ]);
         $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {

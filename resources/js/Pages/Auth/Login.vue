@@ -59,6 +59,7 @@ const form = useForm({ email: '', password: '' });
             </form>
 
             <p class="login-footnote"><i class="bi bi-lock-fill" aria-hidden="true"></i> Secure access for authorised team members</p>
+            <p class="text-center small mt-3 mb-0">New traveller? <a :href="appUrl('/register')">Create an account</a></p>
         </section>
     </main>
 </template>

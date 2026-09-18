@@ -147,6 +147,13 @@ const settingNavigation = [
     },
 
     {
+        key: 'marketplace',
+        label: 'Marketplace',
+        icon: 'bi-shop',
+        enabled: true,
+    },
+
+    {
         key: 'seo',
         label: 'SEO Settings',
         icon: 'bi-search',
@@ -194,7 +201,24 @@ const socialForm = useForm({
 });
 
 
+const marketplaceForm = useForm({
+    platform_commission_percentage: props.settings.platform_commission_percentage ?? '10.00',
+    minimum_withdrawal_amount: props.settings.minimum_withdrawal_amount ?? '1000.00',
+});
+
+
+function submitMarketplaceSettings() {
+    marketplaceForm.post(
+        appUrl('/admin/settings/marketplace'),
+        {
+            preserveScroll: true,
+        }
+    );
+}
+
+
 const seoForm = useForm({
+
     seo_meta_title:
         props.settings.seo_meta_title ?? '',
 
@@ -968,6 +992,112 @@ function selectSeoOgImage(event) {
                                 <span v-else>
                     <i class="bi bi-check-lg me-1"></i>
                     Save Social Settings
+                </span>
+                            </button>
+
+                        </div>
+
+                    </div>
+                </form>
+
+
+
+                <form
+                    v-if="activeSetting === 'marketplace'"
+                    @submit.prevent="submitMarketplaceSettings"
+                >
+                    <div class="card">
+
+                        <div class="card-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-shop"></i>
+                                <strong>Marketplace Settings</strong>
+                            </div>
+                        </div>
+
+
+                        <div class="card-body">
+
+                            <div class="row g-4">
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label fw-semibold">
+                                        Platform Commission (%)
+                                    </label>
+
+                                    <input
+                                        v-model="marketplaceForm.platform_commission_percentage"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        class="form-control"
+                                        placeholder="10.00"
+                                    />
+
+                                    <div class="form-text">
+                                        Percentage retained by the platform from new vendor bookings.
+                                        Changes apply only to future bookings.
+                                    </div>
+
+                                    <div
+                                        v-if="marketplaceForm.errors.platform_commission_percentage"
+                                        class="text-danger small mt-1"
+                                    >
+                                        {{ marketplaceForm.errors.platform_commission_percentage }}
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <label class="form-label fw-semibold">
+                                        Minimum Withdrawal Amount (₹)
+                                    </label>
+
+                                    <input
+                                        v-model="marketplaceForm.minimum_withdrawal_amount"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        class="form-control"
+                                        placeholder="1000.00"
+                                    />
+
+                                    <div class="form-text">
+                                        Vendors cannot request payouts below this amount.
+                                        Checked server-side against available balance.
+                                    </div>
+
+                                    <div
+                                        v-if="marketplaceForm.errors.minimum_withdrawal_amount"
+                                        class="text-danger small mt-1"
+                                    >
+                                        {{ marketplaceForm.errors.minimum_withdrawal_amount }}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card-footer text-end">
+
+                            <button
+                                type="submit"
+                                class="btn btn-warning"
+                                :disabled="marketplaceForm.processing"
+                            >
+                <span v-if="marketplaceForm.processing">
+                    Saving...
+                </span>
+
+                                <span v-else>
+                    <i class="bi bi-check-lg me-1"></i>
+                    Save Marketplace Settings
                 </span>
                             </button>
 

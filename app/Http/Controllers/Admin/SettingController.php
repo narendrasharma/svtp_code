@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\MarketplaceCommissionService;
+use App\Services\VendorLedgerService;
+use App\Support\OperationsSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -53,7 +56,7 @@ class SettingController extends Controller
                     'Hello! I would like to know more about your tour packages.'
                 ),
 
-                //seo info
+                // seo info
                 'seo_meta_title' => Setting::getValue(
                     'seo_meta_title'
                 ),
@@ -84,6 +87,21 @@ class SettingController extends Controller
                     'google_site_verification'
                 ),
 
+                // Marketplace / vendor commission (Phase 6: one global
+                // default; snapshots at booking time, future bookings only).
+                'platform_commission_percentage' => Setting::getValue(
+                    'platform_commission_percentage',
+                    MarketplaceCommissionService::FALLBACK_PERCENTAGE
+                ),
+
+                // Marketplace / withdrawals (Phase 7: minimum payout request).
+                'minimum_withdrawal_amount' => Setting::getValue(
+                    'minimum_withdrawal_amount',
+                    VendorLedgerService::DEFAULT_MIN_WITHDRAWAL
+                ),
+
+                // Operations / scheduler-driven platform work (11.5D).
+                'operations' => OperationsSettings::all(),
 
             ],
         ]);
@@ -266,7 +284,6 @@ class SettingController extends Controller
         );
     }
 
-
     public function updateSocial(Request $request)
     {
         $validated = $request->validate([
@@ -309,6 +326,101 @@ class SettingController extends Controller
             'flash',
             'Social settings updated successfully.'
         );
+    }
+
+    public function updateMarketplace(Request $request)
+    {
+        $validated = $request->validate([
+            'platform_commission_percentage' => [
+                'required',
+                'numeric',
+                'between:0,100',
+                'decimal:0,2',
+            ],
+            'minimum_withdrawal_amount' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:999999999.99',
+                'decimal:0,2',
+            ],
+        ]);
+
+        // Store normalized so snapshots always read a clean 2-decimal rate.
+        Setting::setValue(
+            'platform_commission_percentage',
+            MarketplaceCommissionService::normalizePercentage($validated['platform_commission_percentage'])
+        );
+
+        Setting::setValue(
+            'minimum_withdrawal_amount',
+            VendorLedgerService::toDecimal($validated['minimum_withdrawal_amount'])
+        );
+
+        return back()->with(
+            'flash',
+            'Marketplace settings updated successfully. Changes apply only to future bookings.'
+        );
+    }
+
+    /**
+     * Operational settings for scheduler-driven platform work (11.5D).
+     * Small, deliberate list — reminders, digests, retention.
+     */
+    public function updateOperations(Request $request)
+    {
+        $validated = $request->validate([
+            'ops_reminders_enabled' => ['required', 'boolean'],
+            'ops_followup_reminders_enabled' => ['required', 'boolean'],
+            'ops_quotation_expiry_enabled' => ['required', 'boolean'],
+            'ops_quotation_expiry_reminder_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'ops_payment_reminder_offsets' => ['nullable', 'string', 'max:50'],
+            'ops_travel_reminder_customer_offsets' => ['nullable', 'string', 'max:50'],
+            'ops_travel_reminder_vendor_offsets' => ['nullable', 'string', 'max:50'],
+            'ops_campaigns_scheduled_enabled' => ['required', 'boolean'],
+            'ops_admin_digest_frequency' => ['required', 'in:off,daily,weekly'],
+            'ops_notification_retention_days' => ['required', 'integer', 'min:30', 'max:730'],
+            'ops_notify_lead_created' => ['required', 'boolean'],
+        ]);
+
+        $this->storeOffsetList('ops.payment_reminder_offsets', $validated['ops_payment_reminder_offsets'] ?? null);
+        $this->storeOffsetList('ops.travel_reminder_customer_offsets', $validated['ops_travel_reminder_customer_offsets'] ?? null);
+        $this->storeOffsetList('ops.travel_reminder_vendor_offsets', $validated['ops_travel_reminder_vendor_offsets'] ?? null);
+
+        Setting::setValue('ops.reminders_enabled', $validated['ops_reminders_enabled'] ? '1' : '0');
+        Setting::setValue('ops.followup_reminders_enabled', $validated['ops_followup_reminders_enabled'] ? '1' : '0');
+        Setting::setValue('ops.quotation_expiry_enabled', $validated['ops_quotation_expiry_enabled'] ? '1' : '0');
+        Setting::setValue('ops.quotation_expiry_reminder_days', (string) $validated['ops_quotation_expiry_reminder_days']);
+        Setting::setValue('ops.campaigns_scheduled_enabled', $validated['ops_campaigns_scheduled_enabled'] ? '1' : '0');
+        Setting::setValue('ops.admin_digest_frequency', $validated['ops_admin_digest_frequency']);
+        Setting::setValue('ops.notification_retention_days', (string) $validated['ops_notification_retention_days']);
+        Setting::setValue('ops.notify_lead_created', $validated['ops_notify_lead_created'] ? '1' : '0');
+
+        return back()->with('flash', 'Operations settings updated successfully.');
+    }
+
+    /**
+     * Normalize a comma-separated day-offset list ("3,1,0") or clear it.
+     */
+    protected function storeOffsetList(string $key, ?string $raw): void
+    {
+        if ($raw === null || trim($raw) === '') {
+            Setting::setValue($key, '');
+
+            return;
+        }
+
+        $offsets = [];
+
+        foreach (explode(',', $raw) as $part) {
+            $part = trim($part);
+
+            if ($part !== '' && is_numeric($part)) {
+                $offsets[] = max(0, (int) $part);
+            }
+        }
+
+        Setting::setValue($key, implode(',', array_values(array_unique($offsets))));
     }
 
     public function updateLogo(Request $request)

@@ -29,6 +29,9 @@
         "phpunit/phpunit": "^12.5.12"
     },
     "autoload": {
+        "files": [
+            "app/helpers.php"
+        ],
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
@@ -55,6 +58,10 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test"
+        ],
+        "test-safe": [
+            "@php artisan db:check @no_additional_args",
             "@php artisan test"
         ],
         "post-autoload-dump": [

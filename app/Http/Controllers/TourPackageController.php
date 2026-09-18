@@ -21,7 +21,7 @@ class TourPackageController extends Controller
             ->values()
             ->all();
 
-        $packages = TourPackage::active()
+        $packages = TourPackage::publiclyVisible()
             ->with(['city', 'category'])
             ->when($request->filled('destination_id'), fn ($query) => $query->whereHas(
                 'destinations',
@@ -53,18 +53,18 @@ class TourPackageController extends Controller
         return Inertia::render('Packages/Index', [
             'packages' => $packages,
             'categories' => TourCategory::active()
-                ->whereHas('tourPackages', fn ($query) => $query->active())
+                ->whereHas('tourPackages', fn ($query) => $query->publiclyVisible())
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug', 'icon']),
             'places' => Place::query()
-                ->whereHas('tourPackages', fn ($query) => $query->active())
+                ->whereHas('tourPackages', fn ($query) => $query->publiclyVisible())
                 ->with('destination:id,name')
                 ->orderBy('name')
                 ->get(['id', 'destination_id', 'name', 'slug']),
             'tags' => Tag::query()
                 ->where('is_active', true)
-                ->whereHas('tourPackages', fn ($query) => $query->active())
+                ->whereHas('tourPackages', fn ($query) => $query->publiclyVisible())
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug']),
             'filters' => [
@@ -80,6 +80,7 @@ class TourPackageController extends Controller
 
     public function show(TourPackage $package)
     {
+        abort_unless($package->is_active && $package->moderation_status?->value === 'approved', 404);
         $package->load(['city', 'category'])
             ->loadCount('approvedReviews')
             ->loadAvg('approvedReviews', 'rating');
@@ -94,6 +95,9 @@ class TourPackageController extends Controller
                 'rating' => $review->rating,
                 'comment' => $review->comment,
                 'created_at' => $review->created_at,
+                // Phase 9: booking-linked reviews are purchase-verified.
+                // No booking reference is ever exposed publicly.
+                'is_verified_booking' => $review->booking_id !== null,
             ]);
 
         return Inertia::render('Packages/Show', compact('package', 'reviews'));

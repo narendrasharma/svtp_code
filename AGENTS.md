@@ -1,5 +1,29 @@
 # Shree Vrindavan Tour Packages
 
+## DATABASE SAFETY — READ FIRST (hard rules for agents and humans)
+
+Active development database: `tour_canyon_new` (MySQL, via `.env`).
+
+- NEVER run `php artisan migrate:fresh`, `migrate:refresh`, `migrate:reset`,
+  or `db:wipe` against the active dev database. These commands are blocked
+  in code (`App\Support\DatabaseSafety` + `AppServiceProvider`) and will
+  throw `REFUSING TO RUN ...` unless the target is an isolated test DB.
+- Tests ALWAYS run on SQLite `:memory:` (forced in `phpunit.xml` with
+  `force="true"`). `Tests\TestCase` aborts the whole run if `APP_ENV=testing`
+  ever resolves to a non-test database. Do NOT weaken this guard.
+- Safe test command: `composer test-safe` (prints `php artisan db:check`
+  first, then runs the suite). `php artisan test` is equivalent.
+- Before any DB-destructive test setup, print the current DB first:
+  `php artisan db:check`.
+- Normal schema changes on the dev DB use plain `php artisan migrate` only
+  (never destructive variants). Verify with read-only
+  `php artisan migrate:status`.
+- Genuinely intended wipes (local rebuild only) require BOTH:
+  1. a fresh manual backup: `bash scripts/backup-db.sh`
+  2. explicit opt-in: `ALLOW_DESTRUCTIVE_DB_COMMANDS=1 php artisan migrate:fresh`
+- Never hardcode DB credentials; `db:check` and `backup-db.sh` never print
+  passwords.
+
 ## Project
 
 This is a Laravel + Vue website for Shree Vrindavan Tour Packages,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\ImpersonationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,14 @@ class AuthenticatedSessionController extends Controller
     public function create(): Response|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('admin.dashboard');
+            $user = Auth::user();
+            $route = match (true) {
+                $user->isAdmin() => 'admin.dashboard',
+                $user->isVendor() => 'vendor.dashboard',
+                default => 'account.dashboard',
+            };
+
+            return redirect()->route($route);
         }
 
         return Inertia::render('Auth/Login', [
@@ -37,7 +45,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        $user = $request->user();
+        $dashboard = match (true) {
+            $user->isAdmin() => 'admin.dashboard',
+            $user->isVendor() => 'vendor.dashboard',
+            default => 'account.dashboard',
+        };
+
+        return redirect()->intended(route($dashboard, absolute: false));
     }
 
     /**
@@ -45,6 +60,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // If impersonating, stop impersonation instead of logging out admin.
+        if (session()->has(ImpersonationService::SESSION_KEY_ADMIN_ID)) {
+            app(ImpersonationService::class)->stop($request);
+
+            return redirect()->route('admin.dashboard')->with('success', 'Returned to admin session.');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

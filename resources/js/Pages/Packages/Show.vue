@@ -158,7 +158,7 @@ function formatReviewDate(value) {
                         <div v-if="!reviews.data.length" class="review-empty">No approved reviews yet. Be the first to share your experience.</div>
                         <article v-for="review in reviews.data" :key="review.id" class="review-card">
                             <div class="d-flex flex-wrap justify-content-between gap-2">
-                                <div><strong>{{ review.reviewer_name }}</strong><div><StarRating :rating="review.rating" /></div></div>
+                                <div><strong>{{ review.reviewer_name }}</strong><span v-if="review.is_verified_booking" class="badge bg-success ms-2" title="This reviewer booked this tour">Verified Booking</span><div><StarRating :rating="review.rating" /></div></div>
                                 <time class="text-muted small" :datetime="review.created_at">{{ formatReviewDate(review.created_at) }}</time>
                             </div>
                             <p class="mb-0 mt-3">{{ review.comment }}</p>
@@ -212,7 +212,10 @@ function formatReviewDate(value) {
                             <span class="price-tag fs-4 mb-0">₹{{ totalPrice.toLocaleString('en-IN') }}</span>
                         </div>
 
-                        <button type="button" class="btn btn-svtp w-100 mt-3" @click="isTourEnquiryOpen = true">
+                        <a :href="appUrl(`/packages/${package.slug}/book`)" class="btn btn-svtp w-100 mt-3">
+                            <i class="bi bi-calendar-check-fill me-1"></i>Book Now
+                        </a>
+                        <button type="button" class="btn btn-svtp w-100 mt-2" @click="isTourEnquiryOpen = true">
                             <i class="bi bi-chat-square-text-fill me-1"></i>Enquire Now
                         </button>
                         <a href="https://wa.me/918923427393" target="_blank" rel="noopener" class="btn btn-outline-svtp w-100 mt-2">
