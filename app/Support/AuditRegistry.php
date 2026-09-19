@@ -22,8 +22,17 @@ use App\Models\Setting;
 use App\Models\SupportTicket;
 use App\Models\TaxiAssignment;
 use App\Models\TaxiBooking;
+use App\Models\TaxiBookingNote;
 use App\Models\TaxiBookingStatusHistory;
+use App\Models\TaxiDriverCompensationPlan;
+use App\Models\TaxiDriverEarning;
+use App\Models\TaxiDriverEarningAdjustment;
+use App\Models\TaxiDriverPayout;
+use App\Models\TaxiDriverPayoutItem;
 use App\Models\TaxiPayment;
+use App\Models\TaxiRateCard;
+use App\Models\TaxiRateRule;
+use App\Models\TaxiRentalPackage;
 use App\Models\TourModerationHistory;
 use App\Models\TourPackage;
 use App\Models\User;
@@ -93,8 +102,21 @@ class AuditRegistry
             DriverAvailability::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiBooking::class => ['module' => 'taxi', 'ignore' => ['updated_at', 'last_customer_reminder_at', 'last_vendor_reminder_at']],
             TaxiAssignment::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiBookingNote::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiBookingStatusHistory::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiPayment::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiRateCard::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiRateRule::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiRentalPackage::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            \App\Models\TaxiCancellationPolicy::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            \App\Models\TaxiBookingCancellation::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            \App\Models\TaxiRefund::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            \App\Models\TaxiBookingReschedule::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiDriverCompensationPlan::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiDriverEarning::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiDriverEarningAdjustment::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiDriverPayout::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiDriverPayoutItem::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
         ];
     }
 

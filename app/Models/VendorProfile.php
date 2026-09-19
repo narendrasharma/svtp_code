@@ -94,6 +94,11 @@ class VendorProfile extends Model
         return $this->hasMany(TourPackage::class);
     }
 
+    public function taxiRateCards(): HasMany
+    {
+        return $this->hasMany(TaxiRateCard::class);
+    }
+
     public function plan(): BelongsTo
     {
         return $this->belongsTo(VendorPlan::class, 'vendor_plan_id');

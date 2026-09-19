@@ -31,6 +31,6 @@ enum TripType: string
      */
     public static function bookable(): array
     {
-        return [self::OneWay->value, self::AirportTransfer->value];
+        return array_column(self::cases(), 'value');
     }
 }

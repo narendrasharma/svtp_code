@@ -11,6 +11,7 @@ const page = usePage();
 const unread = computed(() => Number(page.props.notificationsUnreadCount ?? 0));
 
 const tabs = [
+    { key: 'taxi', label: 'My Taxi Bookings', href: '/account/taxi/bookings', icon: 'bi-taxi-front' },
     { key: 'dashboard', label: 'Dashboard', href: '/account', icon: 'bi-speedometer2' },
     { key: 'bookings', label: 'My Bookings', href: '/account/bookings', icon: 'bi-calendar-check' },
     { key: 'support', label: 'Support', href: '/account/support', icon: 'bi-life-preserver' },

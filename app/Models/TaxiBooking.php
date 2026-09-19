@@ -17,14 +17,13 @@ class TaxiBooking extends Model
 
     protected $fillable = [
         'reference', 'customer_user_id', 'vendor_profile_id', 'lead_id', 'quotation_id',
-        'trip_type', 'pickup_at', 'pickup_address', 'pickup_lat', 'pickup_lng',
+        'trip_type', 'pickup_at', 'return_at', 'pickup_address', 'pickup_lat', 'pickup_lng',
         'drop_address', 'drop_lat', 'drop_lng',
         'airport_direction', 'flight_number', 'airline', 'terminal',
         'passenger_count', 'luggage_count',
         'vehicle_type_id', 'assigned_vehicle_id', 'assigned_driver_id',
         'customer_name', 'customer_phone', 'customer_email', 'special_instructions',
         'source', 'status', 'payment_status',
-        'currency', 'base_amount', 'extra_amount', 'discount_amount', 'tax_amount', 'total_amount',
         'quoted_distance_km', 'quoted_duration_minutes',
         'payment_due_date', 'created_by',
     ];
@@ -33,6 +32,7 @@ class TaxiBooking extends Model
     {
         return [
             'pickup_at' => 'datetime',
+            'return_at' => 'datetime',
             'payment_due_date' => 'date',
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -44,6 +44,8 @@ class TaxiBooking extends Model
             'discount_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'pricing_snapshot' => 'array',
+            'priced_at' => 'datetime',
         ];
     }
 
@@ -92,6 +94,16 @@ class TaxiBooking extends Model
         return $this->belongsTo(VehicleType::class);
     }
 
+    public function rateCard(): BelongsTo
+    {
+        return $this->belongsTo(TaxiRateCard::class, 'taxi_rate_card_id');
+    }
+
+    public function rentalPackage(): BelongsTo
+    {
+        return $this->belongsTo(TaxiRentalPackage::class, 'taxi_rental_package_id');
+    }
+
     public function assignedVehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class, 'assigned_vehicle_id');
@@ -120,6 +132,16 @@ class TaxiBooking extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(TaxiAssignment::class)->orderByDesc('assigned_at');
+    }
+
+    public function dispatchOffers(): HasMany
+    {
+        return $this->hasMany(TaxiDispatchOffer::class, 'taxi_booking_id')->orderByDesc('offered_at');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(TaxiBookingNote::class)->latest();
     }
 
     public function payments(): HasMany

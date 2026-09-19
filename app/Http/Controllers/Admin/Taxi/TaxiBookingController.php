@@ -7,15 +7,22 @@ use App\Enums\PaymentMethod;
 use App\Enums\TaxiBookingStatus;
 use App\Enums\TripType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Taxi\QuoteTaxiPricingRequest;
 use App\Http\Requests\Taxi\StoreTaxiBookingRequest;
 use App\Models\Driver;
 use App\Models\Quotation;
 use App\Models\TaxiBooking;
+use App\Models\TaxiRentalPackage;
 use App\Models\Vehicle;
 use App\Models\VehicleType;
 use App\Models\VendorProfile;
+use App\Services\TaxiAutoDispatchService;
 use App\Services\TaxiBookingService;
 use App\Services\TaxiPaymentService;
+use App\Services\TaxiPricingService;
+use App\Services\TaxiTrackingTokenService;
+use App\Support\TaxiSettings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,6 +38,9 @@ class TaxiBookingController extends Controller
     public function __construct(
         protected TaxiBookingService $bookings,
         protected TaxiPaymentService $payments,
+        protected TaxiPricingService $pricing,
+        protected TaxiAutoDispatchService $autoDispatch,
+        protected TaxiTrackingTokenService $trackingTokens,
     ) {}
 
     public function index(Request $request): Response
@@ -72,12 +82,32 @@ class TaxiBookingController extends Controller
                 ->map(fn ($t) => ['value' => $t->value, 'label' => $t->label()])->values(),
             'sources' => BookingSource::staffCreatable(),
             'paymentMethods' => collect(PaymentMethod::cases())->map(fn ($m) => ['value' => $m->value, 'label' => $m->name]),
+            'rentalPackages' => TaxiRentalPackage::with('rateCard:id,name,vendor_profile_id,vehicle_type_id,currency')
+                ->where('is_active', true)->orderBy('sort_order')->get(),
+        ]);
+    }
+
+    public function quote(QuoteTaxiPricingRequest $request): JsonResponse
+    {
+        $quote = $this->pricing->quote([
+            ...$request->validated(),
+            'currency' => TaxiSettings::get('taxi.default_currency') ?? 'INR',
+            'distance_km' => $request->validated('quoted_distance_km') ?? 0,
+            'duration_minutes' => $request->validated('quoted_duration_minutes') ?? 0,
+            'authorized_actual_costs' => true,
+        ]);
+
+        return response()->json([
+            'currency' => $quote['currency'],
+            'breakdown' => $quote['breakdown'],
+            'rate_card' => $quote['snapshot']['rate_card'],
+            'rental_package' => $quote['snapshot']['rental_package'],
         ]);
     }
 
     public function store(StoreTaxiBookingRequest $request): RedirectResponse
     {
-        $booking = $this->bookings->create($request->bookingData(), $request->user());
+        $booking = $this->bookings->create($request->bookingData(), $request->user(), authorizedActualCosts: true);
 
         return redirect()->route('admin.taxi.bookings.show', $booking)->with('flash', "Taxi booking {$booking->reference} confirmed.");
     }
@@ -97,14 +127,15 @@ class TaxiBookingController extends Controller
             Quotation::findOrFail($quotationId),
             $request->bookingData(),
             $request->user(),
+            authorizedActualCosts: true,
         );
 
         return redirect()->route('admin.taxi.bookings.show', $booking)->with('flash', "Taxi booking {$booking->reference} created from quotation.");
     }
 
-    public function show(TaxiBooking $booking): Response
+    public function show(TaxiBooking $taxiBooking): Response
     {
-        $booking->load([
+        $taxiBooking->load([
             'customer:id,name,email,phone', 'vendorProfile:id,business_name',
             'lead:id,reference,name', 'quotation:id,reference,total_amount',
             'vehicleType:id,name,passenger_capacity',
@@ -115,26 +146,97 @@ class TaxiBookingController extends Controller
             'payments.receiver:id,name',
         ]);
 
-        $summary = $this->bookings->summary($booking);
+        $summary = $this->bookings->summary($taxiBooking);
 
-        $fleet = $booking->vendor_profile_id ? [
-            'drivers' => Driver::where('vendor_profile_id', $booking->vendor_profile_id)->where('is_active', true)->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'availability_status', 'employment_status']),
-            'vehicles' => Vehicle::where('vendor_profile_id', $booking->vendor_profile_id)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'registration_number', 'status', 'passenger_capacity']),
+        $fleet = $taxiBooking->vendor_profile_id ? [
+            'drivers' => Driver::where('vendor_profile_id', $taxiBooking->vendor_profile_id)->where('is_active', true)->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'availability_status', 'employment_status']),
+            'vehicles' => Vehicle::where('vendor_profile_id', $taxiBooking->vendor_profile_id)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'registration_number', 'status', 'passenger_capacity']),
         ] : ['drivers' => [], 'vehicles' => []];
 
         return Inertia::render('Admin/Taxi/Bookings/Show', [
-            'booking' => $booking,
+            'booking' => $taxiBooking,
             'summary' => $summary,
             'fleet' => $fleet,
             'statuses' => collect(TaxiBookingStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
-            'allowedTransitions' => collect($booking->status()->allowedTransitions())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
+            'allowedTransitions' => collect($taxiBooking->status()->allowedTransitions())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'paymentMethods' => collect(PaymentMethod::cases())->map(fn ($m) => ['value' => $m->value, 'label' => $m->name]),
             'canAssign' => request()->user()->can('taxi.bookings.assign'),
             'canStatus' => request()->user()->can('taxi.bookings.status'),
+            'autoDispatch' => $this->autoDispatchPanel($taxiBooking),
+            'trackingLink' => $this->trackingLinkPanel($taxiBooking),
         ]);
     }
 
-    public function assign(Request $request, TaxiBooking $booking): RedirectResponse
+    /**
+     * @return array{status:string, attempts:int, max_attempts:int, pending:?array{id:int, driver_name:string, vehicle_name:string, rank:int, expires_at:?string}, history:array<int, mixed>}
+     */
+    protected function autoDispatchPanel(TaxiBooking $taxiBooking): array
+    {
+        $pending = $this->autoDispatch->pendingFor($taxiBooking);
+        $pending?->load(['driver:id,first_name,last_name', 'vehicle:id,name,registration_number']);
+
+        return [
+            'status' => $this->autoDispatch->statusFor($taxiBooking),
+            'attempts' => $this->autoDispatch->attemptsFor($taxiBooking),
+            'max_attempts' => $this->autoDispatch->maxAttempts(),
+            'pending' => $pending ? [
+                'id' => $pending->id,
+                'driver_name' => $pending->driver?->fullName(),
+                'vehicle_name' => $pending->vehicle ? $pending->vehicle->name.' ('.$pending->vehicle->registration_number.')' : null,
+                'rank' => $pending->rank,
+                'expires_at' => $pending->expires_at?->toISOString(),
+            ] : null,
+            'history' => $taxiBooking->dispatchOffers()->with(['driver:id,first_name,last_name'])->latest('offered_at')->limit(10)->get(),
+        ];
+    }
+
+    public function startAutoDispatch(Request $request, TaxiBooking $taxiBooking): RedirectResponse
+    {
+        $offer = $this->autoDispatch->startForBooking($taxiBooking, $request->user(), 'manual');
+
+        return back()->with('flash', "Auto-dispatch started — offered to {$offer->driver->fullName()}.");
+    }
+
+    public function stopAutoDispatch(Request $request, TaxiBooking $taxiBooking): RedirectResponse
+    {
+        $this->autoDispatch->stopForBooking($taxiBooking, $request->user());
+
+        return back()->with('flash', 'Auto-dispatch stopped — the booking stays in the manual queue.');
+    }
+
+    /**
+     * @return array{active:bool, expires_at:?string, last_accessed_at:?string}
+     */
+    protected function trackingLinkPanel(TaxiBooking $taxiBooking): array
+    {
+        $token = $this->trackingTokens->activeForBooking($taxiBooking);
+
+        return [
+            'active' => $token !== null,
+            'expires_at' => $token?->expires_at?->toISOString(),
+            'last_accessed_at' => $token?->last_accessed_at?->toISOString(),
+        ];
+    }
+
+    public function generateTrackingLink(Request $request, TaxiBooking $taxiBooking): RedirectResponse
+    {
+        $result = $this->trackingTokens->generate($taxiBooking, $request->user(), 'manual');
+
+        return back()->with('tracking_url', $result['url'])->with('flash', 'Customer tracking link generated.');
+    }
+
+    public function revokeTrackingLink(Request $request, TaxiBooking $taxiBooking): RedirectResponse
+    {
+        $token = $this->trackingTokens->activeForBooking($taxiBooking);
+
+        if ($token !== null) {
+            $this->trackingTokens->revoke($token, $request->user());
+        }
+
+        return back()->with('flash', 'Customer tracking link revoked.');
+    }
+
+    public function assign(Request $request, TaxiBooking $taxiBooking): RedirectResponse
     {
         $validated = $request->validate([
             'driver_id' => ['required', 'integer', 'exists:drivers,id'],
@@ -143,7 +245,7 @@ class TaxiBookingController extends Controller
         ]);
 
         $this->bookings->assign(
-            $booking,
+            $taxiBooking,
             Driver::findOrFail($validated['driver_id']),
             Vehicle::findOrFail($validated['vehicle_id']),
             $request->user(),
@@ -153,16 +255,16 @@ class TaxiBookingController extends Controller
         return back()->with('flash', 'Driver and vehicle assigned.');
     }
 
-    public function unassign(Request $request, TaxiBooking $booking): RedirectResponse
+    public function unassign(Request $request, TaxiBooking $taxiBooking): RedirectResponse
     {
         $validated = $request->validate(['note' => ['nullable', 'string', 'max:500']]);
 
-        $this->bookings->unassign($booking, $request->user(), $validated['note'] ?? null);
+        $this->bookings->unassign($taxiBooking, $request->user(), $validated['note'] ?? null);
 
         return back()->with('flash', 'Assignment removed.');
     }
 
-    public function status(Request $request, TaxiBooking $booking): RedirectResponse
+    public function status(Request $request, TaxiBooking $taxiBooking): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['required', Rule::in(TaxiBookingStatus::values())],
@@ -176,12 +278,12 @@ class TaxiBookingController extends Controller
             abort(403, 'Cancellation requires the taxi cancellation permission.');
         }
 
-        $this->bookings->changeStatus($booking, $to, $request->user(), $validated['note'] ?? null);
+        $this->bookings->changeStatus($taxiBooking, $to, $request->user(), $validated['note'] ?? null);
 
         return back()->with('flash', 'Ride status updated to '.$to->label().'.');
     }
 
-    public function storePayment(Request $request, TaxiBooking $booking): RedirectResponse
+    public function storePayment(Request $request, TaxiBooking $taxiBooking): RedirectResponse
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01', 'max:999999999.99'],
@@ -191,7 +293,7 @@ class TaxiBookingController extends Controller
         ]);
 
         $payment = $this->payments->recordPayment(
-            $booking,
+            $taxiBooking,
             (float) $validated['amount'],
             PaymentMethod::from($validated['payment_method']),
             $request->user(),
@@ -199,9 +301,9 @@ class TaxiBookingController extends Controller
             $validated['external_reference'] ?? null,
         );
 
-        $summary = $this->payments->summary($booking->refresh());
+        $summary = $this->payments->summary($taxiBooking->refresh());
 
-        return back()->with('flash', "Payment {$payment->reference} of ₹".number_format((float) $payment->amount, 2).' recorded. Outstanding ₹'.number_format($summary['due'], 2).'.');
+        return back()->with('flash', "Payment {$payment->reference} of {$summary['currency']} ".number_format((float) $payment->amount, 2)." recorded. Outstanding {$summary['currency']} ".number_format($summary['due'], 2).'.');
     }
 
     /**

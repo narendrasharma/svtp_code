@@ -54,6 +54,9 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
+                // One-time secrets (e.g. fresh customer tracking links).
+                // Shown once, never persisted in page props.
+                'tracking_url' => fn () => $request->session()->get('tracking_url'),
             ],
             'siteSettings' => function () {
 

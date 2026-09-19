@@ -35,3 +35,5 @@ Schedule::command('ops:remind-travel')->dailyAt('08:00')->name('ops-remind-trave
 Schedule::command('ops:digest')->dailyAt('07:30')->name('ops-digest');
 
 Schedule::command('ops:cleanup')->dailyAt('03:00')->name('ops-cleanup');
+
+Schedule::command('taxi:expire-dispatch-offers')->everyFiveMinutes()->name('taxi-expire-dispatch-offers');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Driver extends Model
 {
@@ -64,6 +65,19 @@ class Driver extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(TaxiAssignment::class);
+    }
+
+    /**
+     * Latest telemetry ping without scanning history (12A.5).
+     */
+    public function latestLocation(): HasOne
+    {
+        return $this->hasOne(TaxiDriverLocation::class)->latestOfMany('captured_at');
+    }
+
+    public function locations(): HasMany
+    {
+        return $this->hasMany(TaxiDriverLocation::class)->orderByDesc('captured_at');
     }
 
     public function fullName(): string

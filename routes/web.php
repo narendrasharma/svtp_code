@@ -51,8 +51,14 @@ use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealthContro
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\Taxi\DriverController as AdminTaxiDriverController;
 use App\Http\Controllers\Admin\Taxi\TaxiBookingController as AdminTaxiBookingController;
+use App\Http\Controllers\Admin\Taxi\TaxiCompensationPlanController as AdminTaxiCompensationPlanController;
 use App\Http\Controllers\Admin\Taxi\TaxiDashboardController as AdminTaxiDashboardController;
+use App\Http\Controllers\Admin\Taxi\TaxiDispatchController as AdminTaxiDispatchController;
+use App\Http\Controllers\Admin\Taxi\TaxiDriverEarningController as AdminTaxiDriverEarningController;
+use App\Http\Controllers\Admin\Taxi\TaxiDriverPayoutController as AdminTaxiDriverPayoutController;
+use App\Http\Controllers\Admin\Taxi\TaxiRateCardController as AdminTaxiRateCardController;
 use App\Http\Controllers\Admin\Taxi\TaxiSettingsController as AdminTaxiSettingsController;
+use App\Http\Controllers\Admin\Taxi\TaxiTrackingController as AdminTaxiTrackingController;
 use App\Http\Controllers\Admin\Taxi\VehicleController as AdminTaxiVehicleController;
 use App\Http\Controllers\Admin\Taxi\VehicleTypeController as AdminTaxiVehicleTypeController;
 use App\Http\Controllers\Admin\TemplateController as AdminTemplateController;
@@ -66,6 +72,12 @@ use App\Http\Controllers\Admin\VendorFinanceController as AdminVendorFinanceCont
 use App\Http\Controllers\Admin\VendorPlanController as AdminVendorPlanController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
 use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\Driver\Taxi\DriverDashboardController as DriverTaxiDashboardController;
+use App\Http\Controllers\Driver\Taxi\DriverEarningController as DriverTaxiEarningController;
+use App\Http\Controllers\Driver\Taxi\DriverLocationController as DriverTaxiLocationController;
+use App\Http\Controllers\Driver\Taxi\DriverOfferController as DriverTaxiOfferController;
+use App\Http\Controllers\Driver\Taxi\DriverProfileController as DriverTaxiProfileController;
+use App\Http\Controllers\Driver\Taxi\DriverTripController as DriverTaxiTripController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HomeController;
@@ -82,6 +94,7 @@ use App\Http\Controllers\PublicQuotationDecisionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SharedDocumentController;
 use App\Http\Controllers\TaxiEnquiryController;
+use App\Http\Controllers\TaxiTrackingController;
 use App\Http\Controllers\TourPackageController;
 use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\Vendor\BookingController as VendorBookingController;
@@ -90,8 +103,14 @@ use App\Http\Controllers\Vendor\FinanceController as VendorFinanceController;
 use App\Http\Controllers\Vendor\PayoutAccountController as VendorPayoutAccountController;
 use App\Http\Controllers\Vendor\SupportTicketController as VendorSupportTicketController;
 use App\Http\Controllers\Vendor\Taxi\TaxiBookingController as VendorTaxiBookingController;
+use App\Http\Controllers\Vendor\Taxi\TaxiCompensationPlanController as VendorTaxiCompensationPlanController;
 use App\Http\Controllers\Vendor\Taxi\TaxiDashboardController as VendorTaxiDashboardController;
+use App\Http\Controllers\Vendor\Taxi\TaxiDispatchController as VendorTaxiDispatchController;
 use App\Http\Controllers\Vendor\Taxi\TaxiDriverController as VendorTaxiDriverController;
+use App\Http\Controllers\Vendor\Taxi\TaxiDriverEarningController as VendorTaxiDriverEarningController;
+use App\Http\Controllers\Vendor\Taxi\TaxiDriverPayoutController as VendorTaxiDriverPayoutController;
+use App\Http\Controllers\Vendor\Taxi\TaxiRateCardController as VendorTaxiRateCardController;
+use App\Http\Controllers\Vendor\Taxi\TaxiTrackingController as VendorTaxiTrackingController;
 use App\Http\Controllers\Vendor\Taxi\TaxiVehicleController as VendorTaxiVehicleController;
 use App\Http\Controllers\Vendor\TourAddonController as VendorTourAddonController;
 use App\Http\Controllers\Vendor\TourAvailabilityController as VendorTourAvailabilityController;
@@ -197,6 +216,17 @@ Route::middleware('auth')->group(function () {
 
 // Customer account area (public theme, never under /admin).
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
+    Route::prefix('taxi')->name('taxi.')->middleware('module:taxi')->group(function () {
+        Route::get('/bookings', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'index'])->name('bookings.index');
+
+        // Phase 12A.11: authenticated booking changes and manual refunds.
+        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+    });
+
     Route::get('/', [AccountDashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [AccountBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [AccountBookingController::class, 'show'])->name('bookings.show');
@@ -278,6 +308,13 @@ Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(
     // Phase 12A.1 vendor taxi fleet (own resources only, taxi module on).
     Route::middleware('module:taxi')->prefix('taxi')->name('taxi.')->group(function () {
         Route::get('/dashboard', [VendorTaxiDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/pricing', [VendorTaxiRateCardController::class, 'index'])->name('pricing.index');
+        Route::get('/pricing/create', [VendorTaxiRateCardController::class, 'create'])->name('pricing.create');
+        Route::post('/pricing', [VendorTaxiRateCardController::class, 'store'])->name('pricing.store');
+        Route::get('/pricing/{rateCard}/edit', [VendorTaxiRateCardController::class, 'edit'])->name('pricing.edit');
+        Route::put('/pricing/{rateCard}', [VendorTaxiRateCardController::class, 'update'])->name('pricing.update');
+        Route::patch('/pricing/{rateCard}/toggle', [VendorTaxiRateCardController::class, 'toggle'])->name('pricing.toggle');
+        Route::delete('/pricing/{rateCard}', [VendorTaxiRateCardController::class, 'destroy'])->name('pricing.destroy');
         Route::get('/vehicles', [VendorTaxiVehicleController::class, 'index'])->name('vehicles.index');
         Route::get('/vehicles/create', [VendorTaxiVehicleController::class, 'create'])->name('vehicles.create');
         Route::post('/vehicles', [VendorTaxiVehicleController::class, 'store'])->name('vehicles.store');
@@ -297,13 +334,60 @@ Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(
         Route::post('/drivers/{driver}/availability', [VendorTaxiDriverController::class, 'storeAvailability'])->name('drivers.availability.store');
         Route::delete('/drivers/availability/{availability}', [VendorTaxiDriverController::class, 'destroyAvailability'])->name('drivers.availability.destroy');
 
+        Route::get('/dispatch', [VendorTaxiDispatchController::class, 'index'])->name('dispatch.index');
+        Route::get('/dispatch/{taxiBooking}/eligible', [VendorTaxiDispatchController::class, 'eligible'])->name('dispatch.eligible');
+        Route::post('/dispatch/{taxiBooking}/notes', [VendorTaxiDispatchController::class, 'storeNote'])->name('dispatch.notes.store');
+        Route::get('/dispatch/{taxiBooking}/notes', [VendorTaxiDispatchController::class, 'notes'])->name('dispatch.notes.index');
+        Route::get('/dispatch/{taxiBooking}/recommendations', [VendorTaxiDispatchController::class, 'recommendations'])->name('dispatch.recommendations');
+
+        Route::get('/tracking', [VendorTaxiTrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/route', [VendorTaxiTrackingController::class, 'route'])->name('tracking.route');
+
         Route::get('/bookings', [VendorTaxiBookingController::class, 'index'])->name('bookings.index');
         Route::get('/bookings/create', [VendorTaxiBookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings/quote', [VendorTaxiBookingController::class, 'quote'])->name('bookings.quote');
         Route::post('/bookings', [VendorTaxiBookingController::class, 'store'])->name('bookings.store');
         Route::get('/bookings/{taxiBooking}', [VendorTaxiBookingController::class, 'show'])->name('bookings.show');
         Route::post('/bookings/{taxiBooking}/assign', [VendorTaxiBookingController::class, 'assign'])->name('bookings.assign');
         Route::post('/bookings/{taxiBooking}/unassign', [VendorTaxiBookingController::class, 'unassign'])->name('bookings.unassign');
+        Route::post('/bookings/{taxiBooking}/auto-dispatch/start', [VendorTaxiBookingController::class, 'startAutoDispatch'])->name('bookings.auto-dispatch.start');
+        Route::post('/bookings/{taxiBooking}/auto-dispatch/stop', [VendorTaxiBookingController::class, 'stopAutoDispatch'])->name('bookings.auto-dispatch.stop');
+        Route::post('/bookings/{taxiBooking}/tracking', [VendorTaxiBookingController::class, 'generateTrackingLink'])->name('bookings.tracking.store');
+        Route::delete('/bookings/{taxiBooking}/tracking', [VendorTaxiBookingController::class, 'revokeTrackingLink'])->name('bookings.tracking.destroy');
         Route::patch('/bookings/{taxiBooking}/status', [VendorTaxiBookingController::class, 'status'])->name('bookings.status');
+
+
+        // Phase 12A.11: authenticated booking changes and manual refunds.
+        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/refunds', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
+        Route::post('/changes/{booking}/refunds/{refund}/process', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
+        Route::get('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
+        Route::post('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
+        Route::put('/cancellation-policies/{policy}', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
+        Route::patch('/cancellation-policies/{policy}/toggle', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
+        Route::get('/earnings', [VendorTaxiDriverEarningController::class, 'index'])->name('earnings.index');
+        Route::get('/earnings/{earning}', [VendorTaxiDriverEarningController::class, 'show'])->name('earnings.show');
+        Route::patch('/earnings/{earning}/payable', [VendorTaxiDriverEarningController::class, 'markPayable'])->name('earnings.payable');
+        Route::post('/earnings/{earning}/adjustments', [VendorTaxiDriverEarningController::class, 'storeAdjustment'])->name('earnings.adjustments.store');
+
+        Route::get('/plans', [VendorTaxiCompensationPlanController::class, 'index'])->name('plans.index');
+        Route::get('/plans/create', [VendorTaxiCompensationPlanController::class, 'create'])->name('plans.create');
+        Route::post('/plans', [VendorTaxiCompensationPlanController::class, 'store'])->name('plans.store');
+        Route::get('/plans/{plan}/edit', [VendorTaxiCompensationPlanController::class, 'edit'])->name('plans.edit');
+        Route::put('/plans/{plan}', [VendorTaxiCompensationPlanController::class, 'update'])->name('plans.update');
+        Route::patch('/plans/{plan}/toggle', [VendorTaxiCompensationPlanController::class, 'toggle'])->name('plans.toggle');
+        Route::delete('/plans/{plan}', [VendorTaxiCompensationPlanController::class, 'destroy'])->name('plans.destroy');
+
+        Route::get('/payouts', [VendorTaxiDriverPayoutController::class, 'index'])->name('payouts.index');
+        Route::get('/payouts/create', [VendorTaxiDriverPayoutController::class, 'create'])->name('payouts.create');
+        Route::post('/payouts', [VendorTaxiDriverPayoutController::class, 'store'])->name('payouts.store');
+        Route::get('/payouts/{payout}', [VendorTaxiDriverPayoutController::class, 'show'])->name('payouts.show');
+        Route::patch('/payouts/{payout}/mark-paid', [VendorTaxiDriverPayoutController::class, 'markPaid'])->name('payouts.mark-paid');
+        Route::patch('/payouts/{payout}/cancel', [VendorTaxiDriverPayoutController::class, 'cancel'])->name('payouts.cancel');
     });
 
     // Phase 11.5C vendor support portal (own tickets only).
@@ -334,6 +418,34 @@ Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(
 
 // Impersonation stop (available while impersonating)
 Route::middleware('auth')->post('/impersonation/stop', [ImpersonationController::class, 'destroy'])->name('impersonation.stop');
+
+// Phase 12A.4 driver portal (own assigned trips only). Access requires a
+// linked Driver record (drivers.user_id) via the driver middleware; every
+// trip endpoint additionally validates an open assignment and 404s
+// otherwise. Hidden with 404 while the taxi module is disabled.
+Route::middleware(['auth', 'driver'])->prefix('driver')->name('driver.')->group(function () {
+    Route::middleware('module:taxi')->prefix('taxi')->name('taxi.')->group(function () {
+        Route::get('/offers', [DriverTaxiOfferController::class, 'index'])->name('offers.index');
+        Route::post('/offers/{offer}/accept', [DriverTaxiOfferController::class, 'accept'])->name('offers.accept');
+        Route::post('/offers/{offer}/reject', [DriverTaxiOfferController::class, 'reject'])->name('offers.reject');
+        Route::get('/offers/pending-count', [DriverTaxiOfferController::class, 'pendingCount'])->name('offers.pending-count');
+        Route::get('/dashboard', [DriverTaxiDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/trips', [DriverTaxiTripController::class, 'index'])->name('trips.index');
+        Route::get('/trips/{taxiBooking}', [DriverTaxiTripController::class, 'show'])->name('trips.show');
+        Route::patch('/trips/{taxiBooking}/status', [DriverTaxiTripController::class, 'status'])->name('trips.status');
+        Route::post('/trips/{taxiBooking}/acknowledge', [DriverTaxiTripController::class, 'acknowledge'])->name('trips.acknowledge');
+        Route::post('/trips/{taxiBooking}/notes', [DriverTaxiTripController::class, 'storeNote'])->name('trips.notes.store');
+        Route::get('/trips/{taxiBooking}/notes', [DriverTaxiTripController::class, 'notes'])->name('trips.notes.index');
+        Route::get('/trips/{taxiBooking}/route', [DriverTaxiTripController::class, 'routeMap'])->name('trips.route');
+        Route::get('/profile', [DriverTaxiProfileController::class, 'show'])->name('profile.show');
+        Route::put('/profile', [DriverTaxiProfileController::class, 'update'])->name('profile.update');
+        Route::patch('/profile/availability', [DriverTaxiProfileController::class, 'availability'])->name('profile.availability');
+        Route::get('/earnings', [DriverTaxiEarningController::class, 'index'])->name('earnings.index');
+        Route::get('/earnings/{earning}', [DriverTaxiEarningController::class, 'show'])->name('earnings.show');
+        Route::post('/location', [DriverTaxiLocationController::class, 'store'])->name('location.store');
+        Route::get('/location/status', [DriverTaxiLocationController::class, 'status'])->name('location.status');
+    });
+});
 
 Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name('admin.')->group(function () {
     Route::post(
@@ -658,6 +770,14 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::middleware('module:taxi')->prefix('taxi')->name('taxi.')->group(function () {
         Route::get('/dashboard', [AdminTaxiDashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('/pricing', [AdminTaxiRateCardController::class, 'index'])->name('pricing.index');
+        Route::get('/pricing/create', [AdminTaxiRateCardController::class, 'create'])->name('pricing.create');
+        Route::post('/pricing', [AdminTaxiRateCardController::class, 'store'])->name('pricing.store');
+        Route::get('/pricing/{rateCard}/edit', [AdminTaxiRateCardController::class, 'edit'])->name('pricing.edit');
+        Route::put('/pricing/{rateCard}', [AdminTaxiRateCardController::class, 'update'])->name('pricing.update');
+        Route::patch('/pricing/{rateCard}/toggle', [AdminTaxiRateCardController::class, 'toggle'])->name('pricing.toggle');
+        Route::delete('/pricing/{rateCard}', [AdminTaxiRateCardController::class, 'destroy'])->name('pricing.destroy');
+
         Route::get('/vehicle-types', [AdminTaxiVehicleTypeController::class, 'index'])->name('vehicle-types.index');
         Route::post('/vehicle-types', [AdminTaxiVehicleTypeController::class, 'store'])->name('vehicle-types.store');
         Route::put('/vehicle-types/{vehicleType}', [AdminTaxiVehicleTypeController::class, 'update'])->name('vehicle-types.update');
@@ -685,15 +805,64 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
         Route::post('/drivers/{driver}/availability', [AdminTaxiDriverController::class, 'storeAvailability'])->name('drivers.availability.store');
         Route::delete('/drivers/availability/{availability}', [AdminTaxiDriverController::class, 'destroyAvailability'])->name('drivers.availability.destroy');
 
+        Route::get('/dispatch', [AdminTaxiDispatchController::class, 'index'])->name('dispatch.index');
+        Route::get('/dispatch/{taxiBooking}/eligible', [AdminTaxiDispatchController::class, 'eligible'])->name('dispatch.eligible');
+        Route::post('/dispatch/{taxiBooking}/notes', [AdminTaxiDispatchController::class, 'storeNote'])->name('dispatch.notes.store');
+        Route::get('/dispatch/{taxiBooking}/notes', [AdminTaxiDispatchController::class, 'notes'])->name('dispatch.notes.index');
+        Route::get('/dispatch/{taxiBooking}/recommendations', [AdminTaxiDispatchController::class, 'recommendations'])->name('dispatch.recommendations');
+
+        Route::get('/tracking', [AdminTaxiTrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/route', [AdminTaxiTrackingController::class, 'route'])->name('tracking.route');
+
         Route::get('/bookings', [AdminTaxiBookingController::class, 'index'])->name('bookings.index');
         Route::get('/bookings/create', [AdminTaxiBookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings/quote', [AdminTaxiBookingController::class, 'quote'])->name('bookings.quote');
         Route::post('/bookings', [AdminTaxiBookingController::class, 'store'])->name('bookings.store');
         Route::post('/bookings/convert', [AdminTaxiBookingController::class, 'convert'])->name('bookings.convert');
         Route::get('/bookings/{taxiBooking}', [AdminTaxiBookingController::class, 'show'])->name('bookings.show');
         Route::post('/bookings/{taxiBooking}/assign', [AdminTaxiBookingController::class, 'assign'])->name('bookings.assign');
         Route::post('/bookings/{taxiBooking}/unassign', [AdminTaxiBookingController::class, 'unassign'])->name('bookings.unassign');
+        Route::post('/bookings/{taxiBooking}/auto-dispatch/start', [AdminTaxiBookingController::class, 'startAutoDispatch'])->name('bookings.auto-dispatch.start');
+        Route::post('/bookings/{taxiBooking}/auto-dispatch/stop', [AdminTaxiBookingController::class, 'stopAutoDispatch'])->name('bookings.auto-dispatch.stop');
+        Route::post('/bookings/{taxiBooking}/tracking', [AdminTaxiBookingController::class, 'generateTrackingLink'])->name('bookings.tracking.store');
+        Route::delete('/bookings/{taxiBooking}/tracking', [AdminTaxiBookingController::class, 'revokeTrackingLink'])->name('bookings.tracking.destroy');
         Route::patch('/bookings/{taxiBooking}/status', [AdminTaxiBookingController::class, 'status'])->name('bookings.status');
         Route::post('/bookings/{taxiBooking}/payments', [AdminTaxiBookingController::class, 'storePayment'])->name('bookings.payments.store');
+
+
+        // Phase 12A.11: authenticated booking changes and manual refunds.
+        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/refunds', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
+        Route::post('/changes/{booking}/refunds/{refund}/process', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
+        Route::get('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
+        Route::post('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
+        Route::put('/cancellation-policies/{policy}', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
+        Route::patch('/cancellation-policies/{policy}/toggle', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
+        Route::put('/cancellation-settings', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'settings'])->name('cancellation-settings.update');
+        Route::get('/earnings', [AdminTaxiDriverEarningController::class, 'index'])->name('earnings.index');
+        Route::get('/earnings/{earning}', [AdminTaxiDriverEarningController::class, 'show'])->name('earnings.show');
+        Route::patch('/earnings/{earning}/payable', [AdminTaxiDriverEarningController::class, 'markPayable'])->name('earnings.payable');
+        Route::patch('/earnings/{earning}/void', [AdminTaxiDriverEarningController::class, 'void'])->name('earnings.void');
+        Route::post('/earnings/{earning}/adjustments', [AdminTaxiDriverEarningController::class, 'storeAdjustment'])->name('earnings.adjustments.store');
+
+        Route::get('/plans', [AdminTaxiCompensationPlanController::class, 'index'])->name('plans.index');
+        Route::get('/plans/create', [AdminTaxiCompensationPlanController::class, 'create'])->name('plans.create');
+        Route::post('/plans', [AdminTaxiCompensationPlanController::class, 'store'])->name('plans.store');
+        Route::get('/plans/{plan}/edit', [AdminTaxiCompensationPlanController::class, 'edit'])->name('plans.edit');
+        Route::put('/plans/{plan}', [AdminTaxiCompensationPlanController::class, 'update'])->name('plans.update');
+        Route::patch('/plans/{plan}/toggle', [AdminTaxiCompensationPlanController::class, 'toggle'])->name('plans.toggle');
+        Route::delete('/plans/{plan}', [AdminTaxiCompensationPlanController::class, 'destroy'])->name('plans.destroy');
+
+        Route::get('/payouts', [AdminTaxiDriverPayoutController::class, 'index'])->name('payouts.index');
+        Route::get('/payouts/create', [AdminTaxiDriverPayoutController::class, 'create'])->name('payouts.create');
+        Route::post('/payouts', [AdminTaxiDriverPayoutController::class, 'store'])->name('payouts.store');
+        Route::get('/payouts/{payout}', [AdminTaxiDriverPayoutController::class, 'show'])->name('payouts.show');
+        Route::patch('/payouts/{payout}/mark-paid', [AdminTaxiDriverPayoutController::class, 'markPaid'])->name('payouts.mark-paid');
+        Route::patch('/payouts/{payout}/cancel', [AdminTaxiDriverPayoutController::class, 'cancel'])->name('payouts.cancel');
 
         Route::get('/settings', [AdminTaxiSettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [AdminTaxiSettingsController::class, 'update'])->name('settings.update');
@@ -704,6 +873,17 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
 // booking). Hidden with 404 while the taxi module is disabled.
 Route::get('/taxi', [TaxiEnquiryController::class, 'show'])->middleware('module:taxi')->name('taxi.enquiry');
 Route::post('/taxi/enquiry', [TaxiEnquiryController::class, 'store'])->middleware('module:taxi')->name('taxi.enquiry.store');
+
+// Phase 12A.9 public customer tracking (token-authenticated, no login).
+// Token shape enforced; privacy headers + throttled refresh included.
+Route::get('/taxi/track/{token}', [TaxiTrackingController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{20,128}')
+    ->middleware(['module:taxi', 'tracking.privacy', 'throttle:60,1'])
+    ->name('taxi.track.public');
+Route::get('/taxi/track/{token}/status', [TaxiTrackingController::class, 'status'])
+    ->where('token', '[A-Za-z0-9]{20,128}')
+    ->middleware(['module:taxi', 'tracking.privacy', 'throttle:30,1'])
+    ->name('taxi.track.status');
 
 // Phase 11.5B: read-only public quotation view behind an unguessable
 // token (no login). Phase 11.5C adds signed accept/reject decisions.

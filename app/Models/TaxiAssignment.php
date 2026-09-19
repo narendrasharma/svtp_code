@@ -17,7 +17,7 @@ class TaxiAssignment extends Model
 
     protected $fillable = [
         'taxi_booking_id', 'driver_id', 'vehicle_id',
-        'assigned_by', 'assigned_at', 'unassigned_at', 'note',
+        'assigned_by', 'assigned_at', 'unassigned_at', 'acknowledged_at', 'note',
     ];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class TaxiAssignment extends Model
         return [
             'assigned_at' => 'datetime',
             'unassigned_at' => 'datetime',
+            'acknowledged_at' => 'datetime',
         ];
     }
 

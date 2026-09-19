@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../../appUrl';
 
@@ -10,6 +11,7 @@ const props = defineProps({
     tripTypes: { type: Array, default: () => [] },
     sources: { type: Array, default: () => [] },
     paymentMethods: { type: Array, default: () => [] },
+    rentalPackages: { type: Array, default: () => [] },
 });
 
 const defaultTrip = props.tripTypes.find(type => type && type.value) ?? { value: 'one_way' };
@@ -22,6 +24,7 @@ const form = useForm({
     lead_id: '',
     trip_type: defaultTrip.value,
     pickup_at: '',
+    return_at: '',
     pickup_address: '',
     pickup_lat: '',
     pickup_lng: '',
@@ -40,12 +43,12 @@ const form = useForm({
     customer_email: '',
     special_instructions: '',
     source: defaultSource,
-    base_amount: '',
-    extra_amount: '',
-    discount_amount: '',
-    tax_amount: '',
     quoted_distance_km: '',
     quoted_duration_minutes: '',
+    waiting_minutes: 0,
+    toll_amount: 0,
+    parking_amount: 0,
+    rental_package_id: '',
 });
 
 const vendors = computed(() => props.vendors ?? []);
@@ -58,6 +61,25 @@ const convertId = ref('');
 const endpoint = appUrl('/admin/taxi/bookings');
 
 const isAirport = computed(() => form.trip_type === 'airport_transfer');
+const needsReturn = computed(() => ['round_trip', 'outstation'].includes(form.trip_type));
+const isHourly = computed(() => form.trip_type === 'hourly');
+const quote = ref(null);
+const quoteError = ref('');
+const quoteLoading = ref(false);
+
+async function previewPrice() {
+    quoteLoading.value = true;
+    quoteError.value = '';
+    try {
+        const response = await axios.post(appUrl('/admin/taxi/bookings/quote'), form.data());
+        quote.value = response.data;
+    } catch (error) {
+        quote.value = null;
+        quoteError.value = Object.values(error.response?.data?.errors ?? {})[0]?.[0] ?? 'Unable to calculate pricing.';
+    } finally {
+        quoteLoading.value = false;
+    }
+}
 
 function submitCreate() {
     form.transform(data => data).post(endpoint, {
@@ -89,6 +111,7 @@ function setTripType(value) {
         form.airline = '';
         form.terminal = '';
     }
+    quote.value = null;
 }
 </script>
 
@@ -131,6 +154,10 @@ function setTripType(value) {
                                 <label class="form-label small">Pickup at</label>
                                 <input v-model="form.pickup_at" type="datetime-local" class="form-control" required />
                             </div>
+                            <div v-if="needsReturn" class="col-md-6">
+                                <label class="form-label small">Return at</label>
+                                <input v-model="form.return_at" type="datetime-local" class="form-control" required />
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label small">Pickup address</label>
                                 <input v-model="form.pickup_address" type="text" class="form-control" maxlength="500" required />
@@ -161,6 +188,10 @@ function setTripType(value) {
                             <div class="col-md-4">
                                 <label class="form-label small">Quoted duration (mins)</label>
                                 <input v-model="form.quoted_duration_minutes" type="number" min="0" class="form-control" />
+                            </div>
+                            <div v-if="isHourly" class="col-md-4">
+                                <label class="form-label small">Rental package</label>
+                                <select v-model="form.rental_package_id" class="form-select" required><option value="">Select package</option><option v-for="item in rentalPackages" :key="item.id" :value="item.id">{{ item.name }} · {{ item.rate_card?.name }}</option></select>
                             </div>
                         </div>
 
@@ -218,24 +249,29 @@ function setTripType(value) {
                             </div>
                         </div>
 
-                        <h5 class="card-title mt-4 mb-3">Pricing snapshot</h5>
+                        <h5 class="card-title mt-4 mb-3">Pricing</h5>
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <label class="form-label small">Base amount</label>
-                                <input v-model="form.base_amount" type="number" step="0.01" min="0" class="form-control" required />
+                                <label class="form-label small">Waiting minutes</label>
+                                <input v-model="form.waiting_minutes" type="number" min="0" class="form-control" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Extra amount</label>
-                                <input v-model="form.extra_amount" type="number" step="0.01" min="0" class="form-control" />
+                                <label class="form-label small">Actual toll</label>
+                                <input v-model="form.toll_amount" type="number" step="0.01" min="0" class="form-control" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Discount</label>
-                                <input v-model="form.discount_amount" type="number" step="0.01" min="0" class="form-control" />
+                                <label class="form-label small">Actual parking</label>
+                                <input v-model="form.parking_amount" type="number" step="0.01" min="0" class="form-control" />
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small">Tax</label>
-                                <input v-model="form.tax_amount" type="number" step="0.01" min="0" class="form-control" />
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-light w-100" :disabled="quoteLoading" @click="previewPrice">{{ quoteLoading ? 'Calculating…' : 'Preview price' }}</button>
                             </div>
+                        </div>
+                        <div v-if="quoteError" class="alert alert-danger mt-3 mb-0">{{ quoteError }}</div>
+                        <div v-if="quote" class="border rounded p-3 mt-3">
+                            <div class="small text-muted mb-2">{{ quote.rate_card.name }} · {{ quote.currency }}</div>
+                            <div v-for="(amount, key) in quote.breakdown" :key="key" class="d-flex justify-content-between"><span class="text-capitalize">{{ String(key).replaceAll('_', ' ') }}</span><strong>{{ quote.currency }} {{ amount }}</strong></div>
+                            <p class="small text-muted mt-2 mb-0">Preview only. The server recalculates when the booking is submitted.</p>
                         </div>
                     </div>
                     <div class="card-footer d-flex gap-2 justify-content-end">

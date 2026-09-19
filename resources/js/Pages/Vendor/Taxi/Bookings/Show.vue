@@ -1,6 +1,6 @@
 <script setup>
 import VendorLayout from '../../../../Layouts/VendorLayout.vue';
-import { Link, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { appUrl } from '../../../../appUrl';
 
@@ -9,12 +9,16 @@ const props = defineProps({
     summary: { type: Object, default: () => ({}) },
     fleet: { type: Object, default: () => ({ drivers: [], vehicles: [] }) },
     allowedTransitions: { type: Array, default: () => [] },
+    autoDispatch: { type: Object, default: () => ({ status: 'idle', attempts: 0, max_attempts: 3, pending: null, history: [] }) },
+    trackingLink: { type: Object, default: () => ({ active: false, expires_at: null, last_accessed_at: null }) },
 });
 
 const booking = computed(() => props.booking);
 const summary = computed(() => props.summary ?? { total: 0, paid: 0, due: 0, currency: 'INR' });
 const drivers = computed(() => props.fleet?.drivers ?? []);
 const vehicles = computed(() => props.fleet?.vehicles ?? []);
+const autoDispatch = computed(() => props.autoDispatch ?? { status: 'idle', attempts: 0, max_attempts: 3, pending: null, history: [] });
+const trackingLink = computed(() => props.trackingLink ?? { active: false, expires_at: null, last_accessed_at: null });
 
 const assignForm = useForm({
     driver_id: booking.value.assigned_driver_id ?? '',
@@ -57,10 +61,27 @@ function unassign() {
 function updateStatus() {
     statusForm.patch(appUrl(`/vendor/taxi/bookings/${booking.value.id}/status`), { preserveScroll: true });
 }
+
+function startAutoDispatch() {
+    router.post(appUrl(`/vendor/taxi/bookings/${booking.value.id}/auto-dispatch/start`), {}, { preserveScroll: true });
+}
+
+function stopAutoDispatch() {
+    router.post(appUrl(`/vendor/taxi/bookings/${booking.value.id}/auto-dispatch/stop`), {}, { preserveScroll: true });
+}
+
+function generateTrackingLink() {
+    router.post(appUrl(`/vendor/taxi/bookings/${booking.value.id}/tracking`), {}, { preserveScroll: true });
+}
+
+function revokeTrackingLink() {
+    router.delete(appUrl(`/vendor/taxi/bookings/${booking.value.id}/tracking`), { preserveScroll: true });
+}
 </script>
 
 <template>
     <VendorLayout>
+        <div class="mb-3"><Link :href="appUrl(`/vendor/taxi/changes/${booking.id}`)" class="btn btn-outline-secondary">Cancellation, refund and reschedule</Link></div>
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
                 <h2 class="mt-2 mb-1">{{ booking.reference }}</h2>
@@ -103,6 +124,10 @@ function updateStatus() {
                                     <div v-else class="text-muted">Unassigned</div>
                                 </div>
                             </div>
+                        </div>
+                        <div v-if="booking.pricing_snapshot?.breakdown" class="border rounded p-3 mt-3">
+                            <h6 class="text-uppercase small text-muted">Historical pricing snapshot</h6>
+                            <div v-for="(amount, key) in booking.pricing_snapshot.breakdown" :key="key" class="d-flex justify-content-between small"><span class="text-capitalize">{{ String(key).replaceAll('_', ' ') }}</span><strong>{{ booking.currency }} {{ amount }}</strong></div>
                         </div>
                     </div>
                 </div>
@@ -152,6 +177,51 @@ function updateStatus() {
                             <textarea v-model="statusForm.note" class="form-control" rows="2" maxlength="500"></textarea>
                         </div>
                         <button class="btn btn-outline-secondary w-100" :disabled="statusForm.processing" @click.prevent="updateStatus">Update status</button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>Auto-dispatch</strong>
+                        <span class="badge bg-secondary text-uppercase">{{ autoDispatch.status }}</span>
+                    </div>
+                    <div class="card-body small">
+                        <div v-if="autoDispatch.pending" class="mb-2">
+                            Offered to <strong>{{ autoDispatch.pending.driver_name }}</strong>
+                            ({{ autoDispatch.pending.vehicle_name }}, rank #{{ autoDispatch.pending.rank }})
+                        </div>
+                        <div v-else-if="autoDispatch.status === 'exhausted'" class="text-muted mb-2">
+                            Candidate attempts exhausted — assign manually.
+                        </div>
+                        <div v-else class="text-muted mb-2">Attempts: {{ autoDispatch.attempts }} / {{ autoDispatch.max_attempts }}.</div>
+                        <div class="d-flex gap-2">
+                            <button v-if="booking.status === 'confirmed'" class="btn btn-sm btn-svtp" @click="startAutoDispatch">Start auto-dispatch</button>
+                            <button v-if="autoDispatch.pending" class="btn btn-sm btn-outline-secondary" @click="stopAutoDispatch">Stop</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>Customer tracking link</strong>
+                        <span v-if="trackingLink.active" class="badge bg-success">Active</span>
+                        <span v-else class="badge bg-secondary">None</span>
+                    </div>
+                    <div class="card-body small">
+                        <div v-if="$page.props.flash?.tracking_url" class="alert alert-success">
+                            Copy now — the link cannot be recovered later, only regenerated.
+                            <div class="input-group mt-2">
+                                <input :value="$page.props.flash.tracking_url" readonly class="form-control form-control-sm" />
+                            </div>
+                        </div>
+                        <div v-if="trackingLink.active" class="text-muted mb-2">
+                            <span v-if="trackingLink.expires_at">Expires {{ formatDate(trackingLink.expires_at) }} · </span>
+                            <span>Last opened {{ trackingLink.last_accessed_at ? formatDate(trackingLink.last_accessed_at) : 'never' }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-svtp" @click="generateTrackingLink">{{ trackingLink.active ? 'Regenerate link' : 'Generate link' }}</button>
+                            <button v-if="trackingLink.active" class="btn btn-sm btn-outline-secondary" @click="revokeTrackingLink">Revoke</button>
+                        </div>
                     </div>
                 </div>
             </div>

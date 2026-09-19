@@ -78,7 +78,7 @@ function statusBadge(status) {
                     <label class="form-label small">Status</label>
                     <select v-model="form.status" class="form-select form-select-sm">
                         <option value="">Any status</option>
-                        <option v-for="status in statuses" :key="status" :value="status">{{ status.replace('_', ' ') }}</option>
+                        <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
                     </select>
                 </div>
                 <div class="col-12 d-flex gap-2 mt-3">

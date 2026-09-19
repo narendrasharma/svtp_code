@@ -1,7 +1,7 @@
 <script setup>
-import AdminLayout from '../../../../Layouts/AdminLayout.vue';
+import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { Link, useForm } from '@inertiajs/vue3';
-import { appUrl } from '../../../../appUrl';
+import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
     settings: { type: Object, default: () => ({}) },
@@ -24,6 +24,33 @@ const form = useForm({
     taxi_max_advance_days: props.settings['taxi.max_advance_days'] ? Number(props.settings['taxi.max_advance_days']) : '',
     taxi_allow_guest_booking: boolSetting('taxi.allow_guest_booking', true),
     taxi_default_assignment_mode: props.settings['taxi.default_assignment_mode'] ?? 'manual',
+    taxi_tracking_stale_seconds: Number(props.settings['taxi.tracking_stale_seconds'] ?? 120),
+    taxi_location_retention_days: Number(props.settings['taxi.location_retention_days'] ?? 30),
+    taxi_maps_provider: props.settings['taxi.maps.provider'] ?? 'none',
+    taxi_maps_enabled: boolSetting('taxi.maps.enabled', false),
+    taxi_maps_google_browser_key: props.settings['taxi.maps.google.browser_key'] ?? '',
+    taxi_maps_google_server_key: props.settings['taxi.maps.google.server_key'] ?? '',
+    taxi_maps_mapbox_public_token: props.settings['taxi.maps.mapbox.public_token'] ?? '',
+    taxi_maps_mapbox_server_token: props.settings['taxi.maps.mapbox.server_token'] ?? '',
+    taxi_routing_enabled: boolSetting('taxi.routing.enabled', false),
+    taxi_routing_cache_minutes: Number(props.settings['taxi.routing.cache_minutes'] ?? 10),
+    taxi_routing_refresh_seconds: Number(props.settings['taxi.routing.refresh_seconds'] ?? 60),
+    taxi_dispatch_smart_enabled: boolSetting('taxi.dispatch.smart_enabled', true),
+    taxi_dispatch_max_pickup_radius_km: Number(props.settings['taxi.dispatch.max_pickup_radius_km'] ?? 0),
+    taxi_dispatch_routing_candidate_limit: Number(props.settings['taxi.dispatch.routing_candidate_limit'] ?? 5),
+    taxi_dispatch_use_routing_eta: boolSetting('taxi.dispatch.use_routing_eta', true),
+    taxi_dispatch_auto_enabled: boolSetting('taxi.dispatch.auto_enabled', false),
+    taxi_dispatch_offer_enabled: boolSetting('taxi.dispatch.offer_enabled', true),
+    taxi_dispatch_offer_timeout_seconds: Number(props.settings['taxi.dispatch.offer_timeout_seconds'] ?? 120),
+    taxi_dispatch_max_offer_attempts: Number(props.settings['taxi.dispatch.max_offer_attempts'] ?? 3),
+    taxi_dispatch_require_driver_acceptance: boolSetting('taxi.dispatch.require_driver_acceptance', true),
+    taxi_dispatch_auto_fallback_manual: boolSetting('taxi.dispatch.auto_fallback_manual', true),
+    taxi_customer_tracking_enabled: boolSetting('taxi.customer_tracking.enabled', false),
+    taxi_customer_tracking_token_expiry_hours: props.settings['taxi.customer_tracking.token_expiry_hours'] ? Number(props.settings['taxi.customer_tracking.token_expiry_hours']) : '',
+    taxi_customer_tracking_show_driver_phone: boolSetting('taxi.customer_tracking.show_driver_phone', false),
+    taxi_customer_tracking_show_vehicle_registration: boolSetting('taxi.customer_tracking.show_vehicle_registration', false),
+    taxi_customer_tracking_show_route: boolSetting('taxi.customer_tracking.show_route', true),
+    taxi_customer_tracking_refresh_seconds: Number(props.settings['taxi.customer_tracking.refresh_seconds'] ?? 30),
 });
 
 function submit() {
@@ -82,12 +109,7 @@ function submit() {
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small">Default currency</label>
-                        <select v-model="form.taxi_default_currency" class="form-select">
-                            <option value="INR">INR</option>
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="AED">AED</option>
-                        </select>
+                        <input v-model="form.taxi_default_currency" class="form-control text-uppercase" maxlength="3" pattern="[A-Za-z]{3}" placeholder="ISO code, e.g. USD" />
                     </div>
                 </div>
 
@@ -107,6 +129,181 @@ function submit() {
                             <option value="manual">Manual assignment</option>
                         </select>
                         <div class="form-text">Automatic dispatch is planned for a future phase.</div>
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Driver tracking</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small">Tracking stale threshold (seconds)</label>
+                        <input v-model="form.taxi_tracking_stale_seconds" type="number" min="30" max="3600" class="form-control" required />
+                        <div class="form-text">A driver position older than this shows as stale.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Location retention (days)</label>
+                        <input v-model="form.taxi_location_retention_days" type="number" min="1" max="365" class="form-control" required />
+                        <div class="form-text">Raw location pings older than this are purged by the daily cleanup. Booking records are never deleted.</div>
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Maps &amp; routing</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small">Map provider</label>
+                        <select v-model="form.taxi_maps_provider" class="form-select">
+                            <option value="none">None (coordinates only)</option>
+                            <option value="google">Google Maps</option>
+                            <option value="mapbox">Mapbox (adapter seam — not implemented yet)</option>
+                        </select>
+                        <div class="form-text">With None, tracking still works as coordinates and freshness.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch mt-4">
+                            <input id="maps-enabled" v-model="form.taxi_maps_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="maps-enabled">Show maps in tracking views</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch mt-4">
+                            <input id="routing-enabled" v-model="form.taxi_routing_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="routing-enabled">Enable route / ETA lookup</label>
+                        </div>
+                    </div>
+                    <template v-if="form.taxi_maps_provider === 'google'">
+                        <div class="col-md-6">
+                            <label class="form-label small">Google browser Maps key</label>
+                            <input v-model="form.taxi_maps_google_browser_key" type="text" class="form-control" maxlength="255" autocomplete="off" />
+                            <div class="form-text">Public key loaded by the browser to render maps. Restrict it to your domains in Google Cloud.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Google server routing key</label>
+                            <input v-model="form.taxi_maps_google_server_key" type="password" class="form-control" maxlength="255" autocomplete="new-password" />
+                            <div class="form-text">Secret key used server-side for route / ETA lookup. Never put this in a browser field. A provider account with billing may be required.</div>
+                        </div>
+                    </template>
+                    <template v-if="form.taxi_maps_provider === 'mapbox'">
+                        <div class="col-md-6">
+                            <label class="form-label small">Mapbox public token</label>
+                            <input v-model="form.taxi_maps_mapbox_public_token" type="text" class="form-control" maxlength="255" autocomplete="off" />
+                            <div class="form-text">Reserved for the future Mapbox adapter. Not used yet.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">Mapbox server token</label>
+                            <input v-model="form.taxi_maps_mapbox_server_token" type="password" class="form-control" maxlength="255" autocomplete="new-password" />
+                            <div class="form-text">Reserved for the future Mapbox adapter. Keep secret.</div>
+                        </div>
+                    </template>
+                    <div class="col-md-6">
+                        <label class="form-label small">Route cache (minutes)</label>
+                        <input v-model="form.taxi_routing_cache_minutes" type="number" min="1" max="120" class="form-control" required />
+                        <div class="form-text">Identical origin/destination lookups reuse the cached route.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Route refresh (seconds)</label>
+                        <input v-model="form.taxi_routing_refresh_seconds" type="number" min="30" max="300" class="form-control" required />
+                        <div class="form-text">How often tracking views refresh route / ETA while a trip is active.</div>
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Smart dispatch</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="smart-enabled" v-model="form.taxi_dispatch_smart_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="smart-enabled">Smart driver recommendations enabled</label>
+                        </div>
+                        <div class="form-text">Decision support only — assignment always stays manual.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mt-md-0 mt-2">
+                            <input id="use-routing-eta" v-model="form.taxi_dispatch_use_routing_eta" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="use-routing-eta">Rank by routing ETA when available</label>
+                        </div>
+                        <div class="form-text">Falls back to straight-line distance when routing is unavailable.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Max pickup radius (km, 0 = unlimited)</label>
+                        <input v-model="form.taxi_dispatch_max_pickup_radius_km" type="number" min="0" max="500" step="0.5" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Routing candidate limit</label>
+                        <input v-model="form.taxi_dispatch_routing_candidate_limit" type="number" min="1" max="20" class="form-control" required />
+                        <div class="form-text">Paid routing ETA is calculated only for this many nearest candidates.</div>
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Controlled auto-dispatch</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="auto-enabled" v-model="form.taxi_dispatch_auto_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="auto-enabled">Auto-dispatch enabled</label>
+                        </div>
+                        <div class="form-text">Off by default. Manual Smart Dispatch always keeps working.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="offer-enabled" v-model="form.taxi_dispatch_offer_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="offer-enabled">Driver offer flow enabled</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="require-acceptance" v-model="form.taxi_dispatch_require_driver_acceptance" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="require-acceptance">Require driver acceptance</label>
+                        </div>
+                        <div class="form-text">Drivers must explicitly accept; direct auto-assignment is not supported in this phase.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="fallback-manual" v-model="form.taxi_dispatch_auto_fallback_manual" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="fallback-manual">Fall back to manual queue when exhausted</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Offer timeout (seconds)</label>
+                        <input v-model="form.taxi_dispatch_offer_timeout_seconds" type="number" min="30" max="600" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Max offer attempts</label>
+                        <input v-model="form.taxi_dispatch_max_offer_attempts" type="number" min="1" max="10" class="form-control" required />
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Customer live tracking</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input id="customer-tracking" v-model="form.taxi_customer_tracking_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="customer-tracking">Customer tracking links enabled</label>
+                        </div>
+                        <div class="form-text">Off by default. Customers open trips through secure revocable links.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Link expiry (hours, empty = no expiry)</label>
+                        <input v-model="form.taxi_customer_tracking_token_expiry_hours" type="number" min="1" max="720" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="show-driver-phone" v-model="form.taxi_customer_tracking_show_driver_phone" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="show-driver-phone">Show driver phone</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="show-registration" v-model="form.taxi_customer_tracking_show_vehicle_registration" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="show-registration">Show vehicle registration</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="show-route" v-model="form.taxi_customer_tracking_show_route" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="show-route">Show route / ETA</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Customer refresh (seconds, 15–60)</label>
+                        <input v-model="form.taxi_customer_tracking_refresh_seconds" type="number" min="15" max="60" class="form-control" required />
                     </div>
                 </div>
             </div>

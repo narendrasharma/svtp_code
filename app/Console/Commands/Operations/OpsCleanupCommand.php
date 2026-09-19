@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Operations;
 
 use App\Models\AccountInvitation;
+use App\Services\TaxiDriverLocationService;
 use App\Support\OperationsSettings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,12 @@ class OpsCleanupCommand extends Command
             ->where('created_at', '<', $cutoff)
             ->delete();
 
-        $this->info("Cleanup: {$expiredInvitations} expired invitations noted, {$oldNotifications} old read notifications pruned.");
+        // Phase 12A.5: purge raw driver location telemetry only. Booking
+        // and assignment records are operational history and are never
+        // touched here.
+        $oldPings = app(TaxiDriverLocationService::class)->purgeExpired();
+
+        $this->info("Cleanup: {$expiredInvitations} expired invitations noted, {$oldNotifications} old read notifications pruned, {$oldPings} old driver location pings pruned.");
 
         return self::SUCCESS;
     }

@@ -25,6 +25,11 @@ class VehicleType extends Model
         return $this->hasMany(Vehicle::class);
     }
 
+    public function taxiRateCards(): HasMany
+    {
+        return $this->hasMany(TaxiRateCard::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');

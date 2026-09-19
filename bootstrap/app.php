@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\BlockSensitiveActionsDuringImpersonation;
+use App\Http\Middleware\EnsureDriverIdentity;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureStaffPermission;
+use App\Http\Middleware\EnsureTrackingPrivacyHeaders;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsVendor;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -27,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'vendor' => EnsureUserIsVendor::class,
+            // Phase 12A.4 driver portal (linked Driver record required).
+            'driver' => EnsureDriverIdentity::class,
+            // Phase 12A.9 public tracking privacy headers.
+            'tracking.privacy' => EnsureTrackingPrivacyHeaders::class,
             'block.impersonated.sensitive' => BlockSensitiveActionsDuringImpersonation::class,
             // Phase 11.5A platform core.
             'module' => EnsureModuleEnabled::class,

@@ -13,6 +13,12 @@ use App\Models\Setting;
 class TaxiSettings
 {
     public const DEFAULTS = [
+        'taxi.cancellation.enabled' => '1',
+        'taxi.customer_cancellation.enabled' => '0',
+        'taxi.reschedule.enabled' => '1',
+        'taxi.customer_reschedule.enabled' => '0',
+        'taxi.refunds.enabled' => '1',
+        'taxi.cancellation.default_reason_required' => '1',
         'taxi.booking_enabled' => '1',
         'taxi.one_way_enabled' => '1',
         'taxi.airport_transfer_enabled' => '1',
@@ -21,6 +27,35 @@ class TaxiSettings
         'taxi.max_advance_days' => '',
         'taxi.allow_guest_booking' => '1',
         'taxi.default_assignment_mode' => 'manual',
+        'taxi.tracking_stale_seconds' => '120',
+        'taxi.location_retention_days' => '30',
+        'taxi.maps.provider' => 'none',
+        'taxi.maps.enabled' => '0',
+        'taxi.maps.google.browser_key' => '',
+        'taxi.maps.google.server_key' => '',
+        'taxi.maps.mapbox.public_token' => '',
+        'taxi.maps.mapbox.server_token' => '',
+        'taxi.routing.enabled' => '0',
+        'taxi.routing.cache_minutes' => '10',
+        'taxi.routing.refresh_seconds' => '60',
+        'taxi.dispatch.smart_enabled' => '1',
+        'taxi.dispatch.max_pickup_radius_km' => '0',
+        'taxi.dispatch.routing_candidate_limit' => '5',
+        'taxi.dispatch.use_routing_eta' => '1',
+        'taxi.dispatch.auto_enabled' => '0',
+        'taxi.dispatch.offer_enabled' => '1',
+        'taxi.dispatch.offer_timeout_seconds' => '120',
+        'taxi.dispatch.max_offer_attempts' => '3',
+        'taxi.dispatch.require_driver_acceptance' => '1',
+        'taxi.dispatch.auto_fallback_manual' => '1',
+        'taxi.customer_tracking.enabled' => '0',
+        'taxi.customer_tracking.token_expiry_hours' => '',
+        'taxi.customer_tracking.show_driver_phone' => '0',
+        'taxi.customer_tracking.show_vehicle_registration' => '0',
+        'taxi.customer_tracking.show_route' => '1',
+        'taxi.customer_tracking.refresh_seconds' => '30',
+        'taxi.driver_earnings.auto_payable_on_complete' => '1',
+        'taxi.driver_earnings.hold_days' => '0',
     ];
 
     public static function get(string $key): ?string
@@ -65,5 +100,15 @@ class TaxiSettings
         }
 
         return max(1, (int) $raw);
+    }
+
+    public static function earningsAutoPayable(): bool
+    {
+        return in_array(strtolower((string) self::get('taxi.driver_earnings.auto_payable_on_complete')), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    public static function earningsHoldDays(): int
+    {
+        return max(0, (int) (self::get('taxi.driver_earnings.hold_days') ?? 0));
     }
 }

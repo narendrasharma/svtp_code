@@ -48,7 +48,11 @@ class TaxiPaymentService
         }
 
         return DB::transaction(function () use ($booking, $amount, $method, $actor, $note, $externalReference, $receivedBy): TaxiPayment {
-            $summary = $this->summary($booking->refresh());
+            $booking = TaxiBooking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            if (in_array($booking->status, ['cancelled', 'no_show'], true)) {
+                throw ValidationException::withMessages(['booking' => 'Cancelled bookings cannot receive payments.']);
+            }
+            $summary = $this->summary($booking);
 
             if ($summary['due'] <= 0) {
                 throw ValidationException::withMessages(['amount' => 'This booking has no outstanding balance.']);
@@ -56,7 +60,7 @@ class TaxiPaymentService
 
             if ($amount > $summary['due']) {
                 throw ValidationException::withMessages([
-                    'amount' => 'Overpayment is blocked: the outstanding balance is ₹'.number_format($summary['due'], 2).'.',
+                    'amount' => 'Overpayment is blocked: the outstanding balance is '.$summary['currency'].' '.number_format($summary['due'], 2).'.',
                 ]);
             }
 
