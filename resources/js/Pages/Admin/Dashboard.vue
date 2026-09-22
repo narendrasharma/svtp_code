@@ -5,6 +5,7 @@ import AdminLayout from '../../Layouts/AdminLayout.vue';
 import AnalyticsChart from '../../Components/AnalyticsChart.vue';
 import PackageCreationChart from '../../Components/PackageCreationChart.vue';
 import { Link } from '@inertiajs/vue3';
+import { appUrl } from '../../appUrl';
 
 defineProps({
     stats: Object,
@@ -20,7 +21,7 @@ defineProps({
 });
 
 function setPreset(preset) {
-    router.get('/admin/dashboard', { preset }, { preserveScroll: true, preserveState: false });
+    router.get(appUrl('/admin/dashboard'), { preset }, { preserveScroll: true, preserveState: false });
 }
 
 // Phase 11.5A: tour-specific widgets hide when the tours module is off.
@@ -188,7 +189,7 @@ const toursEnabled = computed(() => {
                         </td>
                         <td>{{ new Date(pkg.created_at).toLocaleDateString() }}</td>
                         <td>
-                            <Link :href="`/admin/packages/${pkg.id}/edit`" class="btn btn-sm btn-primary">Edit</Link>
+                            <Link :href="appUrl(`/admin/packages/${pkg.id}/edit`)" class="btn btn-sm btn-primary">Edit</Link>
                         </td>
                     </tr>
                 </tbody>

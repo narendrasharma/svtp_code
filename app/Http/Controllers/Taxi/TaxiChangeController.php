@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Taxi;
 
 use App\Enums\PaymentMethod;
+use App\Enums\TaxiBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TaxiBooking;
 use App\Models\TaxiBookingCancellation;
@@ -62,12 +63,12 @@ class TaxiChangeController extends Controller
             'cancellation' => $customer ? $cancellation?->only(['status', 'cancellation_fee', 'refundable_amount', 'currency', 'cancelled_at']) : $cancellation,
             'refunds' => $customer ? $refunds->get(['refund_number', 'amount', 'currency', 'status', 'refunded_at']) : ($seeRefunds ? $refunds->with('items')->get() : []),
             'reschedules' => $customer ? $history->get(['old_pickup_at', 'new_pickup_at', 'old_return_at', 'new_return_at', 'created_at']) : $history->get(),
-            'canCancel' => $service->enabled('cancellation.enabled') && $booking->status()->canTransitionTo(\App\Enums\TaxiBookingStatus::Cancelled)
+            'canCancel' => $service->enabled('cancellation.enabled') && $booking->status()->canTransitionTo(TaxiBookingStatus::Cancelled)
                 && ($customer ? $service->enabled('customer_cancellation.enabled') : ($portal === 'vendor' || $request->user()->can('taxi.cancellations.manage'))),
             'canReschedule' => $service->enabled('reschedule.enabled') && in_array($booking->status, ['draft', 'quoted', 'confirmed', 'driver_assigned'], true)
                 && ($customer ? $service->enabled('customer_reschedule.enabled') : ($portal === 'vendor' || $request->user()->can('taxi.reschedule.manage'))),
             'canRefund' => $canRefund && $service->enabled('refunds.enabled') && $cancellation !== null,
-            'canNoShow' => ! $customer && $booking->status()->canTransitionTo(\App\Enums\TaxiBookingStatus::NoShow) && ! $booking->pickup_at->isFuture()
+            'canNoShow' => ! $customer && $booking->status()->canTransitionTo(TaxiBookingStatus::NoShow) && ! $booking->pickup_at->isFuture()
                 && ($portal === 'vendor' || $request->user()->can('taxi.cancellations.manage')),
             'reasons' => $customer ? ['customer_request', 'schedule_change', 'duplicate_booking', 'other'] : TaxiCancellationService::REASONS,
             'paymentMethods' => $canRefund ? collect(PaymentMethod::cases())->map(fn ($m) => ['value' => $m->value, 'label' => $m->label()]) : [],
@@ -137,8 +138,8 @@ class TaxiChangeController extends Controller
     {
         $data = $this->rescheduleData($request, $booking);
         $request->validate(['confirmed' => ['accepted']]);
-        app(TaxiRescheduleService::class)->reschedule($booking, $data['pickup_at'], $data['return_at'] ?? null, $data['reason'], $request->user());
+        $history = app(TaxiRescheduleService::class)->reschedule($booking, $data['pickup_at'], $data['return_at'] ?? null, $data['reason'], $request->user());
 
-        return back()->with('flash', 'Pickup rescheduled. The agreed price is unchanged.');
+        return back()->with('flash', $history ? 'Pickup rescheduled. The agreed price is unchanged.' : 'No change: the pickup already matches the requested time.');
     }
 }

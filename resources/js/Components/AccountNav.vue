@@ -11,6 +11,7 @@ const page = usePage();
 const unread = computed(() => Number(page.props.notificationsUnreadCount ?? 0));
 
 const tabs = [
+    { key: 'hotels', label: 'My Hotel Bookings', href: '/account/hotel-bookings', icon: 'bi-buildings' },
     { key: 'taxi', label: 'My Taxi Bookings', href: '/account/taxi/bookings', icon: 'bi-taxi-front' },
     { key: 'dashboard', label: 'Dashboard', href: '/account', icon: 'bi-speedometer2' },
     { key: 'bookings', label: 'My Bookings', href: '/account/bookings', icon: 'bi-calendar-check' },
@@ -19,12 +20,14 @@ const tabs = [
     { key: 'profile', label: 'Profile', href: '/account/profile', icon: 'bi-person-gear' },
     { key: 'vendor', label: 'Become a Vendor', href: '/vendor/apply', icon: 'bi-shop' },
 ];
+const visibleTabs = computed(() => tabs.filter(tab => tab.key !== 'hotels'
+    || page.props.platformModules?.some(module => module.key === 'hotels' && module.enabled)));
 </script>
 
 <template>
     <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
         <Link
-            v-for="tab in tabs"
+            v-for="tab in visibleTabs"
             :key="tab.key"
             :href="appUrl(tab.href)"
             class="btn btn-sm"

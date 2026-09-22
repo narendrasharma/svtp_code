@@ -15,18 +15,29 @@ class PlaceFactory extends Factory
     /**
      * Define the model's default state.
      *
+     * Unbounded unique suffix instead of tiny word pools, so factories
+     * scale. Every place belongs to a destination by default.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
-        $name = fake()->unique()->words(3, true);
+        $suffix = fake()->unique()->numerify('######');
+        $name = 'Test Place '.$suffix;
 
         return [
             'destination_id' => Destination::factory(),
-            'name' => Str::title($name),
-            'slug' => Str::slug($name),
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.$suffix,
             'description' => fake()->paragraph(),
             'meta_description' => fake()->sentence(12),
+            'is_active' => true,
+            'sort_order' => fake()->numberBetween(0, 999),
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes): array => ['is_active' => false]);
     }
 }

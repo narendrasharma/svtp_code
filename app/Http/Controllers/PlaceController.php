@@ -10,6 +10,11 @@ class PlaceController extends Controller
 {
     public function show(Place $place): Response
     {
+        // Inactive places stay hidden — same contract as destinations.
+        if (! $place->is_active) {
+            abort(404);
+        }
+
         $place->load([
             'destination.city:id,name',
             'tourPackages' => fn ($query) => $query->publiclyVisible()

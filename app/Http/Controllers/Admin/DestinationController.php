@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SaveDestinationRequest;
 use App\Models\City;
+use App\Models\Country;
 use App\Models\Destination;
+use App\Models\State;
+use App\Services\LocationHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -75,14 +78,12 @@ class DestinationController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Destinations/Form', [
-            'cities' => City::orderBy('name')->get(['id', 'name']),
-        ]);
+        return Inertia::render('Admin/Destinations/Form', $this->formData());
     }
 
     public function store(SaveDestinationRequest $request): RedirectResponse
     {
-        $data = $request->safe()->except(['image_upload', 'remove_image']);
+        $data = LocationHierarchy::inheritCountry($request->safe()->except(['image_upload', 'remove_image']));
 
         if ($request->hasFile('image_upload')) {
             $data['image'] = Storage::disk('public')->url($request->file('image_upload')->store('destinations', 'public'));
@@ -96,15 +97,12 @@ class DestinationController extends Controller
 
     public function edit(Destination $destination): Response
     {
-        return Inertia::render('Admin/Destinations/Form', [
-            'destination' => $destination,
-            'cities' => City::orderBy('name')->get(['id', 'name']),
-        ]);
+        return Inertia::render('Admin/Destinations/Form', $this->formData($destination));
     }
 
     public function update(SaveDestinationRequest $request, Destination $destination): RedirectResponse
     {
-        $data = $request->safe()->except(['image_upload', 'remove_image']);
+        $data = LocationHierarchy::inheritCountry($request->safe()->except(['image_upload', 'remove_image']));
         $oldImage = $destination->image;
 
         if ($request->hasFile('image_upload')) {
@@ -138,5 +136,28 @@ class DestinationController extends Controller
         if (is_string($path) && str_starts_with($path, '/storage/destinations/')) {
             Storage::disk('public')->delete(substr($path, strlen('/storage/')));
         }
+    }
+
+    /**
+     * Shared geography form data (12B.4.1): cities carry their country/
+     * state context so the form can scope dependent selects; parents
+     * exclude the edited record to prevent self-parenting client-side
+     * (server still enforces hierarchy + cycle rules).
+     *
+     * @return array<string, mixed>
+     */
+    protected function formData(?Destination $destination = null): array
+    {
+        return [
+            'destination' => $destination,
+            'countries' => Country::ordered()->get(['id', 'name']),
+            'states' => State::ordered()->get(['id', 'country_id', 'name']),
+            'cities' => City::ordered()->get(['id', 'country_id', 'state_id', 'name']),
+            'parents' => Destination::ordered()
+                ->when($destination, fn ($query) => $query->whereKeyNot($destination->id))
+                ->limit(500)
+                ->get(['id', 'name']),
+            'destinationTypes' => Destination::types(),
+        ];
     }
 }

@@ -1,0 +1,415 @@
+/* ==========================================================================
+ * PRE-12B.9 — Admin design system (centralized semantic tokens)
+ *
+ * Single source of truth for Admin light/dark themes. All Admin surfaces
+ * consume these `--admin-*` tokens instead of hardcoded colors so Light and
+ * Dark mode stay consistent and readable (WCAG-oriented contrast).
+ *
+ * Theme selection: `html[data-admin-theme="light"|"dark"]`, set before
+ * first paint by the inline script in `resources/views/app.blade.php` and
+ * persisted as `svtp-admin-theme` (light | dark | system) in localStorage.
+ * ========================================================================== */
+
+:root,
+html[data-admin-theme='light'] {
+    color-scheme: light;
+
+    --admin-font: 'Manrope', 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+    /* Page + surfaces (warm premium hospitality neutrals) */
+    --admin-bg: #f5f0e7;
+    --admin-surface: #fffdf8;
+    --admin-surface-elevated: #ffffff;
+    --admin-surface-sunken: #efe7d8;
+    --admin-border: #e6dac5;
+    --admin-border-strong: #d5c4a6;
+
+    /* Typography */
+    --admin-text: #2b2117;
+    --admin-text-muted: #77694f;
+    --admin-text-faint: #a29378;
+
+    /* Brand / actions (restrained hospitality amber + peacock accent) */
+    --admin-primary: #b45309;
+    --admin-primary-hover: #92400e;
+    --admin-primary-contrast: #ffffff;
+    --admin-accent: #0e5c61;
+    --admin-accent-contrast: #ffffff;
+
+    /* Links: ordinary entity names use these — never danger red */
+    --admin-link: #9a3412;
+    --admin-link-hover: #7c2d12;
+
+    /* Status (readable on light surfaces) */
+    --admin-success: #15803d;
+    --admin-warning: #b45309;
+    --admin-danger: #b91c1c;
+    --admin-info: #0e7490;
+
+    /* Forms */
+    --admin-input-bg: #ffffff;
+    --admin-input-border: #d5c4a6;
+    --admin-input-placeholder: #a29378;
+    --admin-focus-ring: rgba(180, 83, 9, 0.22);
+
+    /* Sidebar (deep espresso — constant across themes for brand stability) */
+    --admin-sidebar-bg: #241610;
+    --admin-sidebar-bg-elevated: #31201553;
+    --admin-sidebar-text: #efe3cf;
+    --admin-sidebar-muted: #b9a586;
+    --admin-sidebar-hover-bg: rgba(255, 244, 224, 0.07);
+    --admin-sidebar-active-bg: linear-gradient(90deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.07));
+    --admin-sidebar-active-text: #ffe9bd;
+    --admin-sidebar-accent: #f59e0b;
+    --admin-sidebar-border: rgba(255, 235, 200, 0.12);
+    --admin-sidebar-input-bg: rgba(0, 0, 0, 0.28);
+
+    /* Topbar */
+    --admin-topbar-bg: rgba(255, 253, 248, 0.88);
+    --admin-topbar-border: #e6dac5;
+    --admin-topbar-text: #2b2117;
+
+    /* Toasts / dropdowns / modals */
+    --admin-popover-bg: #fffdf8;
+    --admin-popover-border: #e6dac5;
+
+    /* Semantic alerts (shared banner contrast — restrained premium tones) */
+    --alert-info-bg: #e0f2f8;
+    --alert-info-border: #b8dcea;
+    --alert-info-text: #0c4a5e;
+    --alert-info-muted: #3a6b7c;
+    --alert-success-bg: #ddf2e3;
+    --alert-success-border: #b3ddc0;
+    --alert-success-text: #14532d;
+    --alert-success-muted: #376a4b;
+    --alert-warning-bg: #fdf0d5;
+    --alert-warning-border: #f0d49a;
+    --alert-warning-text: #7c4a03;
+    --alert-warning-muted: #8a6530;
+    --alert-danger-bg: #fbe3e3;
+    --alert-danger-border: #f0b9b9;
+    --alert-danger-text: #7f1d1d;
+    --alert-danger-muted: #934040;
+
+    /* Depth */
+    --admin-shadow-sm: 0 1px 2px rgba(80, 55, 20, 0.08);
+    --admin-shadow-md: 0 10px 28px rgba(80, 55, 20, 0.12);
+    --admin-shadow-lg: 0 18px 48px rgba(80, 55, 20, 0.18);
+}
+
+html[data-admin-theme='dark'] {
+    color-scheme: dark;
+
+    --admin-bg: #0a0f1c;
+    --admin-surface: #101827;
+    --admin-surface-elevated: #16223a;
+    --admin-surface-sunken: #0b1322;
+    --admin-border: #26344d;
+    --admin-border-strong: #3b4d6e;
+
+    --admin-text: #e9eef6;
+    --admin-text-muted: #a3b1c7;
+    --admin-text-faint: #6f7f99;
+
+    --admin-primary: #f59e0b;
+    --admin-primary-hover: #fbbf24;
+    --admin-primary-contrast: #1a1206;
+    --admin-accent: #2dd4bf;
+    --admin-accent-contrast: #062a28;
+
+    --admin-link: #7dd3fc;
+    --admin-link-hover: #bae6fd;
+
+    --admin-success: #4ade80;
+    --admin-warning: #fbbf24;
+    --admin-danger: #f87171;
+    --admin-info: #38bdf8;
+
+    --admin-input-bg: #0f1a2e;
+    --admin-input-border: #3b4d6e;
+    --admin-input-placeholder: #6f7f99;
+    --admin-focus-ring: rgba(245, 158, 11, 0.22);
+
+    --admin-sidebar-bg: #0d1424;
+    --admin-sidebar-bg-elevated: #16223a;
+    --admin-sidebar-text: #dbe4f2;
+    --admin-sidebar-muted: #8b99b3;
+    --admin-sidebar-hover-bg: rgba(148, 163, 184, 0.1);
+    --admin-sidebar-active-bg: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+    --admin-sidebar-active-text: #ffe9bd;
+    --admin-sidebar-accent: #f59e0b;
+    --admin-sidebar-border: #1e2a44;
+    --admin-sidebar-input-bg: #0b1322;
+
+    --admin-topbar-bg: rgba(13, 20, 36, 0.88);
+    --admin-topbar-border: #1e2a44;
+    --admin-topbar-text: #e9eef6;
+
+    --admin-popover-bg: #16223a;
+    --admin-popover-border: #3b4d6e;
+
+    /* Semantic alerts — deep restrained tints keep body + muted text
+       readable on dark surfaces (never pale-on-pale cyan). */
+    --alert-info-bg: #0d2833;
+    --alert-info-border: #1e4d5f;
+    --alert-info-text: #bfe6f5;
+    --alert-info-muted: #8fc3d6;
+    --alert-success-bg: #0f2c1e;
+    --alert-success-border: #1d5a38;
+    --alert-success-text: #bdefd0;
+    --alert-success-muted: #7fbf97;
+    --alert-warning-bg: #33230a;
+    --alert-warning-border: #6b4d16;
+    --alert-warning-text: #fbe3a6;
+    --alert-warning-muted: #d3b578;
+    --alert-danger-bg: #381414;
+    --alert-danger-border: #6e2a2a;
+    --alert-danger-text: #f8c9c9;
+    --alert-danger-muted: #d69494;
+
+    --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --admin-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.45);
+    --admin-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55);
+
+    --admin-btn-close-filter: invert(1) grayscale(1) brightness(1.6);
+}
+
+/* Base shell typography (layout components keep structural styles scoped) */
+.admin-shell {
+    font-family: var(--admin-font);
+    background: var(--admin-bg);
+    color: var(--admin-text);
+}
+
+.admin-shell .table,
+.admin-shell .badge,
+.admin-shell .btn {
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-shell :focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+}
+
+/* ==========================================================================
+ * Collapsed sidebar (desktop only). Labels collapse to icon rail; tooltips
+ * come from native `title` attributes set in AdminSidebar.
+ * ========================================================================== */
+@media (min-width: 992px) {
+    .admin-shell.is-collapsed .admin-sidebar {
+        width: 76px;
+    }
+
+    .admin-shell.is-collapsed .admin-main-wrapper {
+        margin-left: 76px;
+    }
+
+    .admin-shell.is-collapsed .admin-sidebar-heading {
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .admin-shell.is-collapsed .dashboard-brand-text,
+    .admin-shell.is-collapsed .admin-sidebar-search,
+    .admin-shell.is-collapsed .admin-nav-group-toggle,
+    .admin-shell.is-collapsed .admin-nav-link span,
+    .admin-shell.is-collapsed .admin-sidebar-footer .admin-nav-link span {
+        display: none;
+    }
+
+    .admin-shell.is-collapsed .admin-navigation {
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
+    }
+
+    .admin-shell.is-collapsed .admin-nav-group {
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid var(--admin-sidebar-border);
+    }
+
+    .admin-shell.is-collapsed .admin-nav-group:last-child {
+        border-bottom: 0;
+    }
+
+    .admin-shell.is-collapsed .admin-nav-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .admin-shell.is-collapsed .admin-nav-link i {
+        width: auto;
+        margin: 0;
+    }
+
+    .admin-shell.is-collapsed .admin-sidebar-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* ==========================================================================
+ * Light-mode overrides for satellite components that carry their own
+ * dark-first scoped styles. Specificity is intentionally anchored on
+ * `html[data-admin-theme]` + `.admin-shell` so these win in Light mode
+ * while Dark mode keeps the components' native look.
+ * ========================================================================== */
+html[data-admin-theme='light'] .admin-shell .dashboard-footer {
+    border-top-color: var(--admin-border);
+    background: var(--admin-surface);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-footer-inner {
+    color: var(--admin-text-muted);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-footer-version {
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-trigger {
+    color: var(--admin-topbar-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-name {
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-role,
+html[data-admin-theme='light'] .admin-shell .dashboard-user-dropdown-header small,
+html[data-admin-theme='light'] .admin-shell .dashboard-user-item i {
+    color: var(--admin-text-muted);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-dropdown {
+    border-color: var(--admin-popover-border);
+    background: var(--admin-popover-bg);
+    box-shadow: var(--admin-shadow-md);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-dropdown-header {
+    border-bottom-color: var(--admin-border);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-item {
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .dashboard-user-item:hover {
+    background: var(--admin-surface-sunken);
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .admin-toast {
+    border-color: var(--admin-border);
+    background: var(--admin-popover-bg);
+    box-shadow: var(--admin-shadow-md);
+}
+
+html[data-admin-theme='light'] .admin-shell .admin-toast-title {
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .admin-toast-message {
+    color: var(--admin-text-muted);
+}
+
+html[data-admin-theme='light'] .admin-shell .notification-dropdown {
+    border-color: var(--admin-popover-border);
+    background: var(--admin-popover-bg);
+    box-shadow: var(--admin-shadow-md);
+}
+
+html[data-admin-theme='light'] .admin-shell .notification-item-message,
+html[data-admin-theme='light'] .admin-shell .notification-item-time,
+html[data-admin-theme='light'] .admin-shell .notification-dropdown-empty {
+    color: var(--admin-text-muted);
+}
+
+html[data-admin-theme='light'] .admin-shell .cmd-backdrop,
+html[data-admin-theme='light'] .admin-shell .cmd-palette {
+    color: var(--admin-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .impersonation-banner {
+    color: var(--admin-text);
+}
+
+/* ==========================================================================
+ * PRE-12B.9 HOTFIX — shared semantic alert contrast.
+ *
+ * Root cause: Bootstrap `.alert-info` keeps its light cyan background in
+ * Dark mode, while `.admin-content :deep(.text-muted)` forces the pale
+ * dark-theme muted token (`#a3b1c7`) with `!important` — pale text on a
+ * pale banner. These theme-aware overrides keep every semantic banner
+ * (info / success / warning / danger) readable in BOTH themes and give
+ * muted secondary text its own contrast-safe token per variant.
+ * Restrained premium tones — never neon or Bootstrap-bright.
+ * Covers Admin + Vendor shells (both render inside `.admin-shell`).
+ * ========================================================================== */
+html[data-admin-theme='light'] .admin-shell .alert-info,
+html[data-admin-theme='dark'] .admin-shell .alert-info {
+    background-color: var(--alert-info-bg);
+    border-color: var(--alert-info-border);
+    color: var(--alert-info-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .alert-success,
+html[data-admin-theme='dark'] .admin-shell .alert-success {
+    background-color: var(--alert-success-bg);
+    border-color: var(--alert-success-border);
+    color: var(--alert-success-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .alert-warning,
+html[data-admin-theme='dark'] .admin-shell .alert-warning {
+    background-color: var(--alert-warning-bg);
+    border-color: var(--alert-warning-border);
+    color: var(--alert-warning-text);
+}
+
+html[data-admin-theme='light'] .admin-shell .alert-danger,
+html[data-admin-theme='dark'] .admin-shell .alert-danger {
+    background-color: var(--alert-danger-bg);
+    border-color: var(--alert-danger-border);
+    color: var(--alert-danger-text);
+}
+
+/* Muted/secondary text inside alerts must stay legible on the alert
+   background — this wins over the global `.text-muted` override. */
+html[data-admin-theme] .admin-shell .alert-info .text-muted,
+html[data-admin-theme] .admin-shell .alert-info .form-text {
+    color: var(--alert-info-muted) !important;
+}
+
+html[data-admin-theme] .admin-shell .alert-success .text-muted,
+html[data-admin-theme] .admin-shell .alert-success .form-text {
+    color: var(--alert-success-muted) !important;
+}
+
+html[data-admin-theme] .admin-shell .alert-warning .text-muted,
+html[data-admin-theme] .admin-shell .alert-warning .form-text {
+    color: var(--alert-warning-muted) !important;
+}
+
+html[data-admin-theme] .admin-shell .alert-danger .text-muted,
+html[data-admin-theme] .admin-shell .alert-danger .form-text {
+    color: var(--alert-danger-muted) !important;
+}
+
+/* Strong text, links and icons inherit the alert tone. */
+html[data-admin-theme] .admin-shell .alert strong {
+    color: inherit;
+}
+
+html[data-admin-theme] .admin-shell .alert a {
+    color: inherit;
+    font-weight: 600;
+}
+
+html[data-admin-theme] .admin-shell .alert .bi {
+    color: inherit;
+}

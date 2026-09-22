@@ -9,21 +9,42 @@ use App\Models\BookingPayment;
 use App\Models\BookingRefund;
 use App\Models\BookingReschedule;
 use App\Models\Campaign;
+use App\Models\City;
 use App\Models\CommunicationTemplate;
+use App\Models\Country;
+use App\Models\Destination;
 use App\Models\Driver;
 use App\Models\DriverAvailability;
 use App\Models\DriverDocument;
+use App\Models\HotelAmenity;
+use App\Models\HotelBedType;
+use App\Models\HotelBooking;
+use App\Models\HotelChargeRule;
+use App\Models\HotelCustomFieldDefinition;
+use App\Models\HotelRatePlan;
+use App\Models\HotelRateSeason;
+use App\Models\HotelRoomImage;
+use App\Models\HotelRoomType;
+use App\Models\HotelRoomUnit;
 use App\Models\ImpersonationLog;
 use App\Models\Lead;
 use App\Models\LeadFollowUp;
 use App\Models\NumberSeries;
+use App\Models\Place;
+use App\Models\Property;
+use App\Models\PropertyImage;
+use App\Models\PropertyType;
 use App\Models\Quotation;
 use App\Models\Setting;
+use App\Models\State;
 use App\Models\SupportTicket;
 use App\Models\TaxiAssignment;
 use App\Models\TaxiBooking;
+use App\Models\TaxiBookingCancellation;
 use App\Models\TaxiBookingNote;
+use App\Models\TaxiBookingReschedule;
 use App\Models\TaxiBookingStatusHistory;
+use App\Models\TaxiCancellationPolicy;
 use App\Models\TaxiDriverCompensationPlan;
 use App\Models\TaxiDriverEarning;
 use App\Models\TaxiDriverEarningAdjustment;
@@ -32,7 +53,9 @@ use App\Models\TaxiDriverPayoutItem;
 use App\Models\TaxiPayment;
 use App\Models\TaxiRateCard;
 use App\Models\TaxiRateRule;
+use App\Models\TaxiRefund;
 use App\Models\TaxiRentalPackage;
+use App\Models\TaxiReview;
 use App\Models\TourModerationHistory;
 use App\Models\TourPackage;
 use App\Models\User;
@@ -80,6 +103,11 @@ class AuditRegistry
             VendorLedgerEntry::class => ['module' => 'finance', 'ignore' => ['updated_at']],
             TourPackage::class => ['module' => 'tours', 'ignore' => ['updated_at']],
             TourModerationHistory::class => ['module' => 'tours', 'ignore' => ['updated_at']],
+            Country::class => ['module' => 'locations', 'ignore' => ['updated_at', 'sort_order']],
+            State::class => ['module' => 'locations', 'ignore' => ['updated_at', 'sort_order']],
+            City::class => ['module' => 'locations', 'ignore' => ['updated_at', 'sort_order']],
+            Destination::class => ['module' => 'locations', 'ignore' => ['updated_at', 'sort_order']],
+            Place::class => ['module' => 'locations', 'ignore' => ['updated_at', 'sort_order']],
             Lead::class => ['module' => 'crm', 'ignore' => ['updated_at']],
             LeadFollowUp::class => ['module' => 'crm', 'ignore' => array_merge(['updated_at'], $reminderMarkers)],
             Quotation::class => ['module' => 'crm', 'ignore' => ['updated_at', 'expiry_reminder_sent_at']],
@@ -108,10 +136,24 @@ class AuditRegistry
             TaxiRateCard::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiRateRule::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiRentalPackage::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
-            \App\Models\TaxiCancellationPolicy::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
-            \App\Models\TaxiBookingCancellation::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
-            \App\Models\TaxiRefund::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
-            \App\Models\TaxiBookingReschedule::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiCancellationPolicy::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiBookingCancellation::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiReview::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            Property::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            PropertyType::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            HotelAmenity::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            PropertyImage::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            HotelRoomType::class => ['module' => 'hotels', 'ignore' => ['updated_at', 'bed_summary']],
+            HotelRoomUnit::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            HotelBedType::class => ['module' => 'hotels', 'ignore' => ['updated_at', 'sort_order']],
+            HotelRoomImage::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            HotelCustomFieldDefinition::class => ['module' => 'hotels', 'ignore' => ['updated_at', 'sort_order']],
+            HotelRatePlan::class => ['module' => 'hotels', 'ignore' => ['updated_at', 'sort_order']],
+            HotelRateSeason::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            HotelChargeRule::class => ['module' => 'hotels', 'ignore' => ['updated_at', 'sort_order']],
+            HotelBooking::class => ['module' => 'hotels', 'ignore' => ['updated_at']],
+            TaxiRefund::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
+            TaxiBookingReschedule::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiDriverCompensationPlan::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiDriverEarning::class => ['module' => 'taxi', 'ignore' => ['updated_at']],
             TaxiDriverEarningAdjustment::class => ['module' => 'taxi', 'ignore' => ['updated_at']],

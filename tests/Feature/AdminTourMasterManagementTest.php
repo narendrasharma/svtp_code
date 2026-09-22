@@ -43,6 +43,7 @@ class AdminTourMasterManagementTest extends TestCase
             'name' => 'Vrindavan',
             'slug' => 'vrindavan',
             'city_id' => $city->id,
+            'is_active' => true,
             'image_upload' => UploadedFile::fake()->image('vrindavan.jpg'),
         ])->assertRedirect(route('admin.destinations.index', absolute: false));
 
@@ -55,6 +56,7 @@ class AdminTourMasterManagementTest extends TestCase
             'name' => 'Vrindavan Dham',
             'slug' => 'vrindavan-dham',
             'city_id' => null,
+            'is_active' => true,
         ])->assertRedirect(route('admin.destinations.index', absolute: false));
 
         $this->assertDatabaseHas('destinations', [
@@ -68,6 +70,7 @@ class AdminTourMasterManagementTest extends TestCase
             'name' => 'Vrindavan Dham',
             'slug' => 'vrindavan-dham',
             'city_id' => null,
+            'is_active' => true,
             'remove_image' => true,
         ])->assertRedirect(route('admin.destinations.index', absolute: false));
 

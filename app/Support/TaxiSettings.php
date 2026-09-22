@@ -56,6 +56,15 @@ class TaxiSettings
         'taxi.customer_tracking.refresh_seconds' => '30',
         'taxi.driver_earnings.auto_payable_on_complete' => '1',
         'taxi.driver_earnings.hold_days' => '0',
+        'taxi.reviews.enabled' => '1',
+        'taxi.reviews.require_moderation' => '1',
+        'taxi.reviews.review_window_days' => '30',
+        'taxi.reviews.allow_text_review' => '1',
+        'taxi.reviews.allow_vendor_reply' => '1',
+        'taxi.reviews.show_driver_rating_publicly' => '0',
+        'taxi.reviews.show_vendor_rating_publicly' => '0',
+        'taxi.reviews.minimum_reviews_for_public_average' => '5',
+        'taxi.reviews.low_rating_threshold' => '2',
     ];
 
     public static function get(string $key): ?string

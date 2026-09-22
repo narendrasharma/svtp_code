@@ -14,12 +14,22 @@ const isSidebarOpen = ref(false);
 const navigation = [
     ['Dashboard', '/vendor', 'bi-speedometer2'],
     ['My Tours', '/vendor/tours', 'bi-map'],
+    ['My Hotels', '/vendor/hotel/properties', 'bi-buildings'],
+    ['Hotel Reviews', '/vendor/hotel/reviews', 'bi-star'],
+    ['Hotel Operations', '/vendor/hotel/operations', 'bi-speedometer2'],
+    ['Hotel Inventory', '/vendor/hotel/inventory', 'bi-calendar-check'],
+    ['Hotel Rate Plans', '/vendor/hotel/rate-plans', 'bi-currency-exchange'],
+    ['Hotel Daily Rates', '/vendor/hotel/daily-rates', 'bi-calendar2-week'],
     ['Customer Bookings', '/vendor/bookings', 'bi-receipt'],
     ['Taxi Operations', '/vendor/taxi/dashboard', 'bi-taxi-front'],
+    ['Taxi Bookings', '/vendor/taxi/bookings', 'bi-taxi-front-fill'],
     ['Taxi Dispatch', '/vendor/taxi/dispatch', 'bi-kanban'],
     ['Taxi Tracking', '/vendor/taxi/tracking', 'bi-geo-alt'],
     ['Taxi Pricing', '/vendor/taxi/pricing', 'bi-currency-exchange'],
+    ['Drivers', '/vendor/taxi/drivers', 'bi-person-badge'],
+    ['Vehicles', '/vendor/taxi/vehicles', 'bi-truck-front'],
     ['Cancellation Policies', '/vendor/taxi/cancellation-policies', 'bi-calendar-x'],
+    ['Taxi Reviews', '/vendor/taxi/reviews', 'bi-star'],
     ['Driver Earnings', '/vendor/taxi/earnings', 'bi-cash-coin'],
     ['Driver Payouts', '/vendor/taxi/payouts', 'bi-bank'],
     ['Coupons', '/vendor/coupons', 'bi-ticket-perforated'],
@@ -30,6 +40,10 @@ const navigation = [
     ['My Bookings', '/account/bookings', 'bi-calendar-check'],
     ['Browse Tours', '/packages', 'bi-compass'],
 ].map(([label, path, icon]) => ({ label, path, icon }));
+
+const visibleNavigation = computed(() => navigation.filter(item =>
+    !item.path.startsWith('/vendor/hotel/') || page.props.platformModules?.some(module => module.key === 'hotels' && module.enabled)
+));
 
 function isActive(path) {
     const currentPath = page.url.split('?')[0];
@@ -50,7 +64,7 @@ watch(() => page.url, () => { isSidebarOpen.value = false; });
                 </div>
 
                 <nav class="admin-navigation" aria-label="Vendor navigation">
-                    <Link v-for="item in navigation" :key="item.path" :href="appUrl(item.path)" class="admin-nav-link" :class="{ 'is-active': isActive(item.path) }">
+                    <Link v-for="item in visibleNavigation" :key="item.path" :href="appUrl(item.path)" class="admin-nav-link" :class="{ 'is-active': isActive(item.path) }">
                         <i class="bi" :class="item.icon"></i><span>{{ item.label }}</span>
                     </Link>
                 </nav>

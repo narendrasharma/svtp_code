@@ -67,7 +67,7 @@ class GlobalSearchController extends Controller
                 ])->filter()->join(' · '),
                 'context' => $this->shortContext(
                     $tour->overview ?: $tour->meta_description,
-                    'Tour package in '.($tour->city?->name ?? 'North India')
+                    $tour->city ? 'Tour package in '.$tour->city->name : 'Tour package'
                 ),
                 'image' => $tour->cover_image,
                 'url' => route('packages.show', $tour, false),
@@ -75,6 +75,7 @@ class GlobalSearchController extends Controller
 
         $destinations = Destination::query()
             ->with('city:id,name')
+            ->where('is_active', true)
             ->where(function (Builder $query) use ($fullTextSearch, $search): void {
                 $this->whereKeywords($query, ['name', 'description', 'meta_description'], $fullTextSearch, $search)
                     ->orWhereHas('city', fn (Builder $cityQuery) => $cityQuery->where('name', 'like', "%{$search}%"));
@@ -97,6 +98,7 @@ class GlobalSearchController extends Controller
 
         $places = Place::query()
             ->with('destination:id,name')
+            ->where('is_active', true)
             ->where(function (Builder $query) use ($fullTextSearch, $search): void {
                 $this->whereKeywords($query, ['name', 'description', 'meta_description'], $fullTextSearch, $search)
                     ->orWhereHas('destination', function (Builder $destinationQuery) use ($fullTextSearch, $search): void {

@@ -51,7 +51,8 @@ class NumberSeriesService
             'taxi_vehicle' => ['display_name' => 'Taxi Vehicle', 'prefix' => 'VEH', 'separator' => '-', 'include_year' => false, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_NEVER, 'description' => 'Taxi vehicle references.'],
             'taxi_driver_earning' => ['display_name' => 'Driver Earning', 'prefix' => 'DRE', 'separator' => '-', 'include_year' => true, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_YEARLY, 'description' => 'Taxi driver earning references.'],
             'taxi_driver_payout' => ['display_name' => 'Driver Payout', 'prefix' => 'DRP', 'separator' => '-', 'include_year' => true, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_YEARLY, 'description' => 'Taxi driver payout batch references.'],
-            'hotel_reservation' => ['display_name' => 'Hotel Reservation (future)', 'prefix' => 'HT', 'separator' => '-', 'include_year' => true, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_YEARLY, 'description' => 'Hotels module not installed; definition only.'],
+            'hotel_reservation' => ['display_name' => 'Hotel Reservation', 'prefix' => 'HT', 'separator' => '-', 'include_year' => true, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_YEARLY, 'description' => 'Hotel reservation references.'],
+            'hotel_refund' => ['display_name' => 'Hotel Refund', 'prefix' => 'HRF', 'separator' => '-', 'include_year' => true, 'include_month' => false, 'padding' => 6, 'start_number' => 1, 'reset_cycle' => NumberSeries::RESET_YEARLY, 'description' => 'Hotel refund accounting references.'],
         ];
     }
 

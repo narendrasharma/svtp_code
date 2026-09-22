@@ -4,6 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="app-base" content="{{ parse_url(config('app.url'), PHP_URL_PATH) ?? '' }}">
+    <script>
+        // PRE-12B.9 admin theme: applied before first paint to avoid flashing
+        // the wrong theme. Choice persisted as svtp-admin-theme
+        // (light | dark | system); falls back to the OS preference.
+        try {
+            (function () {
+                var choice = localStorage.getItem('svtp-admin-theme') || 'system';
+                var theme = choice;
+                if (choice === 'system') {
+                    theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-admin-theme', theme);
+                document.documentElement.setAttribute('data-admin-theme-choice', choice);
+            })();
+        } catch (e) {
+            document.documentElement.setAttribute('data-admin-theme', 'light');
+        }
+    </script>
         @php
             $siteSettings =
            \App\Models\Setting::query()
@@ -38,7 +56,7 @@
         @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title inertia>{{ $siteName }}</title>
     @routes
     @vite(['resources/css/app.css', 'resources/js/app.js'])

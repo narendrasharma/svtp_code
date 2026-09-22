@@ -63,6 +63,15 @@ class TaxiSettingsController extends Controller
             'taxi_customer_tracking_show_vehicle_registration' => ['required', 'boolean'],
             'taxi_customer_tracking_show_route' => ['required', 'boolean'],
             'taxi_customer_tracking_refresh_seconds' => ['required', 'integer', 'min:15', 'max:60'],
+            'taxi_reviews_enabled' => ['required', 'boolean'],
+            'taxi_reviews_require_moderation' => ['required', 'boolean'],
+            'taxi_reviews_review_window_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'taxi_reviews_allow_text_review' => ['required', 'boolean'],
+            'taxi_reviews_allow_vendor_reply' => ['required', 'boolean'],
+            'taxi_reviews_show_driver_rating_publicly' => ['required', 'boolean'],
+            'taxi_reviews_show_vendor_rating_publicly' => ['required', 'boolean'],
+            'taxi_reviews_minimum_reviews_for_public_average' => ['required', 'integer', 'min:1', 'max:100'],
+            'taxi_reviews_low_rating_threshold' => ['required', 'integer', 'min:1', 'max:5'],
         ]);
 
         Setting::setValue('taxi.booking_enabled', $validated['taxi_booking_enabled'] ? '1' : '0');
@@ -100,6 +109,15 @@ class TaxiSettingsController extends Controller
         Setting::setValue('taxi.customer_tracking.show_vehicle_registration', $validated['taxi_customer_tracking_show_vehicle_registration'] ? '1' : '0');
         Setting::setValue('taxi.customer_tracking.show_route', $validated['taxi_customer_tracking_show_route'] ? '1' : '0');
         Setting::setValue('taxi.customer_tracking.refresh_seconds', (string) $validated['taxi_customer_tracking_refresh_seconds']);
+        Setting::setValue('taxi.reviews.enabled', $validated['taxi_reviews_enabled'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.require_moderation', $validated['taxi_reviews_require_moderation'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.review_window_days', $validated['taxi_reviews_review_window_days'] !== null ? (string) $validated['taxi_reviews_review_window_days'] : '');
+        Setting::setValue('taxi.reviews.allow_text_review', $validated['taxi_reviews_allow_text_review'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.allow_vendor_reply', $validated['taxi_reviews_allow_vendor_reply'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.show_driver_rating_publicly', $validated['taxi_reviews_show_driver_rating_publicly'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.show_vendor_rating_publicly', $validated['taxi_reviews_show_vendor_rating_publicly'] ? '1' : '0');
+        Setting::setValue('taxi.reviews.minimum_reviews_for_public_average', (string) $validated['taxi_reviews_minimum_reviews_for_public_average']);
+        Setting::setValue('taxi.reviews.low_rating_threshold', (string) $validated['taxi_reviews_low_rating_threshold']);
 
         return back()->with('flash', 'Taxi settings updated.');
     }

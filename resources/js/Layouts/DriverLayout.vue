@@ -16,6 +16,7 @@ const navigation = [
     ['My Trips', '/driver/taxi/trips', 'bi-car-front'],
     ['Job Offers', '/driver/taxi/offers', 'bi-briefcase'],
     ['My Earnings', '/driver/taxi/earnings', 'bi-cash-coin'],
+    ['My Ratings', '/driver/taxi/reviews', 'bi-star'],
     ['Profile', '/driver/taxi/profile', 'bi-person-badge'],
     ['Notifications', '/notifications', 'bi-bell'],
 ].map(([label, path, icon]) => ({ label, path, icon }));

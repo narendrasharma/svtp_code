@@ -10,6 +10,10 @@ const form = useForm({
     slug: props.place?.slug ?? '',
     destination_id: props.place?.destination_id ?? '',
     description: props.place?.description ?? '',
+    latitude: props.place?.latitude ?? '',
+    longitude: props.place?.longitude ?? '',
+    is_active: props.place?.is_active ?? true,
+    sort_order: props.place?.sort_order ?? 0,
     image_upload: null,
     remove_image: false,
     meta_description: props.place?.meta_description ?? '',
@@ -22,10 +26,16 @@ watch(() => form.name, (name) => {
 
 function submit() {
     const url = props.place ? `${appUrl('/admin/places')}/${props.place.id}` : appUrl('/admin/places');
+    const payload = (data) => {
+        const out = { ...data };
+        if (out.latitude === '') out.latitude = null;
+        if (out.longitude === '') out.longitude = null;
+        return out;
+    };
     if (props.place) {
-        form.transform((data) => ({ ...data, _method: 'put' })).post(url, { forceFormData: true });
+        form.transform((data) => ({ ...payload(data), _method: 'put' })).post(url, { forceFormData: true });
     } else {
-        form.post(url, { forceFormData: true });
+        form.transform(payload).post(url, { forceFormData: true });
     }
 }
 
@@ -60,6 +70,31 @@ function selectImage(event) {
             <label class="form-label mt-3">Description</label>
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Describe this temple, landmark, or attraction."></textarea>
             <small class="text-danger">{{ form.errors.description }}</small>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label mt-3">Latitude</label>
+                    <input v-model="form.latitude" type="number" step="0.0000001" min="-90" max="90" class="form-control">
+                    <small class="text-danger">{{ form.errors.latitude }}</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label mt-3">Longitude</label>
+                    <input v-model="form.longitude" type="number" step="0.0000001" min="-180" max="180" class="form-control">
+                    <small class="text-danger">{{ form.errors.longitude }}</small>
+                </div>
+            </div>
+
+            <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" id="placeActiveSwitch" v-model="form.is_active">
+                <label class="form-check-label" for="placeActiveSwitch">
+                    {{ form.is_active ? 'Active' : 'Inactive' }}
+                </label>
+                <small class="text-danger">{{ form.errors.is_active }}</small>
+            </div>
+
+            <label class="form-label mt-3">Sort order</label>
+            <input v-model="form.sort_order" type="number" min="0" class="form-control">
+            <small class="text-danger">{{ form.errors.sort_order }}</small>
 
             <div class="mt-3">
                 <label class="form-label">Image</label>

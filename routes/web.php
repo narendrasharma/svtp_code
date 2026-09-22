@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Account\BookingController as AccountBookingController;
 use App\Http\Controllers\Account\DashboardController as AccountDashboardController;
+use App\Http\Controllers\Account\HotelReviewController;
 use App\Http\Controllers\Account\SupportTicketController as AccountSupportTicketController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\AdminSearchController;
@@ -12,7 +13,9 @@ use App\Http\Controllers\Admin\BookingNoteController as AdminBookingNoteControll
 use App\Http\Controllers\Admin\BookingPaymentController as AdminBookingPaymentController;
 use App\Http\Controllers\Admin\BookingRescheduleController as AdminBookingRescheduleController;
 use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
+use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CommunicationLogController as AdminCommunicationLogController;
+use App\Http\Controllers\Admin\CountryController as AdminCountryController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CrmDashboardController as AdminCrmDashboardController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
@@ -23,10 +26,17 @@ use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\FailedJobController as AdminFailedJobController;
 use App\Http\Controllers\Admin\FollowUpController as AdminFollowUpController;
 use App\Http\Controllers\Admin\HomepageSectionController;
+use App\Http\Controllers\Admin\Hotel\CatalogueController;
+use App\Http\Controllers\Admin\Hotel\ChargeRuleController;
+use App\Http\Controllers\Admin\Hotel\CustomFieldController;
+use App\Http\Controllers\Admin\Hotel\HotelSettingsController;
+use App\Http\Controllers\Admin\Hotel\RoomController;
+use App\Http\Controllers\Admin\Hotel\UnitController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Admin\InvitationController as AdminInvitationController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LeadSourceController as AdminLeadSourceController;
+use App\Http\Controllers\Admin\LocationLookupController as AdminLocationLookupController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\MenuItemController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
@@ -45,6 +55,7 @@ use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShareController as AdminShareController;
 use App\Http\Controllers\Admin\StaffController as AdminStaffController;
+use App\Http\Controllers\Admin\StateController as AdminStateController;
 use App\Http\Controllers\Admin\SupportCategoryController as AdminSupportCategoryController;
 use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealthController;
@@ -77,10 +88,13 @@ use App\Http\Controllers\Driver\Taxi\DriverEarningController as DriverTaxiEarnin
 use App\Http\Controllers\Driver\Taxi\DriverLocationController as DriverTaxiLocationController;
 use App\Http\Controllers\Driver\Taxi\DriverOfferController as DriverTaxiOfferController;
 use App\Http\Controllers\Driver\Taxi\DriverProfileController as DriverTaxiProfileController;
+use App\Http\Controllers\Driver\Taxi\DriverReviewController;
 use App\Http\Controllers\Driver\Taxi\DriverTripController as DriverTaxiTripController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HotelBookingController;
+use App\Http\Controllers\HotelController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvitationAcceptController;
 use App\Http\Controllers\InvoiceController;
@@ -88,18 +102,27 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlaceController as PublicPlaceController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicBookingController;
+use App\Http\Controllers\PublicBookingController; // <-- NEW IMPORT
 use App\Http\Controllers\PublicQuotationController;
 use App\Http\Controllers\PublicQuotationDecisionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SharedDocumentController;
+use App\Http\Controllers\Taxi\TaxiCancellationPolicyController;
+use App\Http\Controllers\Taxi\TaxiChangeController;
+use App\Http\Controllers\Taxi\TaxiReviewController;
 use App\Http\Controllers\TaxiEnquiryController;
 use App\Http\Controllers\TaxiTrackingController;
 use App\Http\Controllers\TourPackageController;
 use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\Vendor\BookingController as VendorBookingController;
-use App\Http\Controllers\Vendor\CouponController as VendorCouponController; // <-- NEW IMPORT
+use App\Http\Controllers\Vendor\CouponController as VendorCouponController;
 use App\Http\Controllers\Vendor\FinanceController as VendorFinanceController;
+use App\Http\Controllers\Vendor\Hotel\BookingController;
+use App\Http\Controllers\Vendor\Hotel\DailyRateController;
+use App\Http\Controllers\Vendor\Hotel\InventoryController;
+use App\Http\Controllers\Vendor\Hotel\OperationsController;
+use App\Http\Controllers\Vendor\Hotel\PropertyController;
+use App\Http\Controllers\Vendor\Hotel\RatePlanController;
 use App\Http\Controllers\Vendor\PayoutAccountController as VendorPayoutAccountController;
 use App\Http\Controllers\Vendor\SupportTicketController as VendorSupportTicketController;
 use App\Http\Controllers\Vendor\Taxi\TaxiBookingController as VendorTaxiBookingController;
@@ -161,6 +184,16 @@ Route::get('/search', GlobalSearchController::class)
 
 Route::get('/packages', [TourPackageController::class, 'index'])->name('packages.index')->middleware('module:tours');
 Route::get('/packages/{package:slug}', [TourPackageController::class, 'show'])->name('packages.show')->middleware('module:tours');
+
+// Phase 12B.1 public hotels (published properties only, no availability yet).
+Route::get('/hotels', [HotelController::class, 'index'])->name('hotels.index')->middleware('module:hotels');
+Route::get('/hotels/{property:slug}', [HotelController::class, 'show'])->name('hotels.show')->middleware('module:hotels');
+// Phase 12B.3 public availability (inventory only, no pricing yet).
+Route::get('/hotels/{property:slug}/availability', [HotelController::class, 'availability'])->name('hotels.availability')->middleware(['module:hotels', 'throttle:60,1']);
+// Phase 12B.4 public rates (pricing only, no booking yet).
+Route::get('/hotels/{property:slug}/rates', [HotelController::class, 'rates'])->name('hotels.rates')->middleware(['module:hotels', 'throttle:60,1']);
+Route::post('/hotels/{slug}/book', [HotelBookingController::class, 'store'])->name('hotel-booking.store')->middleware(['module:hotels', 'throttle:10,1']);
+Route::get('/hotel-bookings/{booking}/confirmation', [App\Http\Controllers\Account\HotelBookingController::class, 'show'])->name('hotel-booking.confirmation')->middleware(['auth', 'module:hotels']);
 Route::post('/packages/{package:slug}/reviews', [ReviewController::class, 'storePublic'])
     ->middleware(['throttle:3,10', 'module:tours'])
     ->name('packages.reviews.store');
@@ -217,19 +250,34 @@ Route::middleware('auth')->group(function () {
 // Customer account area (public theme, never under /admin).
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::prefix('taxi')->name('taxi.')->middleware('module:taxi')->group(function () {
-        Route::get('/bookings', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings', [TaxiChangeController::class, 'index'])->name('bookings.index');
 
         // Phase 12A.11: authenticated booking changes and manual refunds.
-        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
-        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}', [TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+
+        // Phase 12A.12: booking-backed taxi reviews (authenticated ownership only).
+        Route::get('/reviews', [TaxiReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/create/{booking}', [TaxiReviewController::class, 'create'])->name('reviews.create');
+        Route::post('/reviews/{booking}', [TaxiReviewController::class, 'store'])->name('reviews.store')->middleware('throttle:10,1');
+        Route::get('/reviews/{review}', [TaxiReviewController::class, 'show'])->name('reviews.show');
     });
 
     Route::get('/', [AccountDashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [AccountBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [AccountBookingController::class, 'show'])->name('bookings.show');
+    Route::get('/hotel-bookings', [App\Http\Controllers\Account\HotelBookingController::class, 'index'])->name('hotel-bookings.index')->middleware('module:hotels');
+    Route::get('/hotel-bookings/{booking}', [App\Http\Controllers\Account\HotelBookingController::class, 'show'])->name('hotel-bookings.show')->middleware('module:hotels');
+    Route::get('/hotel-bookings/{booking}/review', [HotelReviewController::class, 'show'])->name('hotel-reviews.show')->middleware('module:hotels');
+    Route::post('/hotel-bookings/{booking}/review', [HotelReviewController::class, 'store'])->name('hotel-reviews.store')->middleware(['module:hotels', 'throttle:10,1']);
+    Route::put('/hotel-bookings/{booking}/review', [HotelReviewController::class, 'update'])->name('hotel-reviews.update')->middleware(['module:hotels', 'throttle:10,1']);
+    Route::get('/hotel-bookings/{booking}/cancellation-quote', [App\Http\Controllers\Account\HotelBookingController::class, 'cancellationQuote'])->name('hotel-bookings.cancellation-quote')->middleware('module:hotels');
+    Route::post('/hotel-bookings/{booking}/cancel', [App\Http\Controllers\Account\HotelBookingController::class, 'cancel'])->name('hotel-bookings.cancel')->middleware('module:hotels');
+    Route::post('/hotel-bookings/{booking}/reschedule-quote', [App\Http\Controllers\Account\HotelBookingController::class, 'rescheduleQuote'])->name('hotel-bookings.reschedule-quote')->middleware('module:hotels');
+    Route::post('/hotel-bookings/{booking}/reschedule', [App\Http\Controllers\Account\HotelBookingController::class, 'reschedule'])->name('hotel-bookings.reschedule')->middleware('module:hotels');
     Route::post('/bookings/{booking}/cancellation-requests', [AccountBookingController::class, 'requestCancellation'])->name('cancellation-requests.store');
 
     // Phase 11.5C customer support portal (own tickets only).
@@ -298,6 +346,70 @@ Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(
     Route::patch('/coupons/{coupon}/toggle', [VendorCouponController::class, 'toggle'])->name('coupons.toggle');
     Route::delete('/coupons/{coupon}', [VendorCouponController::class, 'destroy'])->name('coupons.destroy');
 
+    // Phase 12B.1 vendor hotel properties (own properties only).
+    Route::middleware('module:hotels')->prefix('hotel')->name('hotel.')->group(function () {
+        Route::get('/operations', [OperationsController::class, 'index'])->name('operations');
+        Route::get('/reviews', [App\Http\Controllers\Vendor\Hotel\ReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [App\Http\Controllers\Vendor\Hotel\ReviewController::class, 'show'])->name('reviews.show');
+        Route::put('/reviews/{review}/reply', [App\Http\Controllers\Vendor\Hotel\ReviewController::class, 'reply'])->name('reviews.reply')->middleware('throttle:10,1');
+        Route::patch('/operations/bookings/{booking}/status', [OperationsController::class, 'status'])->name('operations.status');
+        Route::get('/properties', [PropertyController::class, 'index'])->name('properties.index');
+        Route::get('/properties/create', [PropertyController::class, 'create'])->name('properties.create');
+        Route::post('/properties', [PropertyController::class, 'store'])->name('properties.store');
+        Route::get('/properties/{property:id}', [PropertyController::class, 'show'])->name('properties.show');
+        Route::get('/properties/{property:id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
+        Route::put('/properties/{property:id}', [PropertyController::class, 'update'])->name('properties.update');
+        Route::delete('/properties/{property:id}', [PropertyController::class, 'destroy'])->name('properties.destroy');
+        Route::post('/properties/{property:id}/submit', [PropertyController::class, 'submit'])->name('properties.submit');
+        Route::post('/properties/{property:id}/images', [PropertyController::class, 'storeImage'])->name('properties.images.store');
+        Route::delete('/properties/{property:id}/images/{image}', [PropertyController::class, 'destroyImage'])->name('properties.images.destroy');
+        Route::patch('/properties/{property:id}/images/{image}/primary', [PropertyController::class, 'primaryImage'])->name('properties.images.primary');
+        Route::get('/cities', [PropertyController::class, 'cities'])->name('cities.index');
+        Route::get('/destinations', [PropertyController::class, 'destinations'])->name('destinations.index');
+
+        Route::get('/properties/{property:id}/room-types', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'index'])->name('room-types.index');
+        Route::get('/properties/{property:id}/room-types/create', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'create'])->name('room-types.create');
+        Route::post('/properties/{property:id}/room-types', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'store'])->name('room-types.store');
+        Route::get('/room-types/{roomType}', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'show'])->name('room-types.show');
+        Route::get('/room-types/{roomType}/edit', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'edit'])->name('room-types.edit');
+        Route::put('/room-types/{roomType}', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'update'])->name('room-types.update');
+        Route::delete('/room-types/{roomType}', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'destroy'])->name('room-types.destroy');
+        Route::post('/room-types/{roomType}/images', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'storeImage'])->name('room-types.images.store');
+        Route::delete('/room-types/{roomType}/images/{image}', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'destroyImage'])->name('room-types.images.destroy');
+        Route::patch('/room-types/{roomType}/images/{image}/primary', [App\Http\Controllers\Vendor\Hotel\RoomController::class, 'primaryImage'])->name('room-types.images.primary');
+
+        Route::get('/properties/{property:id}/units', [App\Http\Controllers\Vendor\Hotel\UnitController::class, 'index'])->name('room-units.index');
+        Route::post('/properties/{property:id}/units', [App\Http\Controllers\Vendor\Hotel\UnitController::class, 'store'])->name('room-units.store');
+        Route::put('/units/{unit}', [App\Http\Controllers\Vendor\Hotel\UnitController::class, 'update'])->name('room-units.update');
+        Route::delete('/units/{unit}', [App\Http\Controllers\Vendor\Hotel\UnitController::class, 'destroy'])->name('room-units.destroy');
+
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
+        Route::post('/inventory/bulk', [InventoryController::class, 'bulk'])->name('inventory.bulk');
+        Route::delete('/inventory', [InventoryController::class, 'clear'])->name('inventory.clear');
+
+        Route::get('/rate-plans', [RatePlanController::class, 'index'])->name('rate-plans.index');
+        Route::post('/rate-plans', [RatePlanController::class, 'store'])->name('rate-plans.store');
+        Route::put('/rate-plans/{plan}', [RatePlanController::class, 'update'])->name('rate-plans.update');
+        Route::patch('/rate-plans/{plan}/toggle', [RatePlanController::class, 'toggle'])->name('rate-plans.toggle');
+        Route::post('/seasons', [RatePlanController::class, 'storeSeason'])->name('seasons.store');
+        Route::put('/seasons/{season}', [RatePlanController::class, 'updateSeason'])->name('seasons.update');
+        Route::patch('/seasons/{season}/toggle', [RatePlanController::class, 'toggleSeason'])->name('seasons.toggle');
+        Route::delete('/seasons/{season}', [RatePlanController::class, 'destroySeason'])->name('seasons.destroy');
+        Route::get('/daily-rates', [DailyRateController::class, 'index'])->name('daily-rates.index');
+        Route::post('/daily-rates', [DailyRateController::class, 'store'])->name('daily-rates.store');
+        Route::post('/daily-rates/bulk', [DailyRateController::class, 'bulk'])->name('daily-rates.bulk');
+        Route::delete('/daily-rates', [DailyRateController::class, 'clear'])->name('daily-rates.clear');
+        Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+        Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+        Route::patch('/bookings/{booking}/status', [BookingController::class, 'status'])->name('bookings.status');
+        Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::post('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule'])->name('bookings.reschedule');
+        Route::post('/bookings/{booking}/reschedule-quote', [BookingController::class, 'rescheduleQuote'])->name('bookings.reschedule-quote');
+    });
+
     // Vendor bookings are read-only: vendors view only bookings
     // historically assigned to their own vendor profile.
     Route::get('/bookings', [VendorBookingController::class, 'index'])->name('bookings.index');
@@ -356,19 +468,22 @@ Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(
         Route::delete('/bookings/{taxiBooking}/tracking', [VendorTaxiBookingController::class, 'revokeTrackingLink'])->name('bookings.tracking.destroy');
         Route::patch('/bookings/{taxiBooking}/status', [VendorTaxiBookingController::class, 'status'])->name('bookings.status');
 
-
         // Phase 12A.11: authenticated booking changes and manual refunds.
-        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
-        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/refunds', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
-        Route::post('/changes/{booking}/refunds/{refund}/process', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
-        Route::get('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
-        Route::post('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
-        Route::put('/cancellation-policies/{policy}', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
-        Route::patch('/cancellation-policies/{policy}/toggle', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
+        Route::get('/changes/{booking}', [TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/refunds', [TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
+        Route::post('/changes/{booking}/refunds/{refund}/process', [TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
+        Route::get('/cancellation-policies', [TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
+        Route::post('/cancellation-policies', [TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
+        Route::put('/cancellation-policies/{policy}', [TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
+        Route::patch('/cancellation-policies/{policy}/toggle', [TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
+        Route::get('/reviews', [TaxiReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [TaxiReviewController::class, 'show'])->name('reviews.show');
+        Route::post('/reviews/{review}/reply', [TaxiReviewController::class, 'reply'])->name('reviews.reply');
+        Route::post('/reviews/{review}/flag', [TaxiReviewController::class, 'flag'])->name('reviews.flag');
         Route::get('/earnings', [VendorTaxiDriverEarningController::class, 'index'])->name('earnings.index');
         Route::get('/earnings/{earning}', [VendorTaxiDriverEarningController::class, 'show'])->name('earnings.show');
         Route::patch('/earnings/{earning}/payable', [VendorTaxiDriverEarningController::class, 'markPayable'])->name('earnings.payable');
@@ -442,6 +557,7 @@ Route::middleware(['auth', 'driver'])->prefix('driver')->name('driver.')->group(
         Route::patch('/profile/availability', [DriverTaxiProfileController::class, 'availability'])->name('profile.availability');
         Route::get('/earnings', [DriverTaxiEarningController::class, 'index'])->name('earnings.index');
         Route::get('/earnings/{earning}', [DriverTaxiEarningController::class, 'show'])->name('earnings.show');
+        Route::get('/reviews', [DriverReviewController::class, 'index'])->name('reviews.index');
         Route::post('/location', [DriverTaxiLocationController::class, 'store'])->name('location.store');
         Route::get('/location/status', [DriverTaxiLocationController::class, 'status'])->name('location.status');
     });
@@ -502,6 +618,20 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::resource('places', PlaceController::class)->except('show')->middleware('module:tours');
     Route::resource('tags', TagController::class)->except('show')->middleware('module:tours');
     Route::resource('tour-categories', TourCategoryController::class)->except('show')->middleware('module:tours');
+
+    // Phase 12B.4.1 shared geography (Countries/States/Cities). Platform
+    // data — intentionally NOT module-gated so Hotels/Tours/discovery
+    // keep their geography even when a single module is disabled.
+    Route::resource('countries', AdminCountryController::class)->except('show');
+    Route::resource('states', AdminStateController::class)->except('show');
+    Route::resource('cities', AdminCityController::class)->except('show');
+
+    // Bounded dependent selects for Property/Tour admin + vendor forms.
+    Route::prefix('locations/lookup')->name('locations.lookup.')->group(function () {
+        Route::get('/states', [AdminLocationLookupController::class, 'states'])->name('states');
+        Route::get('/cities', [AdminLocationLookupController::class, 'cities'])->name('cities');
+        Route::get('/destinations', [AdminLocationLookupController::class, 'destinations'])->name('destinations');
+    });
 
     Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
     Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
@@ -765,6 +895,104 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::delete('/vendor-plans/{vendorPlan}', [AdminVendorPlanController::class, 'destroy'])->name('vendor-plans.destroy');
     Route::post('/vendor-profiles/{vendorProfile}/plan', [AdminVendorPlanController::class, 'assign'])->name('vendor-profiles.plan.assign');
 
+    // Phase 12B.1 hotel module (blocked with 404 while the hotels module
+    // is disabled; staff permissions enforced per route via the map).
+    Route::middleware('module:hotels')->prefix('hotel')->name('hotel.')->group(function () {
+        Route::get('/operations', [App\Http\Controllers\Admin\Hotel\OperationsController::class, 'index'])->name('operations');
+        Route::get('/reviews', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'show'])->name('reviews.show');
+        Route::patch('/reviews/{review}/moderate', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'moderate'])->name('reviews.moderate');
+        Route::post('/reviews/{review}/reply', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'reply'])->name('reviews.reply');
+        Route::put('/reviews/{review}/reply', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'updateReply'])->name('reviews.reply.update');
+        Route::delete('/reviews/{review}/reply', [App\Http\Controllers\Admin\Hotel\ReviewController::class, 'destroyReply'])->name('reviews.reply.destroy');
+        Route::patch('/operations/bookings/{booking}/status', [App\Http\Controllers\Admin\Hotel\OperationsController::class, 'status'])->name('operations.status');
+        Route::get('/properties', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'index'])->name('properties.index');
+        Route::get('/properties/create', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'create'])->name('properties.create');
+        Route::post('/properties', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'store'])->name('properties.store');
+        Route::get('/properties/{property:id}', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'show'])->name('properties.show');
+        Route::get('/properties/{property:id}/edit', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'edit'])->name('properties.edit');
+        Route::put('/properties/{property:id}', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'update'])->name('properties.update');
+        Route::delete('/properties/{property:id}', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'destroy'])->name('properties.destroy');
+        Route::post('/properties/{property:id}/publish', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'publish'])->name('properties.publish');
+        Route::post('/properties/{property:id}/reject', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'reject'])->name('properties.reject');
+        Route::post('/properties/{property:id}/deactivate', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'deactivate'])->name('properties.deactivate');
+        Route::post('/properties/{property:id}/images', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'storeImage'])->name('properties.images.store');
+        Route::delete('/properties/{property:id}/images/{image}', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'destroyImage'])->name('properties.images.destroy');
+        Route::patch('/properties/{property:id}/images/{image}/primary', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'primaryImage'])->name('properties.images.primary');
+        Route::get('/cities', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'cities'])->name('cities.index');
+        Route::get('/destinations', [App\Http\Controllers\Admin\Hotel\PropertyController::class, 'destinations'])->name('destinations.index');
+
+        Route::get('/property-types', [CatalogueController::class, 'types'])->name('property-types.index');
+        Route::post('/property-types', [CatalogueController::class, 'storeType'])->name('property-types.store');
+        Route::put('/property-types/{type}', [CatalogueController::class, 'updateType'])->name('property-types.update');
+        Route::patch('/property-types/{type}/toggle', [CatalogueController::class, 'toggleType'])->name('property-types.toggle');
+
+        Route::get('/amenities', [CatalogueController::class, 'amenities'])->name('amenities.index');
+        Route::post('/amenities', [CatalogueController::class, 'storeAmenity'])->name('amenities.store');
+        Route::put('/amenities/{amenity}', [CatalogueController::class, 'updateAmenity'])->name('amenities.update');
+        Route::patch('/amenities/{amenity}/toggle', [CatalogueController::class, 'toggleAmenity'])->name('amenities.toggle');
+
+        Route::get('/settings', [HotelSettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [HotelSettingsController::class, 'update'])->name('settings.update');
+
+        Route::get('/properties/{property:id}/room-types', [RoomController::class, 'index'])->name('room-types.index');
+        Route::get('/properties/{property:id}/room-types/create', [RoomController::class, 'create'])->name('room-types.create');
+        Route::post('/properties/{property:id}/room-types', [RoomController::class, 'store'])->name('room-types.store');
+        Route::get('/room-types/{roomType}', [RoomController::class, 'show'])->name('room-types.show');
+        Route::get('/room-types/{roomType}/edit', [RoomController::class, 'edit'])->name('room-types.edit');
+        Route::put('/room-types/{roomType}', [RoomController::class, 'update'])->name('room-types.update');
+        Route::delete('/room-types/{roomType}', [RoomController::class, 'destroy'])->name('room-types.destroy');
+        Route::post('/room-types/{roomType}/images', [RoomController::class, 'storeImage'])->name('room-types.images.store');
+        Route::delete('/room-types/{roomType}/images/{image}', [RoomController::class, 'destroyImage'])->name('room-types.images.destroy');
+        Route::patch('/room-types/{roomType}/images/{image}/primary', [RoomController::class, 'primaryImage'])->name('room-types.images.primary');
+
+        Route::get('/properties/{property:id}/units', [UnitController::class, 'index'])->name('room-units.index');
+        Route::post('/properties/{property:id}/units', [UnitController::class, 'store'])->name('room-units.store');
+        Route::put('/units/{unit}', [UnitController::class, 'update'])->name('room-units.update');
+        Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('room-units.destroy');
+
+        Route::get('/bed-types', [CatalogueController::class, 'bedTypes'])->name('bed-types.index');
+        Route::post('/bed-types', [CatalogueController::class, 'storeBedType'])->name('bed-types.store');
+        Route::put('/bed-types/{bedType}', [CatalogueController::class, 'updateBedType'])->name('bed-types.update');
+        Route::patch('/bed-types/{bedType}/toggle', [CatalogueController::class, 'toggleBedType'])->name('bed-types.toggle');
+
+        Route::get('/custom-fields', [CustomFieldController::class, 'index'])->name('custom-fields.index');
+        Route::post('/custom-fields', [CustomFieldController::class, 'store'])->name('custom-fields.store');
+        Route::put('/custom-fields/{definition}', [CustomFieldController::class, 'update'])->name('custom-fields.update');
+        Route::patch('/custom-fields/{definition}/toggle', [CustomFieldController::class, 'toggle'])->name('custom-fields.toggle');
+
+        Route::get('/inventory', [App\Http\Controllers\Admin\Hotel\InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory', [App\Http\Controllers\Admin\Hotel\InventoryController::class, 'store'])->name('inventory.store');
+        Route::post('/inventory/bulk', [App\Http\Controllers\Admin\Hotel\InventoryController::class, 'bulk'])->name('inventory.bulk');
+        Route::delete('/inventory', [App\Http\Controllers\Admin\Hotel\InventoryController::class, 'clear'])->name('inventory.clear');
+
+        Route::get('/rate-plans', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'index'])->name('rate-plans.index');
+        Route::post('/rate-plans', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'store'])->name('rate-plans.store');
+        Route::put('/rate-plans/{plan}', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'update'])->name('rate-plans.update');
+        Route::patch('/rate-plans/{plan}/toggle', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'toggle'])->name('rate-plans.toggle');
+        Route::post('/seasons', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'storeSeason'])->name('seasons.store');
+        Route::put('/seasons/{season}', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'updateSeason'])->name('seasons.update');
+        Route::patch('/seasons/{season}/toggle', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'toggleSeason'])->name('seasons.toggle');
+        Route::delete('/seasons/{season}', [App\Http\Controllers\Admin\Hotel\RatePlanController::class, 'destroySeason'])->name('seasons.destroy');
+        Route::get('/daily-rates', [App\Http\Controllers\Admin\Hotel\DailyRateController::class, 'index'])->name('daily-rates.index');
+        Route::post('/daily-rates', [App\Http\Controllers\Admin\Hotel\DailyRateController::class, 'store'])->name('daily-rates.store');
+        Route::post('/daily-rates/bulk', [App\Http\Controllers\Admin\Hotel\DailyRateController::class, 'bulk'])->name('daily-rates.bulk');
+        Route::delete('/daily-rates', [App\Http\Controllers\Admin\Hotel\DailyRateController::class, 'clear'])->name('daily-rates.clear');
+        Route::get('/bookings', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings/create', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'store'])->name('bookings.store');
+        Route::get('/bookings/{booking}', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'show'])->name('bookings.show');
+        Route::patch('/bookings/{booking}/status', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'status'])->name('bookings.status');
+        Route::post('/bookings/{booking}/cancel', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::post('/bookings/{booking}/refunds', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'refund'])->name('bookings.refunds.store');
+        Route::post('/bookings/{booking}/reschedule', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'reschedule'])->name('bookings.reschedule');
+        Route::post('/bookings/{booking}/reschedule-quote', [App\Http\Controllers\Admin\Hotel\BookingController::class, 'rescheduleQuote'])->name('bookings.reschedule-quote');
+        Route::get('/charges', [ChargeRuleController::class, 'index'])->name('charges.index');
+        Route::post('/charges', [ChargeRuleController::class, 'store'])->name('charges.store');
+        Route::put('/charges/{rule}', [ChargeRuleController::class, 'update'])->name('charges.update');
+        Route::patch('/charges/{rule}/toggle', [ChargeRuleController::class, 'toggle'])->name('charges.toggle');
+    });
+
     // Phase 12A.1 taxi module (blocked with 404 while the taxi module is
     // disabled; staff permissions enforced per route via the map).
     Route::middleware('module:taxi')->prefix('taxi')->name('taxi.')->group(function () {
@@ -829,20 +1057,24 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
         Route::patch('/bookings/{taxiBooking}/status', [AdminTaxiBookingController::class, 'status'])->name('bookings.status');
         Route::post('/bookings/{taxiBooking}/payments', [AdminTaxiBookingController::class, 'storePayment'])->name('bookings.payments.store');
 
-
         // Phase 12A.11: authenticated booking changes and manual refunds.
-        Route::get('/changes/{booking}', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
-        Route::get('/changes/{booking}/quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/cancel', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule-quote', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/reschedule', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
-        Route::post('/changes/{booking}/refunds', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
-        Route::post('/changes/{booking}/refunds/{refund}/process', [\App\Http\Controllers\Taxi\TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
-        Route::get('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
-        Route::post('/cancellation-policies', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
-        Route::put('/cancellation-policies/{policy}', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
-        Route::patch('/cancellation-policies/{policy}/toggle', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
-        Route::put('/cancellation-settings', [\App\Http\Controllers\Taxi\TaxiCancellationPolicyController::class, 'settings'])->name('cancellation-settings.update');
+        Route::get('/changes/{booking}', [TaxiChangeController::class, 'show'])->name('changes.show')->middleware('throttle:30,1');
+        Route::get('/changes/{booking}/quote', [TaxiChangeController::class, 'quote'])->name('changes.quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/cancel', [TaxiChangeController::class, 'cancel'])->name('changes.cancel')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule-quote', [TaxiChangeController::class, 'rescheduleQuote'])->name('changes.reschedule-quote')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/reschedule', [TaxiChangeController::class, 'reschedule'])->name('changes.reschedule')->middleware('throttle:30,1');
+        Route::post('/changes/{booking}/refunds', [TaxiChangeController::class, 'refund'])->name('changes.refunds.store');
+        Route::post('/changes/{booking}/refunds/{refund}/process', [TaxiChangeController::class, 'processRefund'])->name('changes.refunds.process');
+        Route::get('/cancellation-policies', [TaxiCancellationPolicyController::class, 'index'])->name('cancellation-policies.index');
+        Route::post('/cancellation-policies', [TaxiCancellationPolicyController::class, 'store'])->name('cancellation-policies.store');
+        Route::put('/cancellation-policies/{policy}', [TaxiCancellationPolicyController::class, 'update'])->name('cancellation-policies.update');
+        Route::patch('/cancellation-policies/{policy}/toggle', [TaxiCancellationPolicyController::class, 'toggle'])->name('cancellation-policies.toggle');
+        Route::put('/cancellation-settings', [TaxiCancellationPolicyController::class, 'settings'])->name('cancellation-settings.update');
+        Route::get('/reviews', [TaxiReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [TaxiReviewController::class, 'show'])->name('reviews.show');
+        Route::post('/reviews/{review}/moderate', [TaxiReviewController::class, 'moderate'])->name('reviews.moderate');
+        Route::post('/reviews/{review}/reply', [TaxiReviewController::class, 'reply'])->name('reviews.reply');
+        Route::post('/reviews/{review}/flag', [TaxiReviewController::class, 'flag'])->name('reviews.flag');
         Route::get('/earnings', [AdminTaxiDriverEarningController::class, 'index'])->name('earnings.index');
         Route::get('/earnings/{earning}', [AdminTaxiDriverEarningController::class, 'show'])->name('earnings.show');
         Route::patch('/earnings/{earning}/payable', [AdminTaxiDriverEarningController::class, 'markPayable'])->name('earnings.payable');

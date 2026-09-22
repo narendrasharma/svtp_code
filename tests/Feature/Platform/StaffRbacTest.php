@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Platform;
 
+use App\Http\Middleware\EnsureStaffPermission;
 use App\Models\Booking;
 use App\Models\User;
 use App\Models\VendorProfile;
@@ -183,5 +184,27 @@ class StaffRbacTest extends TestCase
         // though the originating staff member had staff permissions.
         $this->get(route('admin.dashboard'))->assertForbidden();
         $this->get(route('admin.search', ['q' => 'test']))->assertForbidden();
+    }
+
+    public function test_hotel_booking_mutation_routes_require_granular_permissions(): void
+    {
+        // 12B.9 freeze: hotel cancel/refund/reschedule must never fall back
+        // to dashboard.view — each maps to its granular hotel permission.
+        $this->assertSame(
+            'hotel.cancellations.manage',
+            EnsureStaffPermission::permissionForRoute('admin.hotel.bookings.cancel')
+        );
+        $this->assertSame(
+            'hotel.refunds.manage',
+            EnsureStaffPermission::permissionForRoute('admin.hotel.bookings.refunds.store')
+        );
+        $this->assertSame(
+            'hotel.reschedules.manage',
+            EnsureStaffPermission::permissionForRoute('admin.hotel.bookings.reschedule')
+        );
+        $this->assertSame(
+            'hotel.reschedules.manage',
+            EnsureStaffPermission::permissionForRoute('admin.hotel.bookings.reschedule-quote')
+        );
     }
 }

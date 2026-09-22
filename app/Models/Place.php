@@ -13,7 +13,16 @@ class Place extends Model
     /** @use HasFactory<PlaceFactory> */
     use HasFactory;
 
-    protected $fillable = ['destination_id', 'name', 'slug', 'description', 'image', 'meta_description', 'meta_title'];
+    protected $fillable = [
+        'destination_id', 'name', 'slug', 'description', 'image',
+        'latitude', 'longitude', 'is_active', 'sort_order',
+        'meta_description', 'meta_title',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
+    ];
 
     public function destination(): BelongsTo
     {
@@ -23,5 +32,15 @@ class Place extends Model
     public function tourPackages(): BelongsToMany
     {
         return $this->belongsToMany(TourPackage::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('name');
     }
 }

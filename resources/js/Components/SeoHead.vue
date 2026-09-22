@@ -33,7 +33,16 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+
+    structuredData: {
+        type: Object,
+        default: null,
+    },
 });
+
+const structuredJson = computed(() => props.structuredData
+    ? JSON.stringify(props.structuredData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+    : null);
 
 const page = usePage();
 
@@ -119,6 +128,7 @@ const robots = computed(() => {
 <template>
     <Head>
         <title>{{ finalTitle }}</title>
+        <component :is="'script'" v-if="structuredJson" type="application/ld+json" head-key="structured-data" v-html="structuredJson" />
 
         <meta
             v-if="finalDescription"

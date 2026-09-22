@@ -18,7 +18,7 @@ const logoUrl = computed(() => {
 </script>
 
 <template>
-    <div class="dashboard-brand">
+    <div class="dashboard-brand" :title="`${siteName} — ${panelLabel}`">
         <div class="dashboard-brand-logo">
             <img
                 v-if="logoUrl"

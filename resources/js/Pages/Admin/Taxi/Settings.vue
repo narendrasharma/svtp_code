@@ -51,6 +51,15 @@ const form = useForm({
     taxi_customer_tracking_show_vehicle_registration: boolSetting('taxi.customer_tracking.show_vehicle_registration', false),
     taxi_customer_tracking_show_route: boolSetting('taxi.customer_tracking.show_route', true),
     taxi_customer_tracking_refresh_seconds: Number(props.settings['taxi.customer_tracking.refresh_seconds'] ?? 30),
+    taxi_reviews_enabled: boolSetting('taxi.reviews.enabled', true),
+    taxi_reviews_require_moderation: boolSetting('taxi.reviews.require_moderation', true),
+    taxi_reviews_review_window_days: props.settings['taxi.reviews.review_window_days'] ? Number(props.settings['taxi.reviews.review_window_days']) : '',
+    taxi_reviews_allow_text_review: boolSetting('taxi.reviews.allow_text_review', true),
+    taxi_reviews_allow_vendor_reply: boolSetting('taxi.reviews.allow_vendor_reply', true),
+    taxi_reviews_show_driver_rating_publicly: boolSetting('taxi.reviews.show_driver_rating_publicly', false),
+    taxi_reviews_show_vendor_rating_publicly: boolSetting('taxi.reviews.show_vendor_rating_publicly', false),
+    taxi_reviews_minimum_reviews_for_public_average: Number(props.settings['taxi.reviews.minimum_reviews_for_public_average'] ?? 5),
+    taxi_reviews_low_rating_threshold: Number(props.settings['taxi.reviews.low_rating_threshold'] ?? 2),
 });
 
 function submit() {
@@ -304,6 +313,60 @@ function submit() {
                     <div class="col-md-6">
                         <label class="form-label small">Customer refresh (seconds, 15–60)</label>
                         <input v-model="form.taxi_customer_tracking_refresh_seconds" type="number" min="15" max="60" class="form-control" required />
+                    </div>
+                </div>
+
+                <h5 class="card-title mt-4 mb-3">Reviews &amp; service quality</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-enabled" v-model="form.taxi_reviews_enabled" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-enabled">Taxi reviews enabled</label>
+                        </div>
+                        <div class="form-text">Completed trips can be rated by their customer.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-moderation" v-model="form.taxi_reviews_require_moderation" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-moderation">Require moderation</label>
+                        </div>
+                        <div class="form-text">Off = eligible reviews publish immediately.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-text" v-model="form.taxi_reviews_allow_text_review" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-text">Allow text reviews</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-reply" v-model="form.taxi_reviews_allow_vendor_reply" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-reply">Allow vendor replies</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-public-driver" v-model="form.taxi_reviews_show_driver_rating_publicly" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-public-driver">Public driver rating</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input id="reviews-public-vendor" v-model="form.taxi_reviews_show_vendor_rating_publicly" type="checkbox" class="form-check-input" />
+                            <label class="form-check-label" for="reviews-public-vendor">Public vendor rating</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Review window (days, empty = no limit)</label>
+                        <input v-model="form.taxi_reviews_review_window_days" type="number" min="1" max="365" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Min reviews for public average</label>
+                        <input v-model="form.taxi_reviews_minimum_reviews_for_public_average" type="number" min="1" max="100" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Low-rating alert threshold (1–5)</label>
+                        <input v-model="form.taxi_reviews_low_rating_threshold" type="number" min="1" max="5" class="form-control" required />
                     </div>
                 </div>
             </div>

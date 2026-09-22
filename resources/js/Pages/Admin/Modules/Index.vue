@@ -1,6 +1,7 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { appUrl } from '../../../appUrl';
 
 defineProps({
     modules: { type: Array, default: () => [] },
@@ -8,7 +9,7 @@ defineProps({
 
 function toggle(module) {
     if (!module.available) return;
-    router.patch(`/admin/modules/${module.key}`, { enabled: !module.enabled }, { preserveScroll: true });
+    router.patch(appUrl(`/admin/modules/${module.key}`), { enabled: !module.enabled }, { preserveScroll: true });
 }
 </script>
 

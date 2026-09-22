@@ -34,8 +34,8 @@ return [
     'hotels' => [
         'key' => 'hotels',
         'name' => 'Hotels',
-        'description' => 'Hotel reservations and stays. Planned future module — not installed yet.',
-        'available' => false,
+        'description' => 'Hotel and property listings: types, amenities, galleries and publishing.',
+        'available' => true,
         'enabled_by_default' => false,
         'order' => 30,
     ],

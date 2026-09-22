@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Operations;
 
 use App\Services\TaxiAutoDispatchService;
+use App\Support\ModuleManager;
 use Illuminate\Console\Command;
 
 /**
@@ -17,6 +18,12 @@ class ExpireDispatchOffersCommand extends Command
 
     public function handle(TaxiAutoDispatchService $autoDispatch): int
     {
+        if (app(ModuleManager::class)->isDisabled('taxi')) {
+            $this->info('Taxi module is disabled; nothing to expire.');
+
+            return self::SUCCESS;
+        }
+
         $result = $autoDispatch->expireDueOffers();
 
         $this->info("Dispatch offers: {$result['expired']} expired, {$result['advanced']} bookings advanced.");

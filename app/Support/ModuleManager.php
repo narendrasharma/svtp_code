@@ -26,6 +26,15 @@ class ModuleManager
     public const HOTELS = 'hotels';
 
     /**
+     * Normalize the singular Hotel key used by older admin bundles to the
+     * registered key used by hotel route gating and settings storage.
+     */
+    public function canonicalKey(string $module): string
+    {
+        return $module === 'hotel' ? self::HOTELS : $module;
+    }
+
+    /**
      * All registered modules with runtime state.
      *
      * @return array<int, array{key:string,name:string,description:string,available:bool,enabled:bool,order:int}>
@@ -62,16 +71,20 @@ class ModuleManager
 
     public function isKnown(string $module): bool
     {
-        return array_key_exists($module, config('modules', []));
+        return array_key_exists($this->canonicalKey($module), config('modules', []));
     }
 
     public function isAvailable(string $module): bool
     {
+        $module = $this->canonicalKey($module);
+
         return (bool) (config("modules.{$module}.available") ?? false);
     }
 
     public function isEnabled(string $module): bool
     {
+        $module = $this->canonicalKey($module);
+
         if (! $this->isKnown($module)) {
             return false;
         }
@@ -105,6 +118,8 @@ class ModuleManager
      */
     public function setEnabled(string $module, bool $enabled): void
     {
+        $module = $this->canonicalKey($module);
+
         if (! $this->isKnown($module)) {
             throw new \InvalidArgumentException("Unknown module [{$module}].");
         }
