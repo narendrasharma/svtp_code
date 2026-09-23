@@ -1,5 +1,15 @@
+@php
+    // Phase 13A: document lang/dir resolve server-side to avoid flicker.
+    // SetLocale middleware already set the app locale; fall back safely.
+    $docLocale = str_replace('_', '-', app()->getLocale() ?: config('app.locale', 'en'));
+    try {
+        $docDirection = \App\Support\Localization::direction(app()->getLocale());
+    } catch (\Throwable) {
+        $docDirection = 'ltr';
+    }
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $docLocale }}" dir="{{ $docDirection }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,7 +66,7 @@
         @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500;600&display=swap" rel="stylesheet">
     <title inertia>{{ $siteName }}</title>
     @routes
     @vite(['resources/css/app.css', 'resources/js/app.js'])

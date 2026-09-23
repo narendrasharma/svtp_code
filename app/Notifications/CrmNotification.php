@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Arr;
 
 /**
  * CRM + reservation-desk in-app notifications (Phase 11.5B).
@@ -24,6 +25,21 @@ class CrmNotification extends MarketplaceNotification
     protected function mailCategory(): string
     {
         return 'marketplace';
+    }
+
+    /**
+     * Guest Taxi notices are mail-only because anonymous recipients do not
+     * have a database notification owner.
+     *
+     * @return array<int, string>
+     */
+    public function via(object $notifiable): array
+    {
+        if (($this->data['guest_recipient'] ?? false) === true) {
+            return ['mail'];
+        }
+
+        return parent::via($notifiable);
     }
 
     public function title(): string
@@ -130,11 +146,11 @@ class CrmNotification extends MarketplaceNotification
             'quotation_expiring' => isset($this->data['quotation_id']) ? "/admin/quotations/{$this->data['quotation_id']}" : '/admin/quotations',
             'payment_due', 'travel_reminder' => isset($this->data['booking_id']) ? "/admin/bookings/{$this->data['booking_id']}" : '/admin/bookings',
             'vendor_travel_reminder' => isset($this->data['booking_id']) ? "/vendor/bookings/{$this->data['booking_id']}" : '/vendor/bookings',
-            'taxi_booking_confirmed', 'taxi_driver_assigned', 'taxi_travel_reminder', 'taxi_status_updated' => isset($this->data['taxi_booking_id']) ? "/admin/taxi/bookings/{$this->data['taxi_booking_id']}" : '/admin/taxi/bookings',
+            'taxi_booking_confirmed', 'taxi_driver_assigned', 'taxi_travel_reminder', 'taxi_status_updated' => $this->customerActionUrl() ?? (isset($this->data['taxi_booking_id']) ? "/admin/taxi/bookings/{$this->data['taxi_booking_id']}" : '/admin/taxi/bookings'),
+            'taxi_cancelled', 'taxi_refunded', 'taxi_rescheduled' => $this->customerActionUrl(),
             'taxi_assignment', 'taxi_vendor_travel_reminder', 'taxi_dispatch_updated' => isset($this->data['taxi_booking_id']) ? "/vendor/taxi/bookings/{$this->data['taxi_booking_id']}" : '/vendor/taxi/bookings',
             'taxi_driver_update' => isset($this->data['taxi_booking_id']) ? "/driver/taxi/trips/{$this->data['taxi_booking_id']}" : '/driver/taxi/trips',
             'taxi_dispatch_offer', 'taxi_dispatch_offer_cancelled' => '/driver/taxi/offers',
-            'taxi_cancelled', 'taxi_refunded', 'taxi_rescheduled' => null,
             'taxi_driver_earning', 'taxi_driver_payout_paid' => '/driver/taxi/earnings',
             'taxi_driver_payout_created' => '/vendor/taxi/payouts',
             'hotel_property_submitted' => isset($this->data['property_id']) ? "/admin/hotel/properties/{$this->data['property_id']}" : '/admin/hotel/properties',
@@ -155,7 +171,7 @@ class CrmNotification extends MarketplaceNotification
             'title' => $this->title(),
             'message' => $this->message(),
             'action_url' => $this->actionUrl(),
-            'meta' => $this->data,
+            'meta' => Arr::except($this->data, ['guest_url', 'customer_url', 'guest_recipient']),
         ];
     }
 
@@ -165,9 +181,16 @@ class CrmNotification extends MarketplaceNotification
             'subject' => $this->title(),
             'greeting' => 'Hello,',
             'lines' => [$this->message()],
-            'action_text' => $this->actionUrl() ? 'Review now' : null,
+            'action_text' => $this->actionUrl() ? (($this->data['guest_recipient'] ?? false) ? __('common.manage_booking') : 'Review now') : null,
             'action_url' => $this->actionUrl(),
         ]);
+    }
+
+    protected function customerActionUrl(): ?string
+    {
+        return ($this->data['guest_recipient'] ?? false) === true
+            ? ($this->data['guest_url'] ?? null)
+            : ($this->data['customer_url'] ?? null);
     }
 
     protected function displayReference(): string

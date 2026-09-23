@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TourModerationStatus;
+use App\Support\HasTranslations;
 use Database\Factories\TourPackageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,16 @@ class TourPackage extends Model
 {
     /** @use HasFactory<TourPackageFactory> */
     use HasFactory;
+
+    use HasTranslations;
+
+    /**
+     * @return array<int, string>
+     */
+    public static function translatableFields(): array
+    {
+        return ['title', 'overview', 'meta_title', 'meta_description'];
+    }
 
     protected $fillable = [
         'title', 'slug', 'city_id', 'duration_days', 'duration_nights',

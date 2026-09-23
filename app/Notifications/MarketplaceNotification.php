@@ -56,6 +56,10 @@ abstract class MarketplaceNotification extends Notification
 
     protected function absoluteUrl(string $relativePath): string
     {
+        if (preg_match('/^https?:\/\//i', $relativePath) === 1) {
+            return $relativePath;
+        }
+
         return rtrim((string) config('app.url'), '/').$relativePath;
     }
 

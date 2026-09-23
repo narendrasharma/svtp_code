@@ -37,3 +37,7 @@ Schedule::command('ops:digest')->dailyAt('07:30')->name('ops-digest');
 Schedule::command('ops:cleanup')->dailyAt('03:00')->name('ops-cleanup');
 
 Schedule::command('taxi:expire-dispatch-offers')->everyFiveMinutes()->name('taxi-expire-dispatch-offers');
+
+// Phase 13B FX refresh (manual provider = cheap no-op success; remote
+// providers refresh at most daily). Never blocks bookings on staleness.
+Schedule::command('currency:refresh-rates')->dailyAt('04:00')->name('currency-refresh-rates');

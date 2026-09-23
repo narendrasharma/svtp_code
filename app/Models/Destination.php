@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Database\Factories\DestinationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ class Destination extends Model
 {
     /** @use HasFactory<DestinationFactory> */
     use HasFactory;
+
+    use HasTranslations;
 
     /**
      * Controlled discovery types. A destination is a travel concept
@@ -33,6 +36,16 @@ class Destination extends Model
     public const TYPE_TOURISM_ZONE = 'tourism_zone';
 
     public const TYPE_OTHER = 'other';
+
+    /**
+     * Phase 13A representative translatable domain (shared platform).
+     *
+     * @return array<int, string>
+     */
+    public static function translatableFields(): array
+    {
+        return ['name', 'description', 'meta_title', 'meta_description'];
+    }
 
     /**
      * @return array<int, string>

@@ -15,14 +15,17 @@ use App\Http\Controllers\Admin\BookingRescheduleController as AdminBookingResche
 use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CommunicationLogController as AdminCommunicationLogController;
+use App\Http\Controllers\Admin\ContentTranslationController as AdminContentTranslationController;
 use App\Http\Controllers\Admin\CountryController as AdminCountryController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CrmDashboardController as AdminCrmDashboardController;
+use App\Http\Controllers\Admin\CurrencyController as AdminCurrencyController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DestinationController as AdminDestinationController;
 use App\Http\Controllers\Admin\EditorUploadController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
+use App\Http\Controllers\Admin\ExchangeRateController as AdminExchangeRateController;
 use App\Http\Controllers\Admin\FailedJobController as AdminFailedJobController;
 use App\Http\Controllers\Admin\FollowUpController as AdminFollowUpController;
 use App\Http\Controllers\Admin\HomepageSectionController;
@@ -34,6 +37,7 @@ use App\Http\Controllers\Admin\Hotel\RoomController;
 use App\Http\Controllers\Admin\Hotel\UnitController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Admin\InvitationController as AdminInvitationController;
+use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LeadSourceController as AdminLeadSourceController;
 use App\Http\Controllers\Admin\LocationLookupController as AdminLocationLookupController;
@@ -82,7 +86,9 @@ use App\Http\Controllers\Admin\VendorDocumentController as AdminVendorDocumentCo
 use App\Http\Controllers\Admin\VendorFinanceController as AdminVendorFinanceController;
 use App\Http\Controllers\Admin\VendorPlanController as AdminVendorPlanController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\Driver\Taxi\DriverDashboardController as DriverTaxiDashboardController;
 use App\Http\Controllers\Driver\Taxi\DriverEarningController as DriverTaxiEarningController;
 use App\Http\Controllers\Driver\Taxi\DriverLocationController as DriverTaxiLocationController;
@@ -98,11 +104,12 @@ use App\Http\Controllers\HotelController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvitationAcceptController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlaceController as PublicPlaceController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicBookingController; // <-- NEW IMPORT
+use App\Http\Controllers\ProfileController; // <-- NEW IMPORT
+use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\PublicQuotationController;
 use App\Http\Controllers\PublicQuotationDecisionController;
 use App\Http\Controllers\ReviewController;
@@ -178,9 +185,42 @@ Route::get('/sitemap.xml', function () {
 });
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Phase 13A: persistent customer language selection (guest-safe,
+// session + first-party cookie, module-independent).
+Route::post('/locale', [LocaleController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('locale.store');
+// Phase 13B: persistent visitor DISPLAY currency (guest-safe,
+// session + first-party cookie, module-independent).
+Route::post('/currency', [CurrencyController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('currency.store');
 Route::get('/search', GlobalSearchController::class)
     ->middleware('throttle:60,1')
     ->name('search');
+
+// Phase 13C shared unified search & discovery foundation. Geography is
+// shared and module-independent; Hotel/Tour/Taxi slices gate inside
+// their services (plus route middleware where the module owns the
+// route). Legacy /search above stays for backwards compatibility.
+Route::get('/discover/locations', [DiscoveryController::class, 'locations'])
+    ->middleware('throttle:60,1')
+    ->name('discover.locations');
+Route::get('/discover/global', [DiscoveryController::class, 'global'])
+    ->middleware('throttle:60,1')
+    ->name('discover.global');
+Route::get('/discover/location', [DiscoveryController::class, 'location'])
+    ->middleware('throttle:60,1')
+    ->name('discover.location');
+Route::get('/search/hotels', [DiscoveryController::class, 'hotels'])
+    ->middleware('throttle:60,1')
+    ->name('search.hotels');
+Route::get('/search/tours', [DiscoveryController::class, 'tours'])
+    ->middleware('throttle:60,1')
+    ->name('search.tours');
+Route::get('/discover/taxi', [DiscoveryController::class, 'taxi'])
+    ->middleware('throttle:60,1')
+    ->name('discover.taxi');
 
 Route::get('/packages', [TourPackageController::class, 'index'])->name('packages.index')->middleware('module:tours');
 Route::get('/packages/{package:slug}', [TourPackageController::class, 'show'])->name('packages.show')->middleware('module:tours');
@@ -192,8 +232,9 @@ Route::get('/hotels/{property:slug}', [HotelController::class, 'show'])->name('h
 Route::get('/hotels/{property:slug}/availability', [HotelController::class, 'availability'])->name('hotels.availability')->middleware(['module:hotels', 'throttle:60,1']);
 // Phase 12B.4 public rates (pricing only, no booking yet).
 Route::get('/hotels/{property:slug}/rates', [HotelController::class, 'rates'])->name('hotels.rates')->middleware(['module:hotels', 'throttle:60,1']);
+Route::get('/hotels/{slug}/book', [HotelBookingController::class, 'create'])->name('hotel-booking.create')->middleware(['module:hotels', 'auth']);
 Route::post('/hotels/{slug}/book', [HotelBookingController::class, 'store'])->name('hotel-booking.store')->middleware(['module:hotels', 'throttle:10,1']);
-Route::get('/hotel-bookings/{booking}/confirmation', [App\Http\Controllers\Account\HotelBookingController::class, 'show'])->name('hotel-booking.confirmation')->middleware(['auth', 'module:hotels']);
+Route::get('/hotel-bookings/{booking}/confirmation', [App\Http\Controllers\Account\HotelBookingController::class, 'confirmation'])->name('hotel-booking.confirmation')->middleware(['module:hotels', 'auth']);
 Route::post('/packages/{package:slug}/reviews', [ReviewController::class, 'storePublic'])
     ->middleware(['throttle:3,10', 'module:tours'])
     ->name('packages.reviews.store');
@@ -204,8 +245,12 @@ Route::post('/bookings', [PublicBookingController::class, 'store'])->name('booki
 
 // Phase 11 public vendor storefront (before the CMS catch-all).
 Route::get('/vendors/{vendor:slug}', [VendorStorefrontController::class, 'show'])->name('vendors.show');
-Route::get('/bookings/confirmation/{booking}', [PublicBookingController::class, 'confirmation'])->name('booking.confirmation')->middleware('signed');
-Route::post('/bookings/{booking}/pay', [PublicBookingController::class, 'pay'])->name('booking.pay')->middleware('signed');
+Route::get('/bookings/confirmation/{booking}', [PublicBookingController::class, 'confirmation'])
+    ->name('booking.confirmation')
+    ->middleware(['module:tours', 'signed', 'tracking.privacy']);
+Route::post('/bookings/{booking}/pay', [PublicBookingController::class, 'pay'])
+    ->name('booking.pay')
+    ->middleware(['module:tours', 'signed', 'tracking.privacy']);
 
 Route::get('/about', fn () => Inertia::render('Static/About'))->name('about');
 Route::get('/our-team', fn () => Inertia::render('Static/Team'))->name('team');
@@ -249,7 +294,7 @@ Route::middleware('auth')->group(function () {
 
 // Customer account area (public theme, never under /admin).
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
-    Route::prefix('taxi')->name('taxi.')->middleware('module:taxi')->group(function () {
+    Route::prefix('taxi')->name('taxi.')->middleware(['module:taxi', 'tracking.privacy'])->group(function () {
         Route::get('/bookings', [TaxiChangeController::class, 'index'])->name('bookings.index');
 
         // Phase 12A.11: authenticated booking changes and manual refunds.
@@ -267,8 +312,8 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     });
 
     Route::get('/', [AccountDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/bookings', [AccountBookingController::class, 'index'])->name('bookings.index');
-    Route::get('/bookings/{booking}', [AccountBookingController::class, 'show'])->name('bookings.show');
+    Route::get('/bookings', [AccountBookingController::class, 'index'])->name('bookings.index')->middleware('tracking.privacy');
+    Route::get('/bookings/{booking}', [AccountBookingController::class, 'show'])->name('bookings.show')->middleware('tracking.privacy');
     Route::get('/hotel-bookings', [App\Http\Controllers\Account\HotelBookingController::class, 'index'])->name('hotel-bookings.index')->middleware('module:hotels');
     Route::get('/hotel-bookings/{booking}', [App\Http\Controllers\Account\HotelBookingController::class, 'show'])->name('hotel-bookings.show')->middleware('module:hotels');
     Route::get('/hotel-bookings/{booking}/review', [HotelReviewController::class, 'show'])->name('hotel-reviews.show')->middleware('module:hotels');
@@ -729,6 +774,32 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
         [SettingController::class, 'updateOperations']
     )->name('settings.operations.update');
 
+    // Phase 13A shared localization (module-independent platform
+    // infrastructure — never gated behind Hotels/Tours/Taxi).
+    Route::get('/languages', [AdminLanguageController::class, 'index'])->name('languages.index');
+    Route::get('/languages/create', [AdminLanguageController::class, 'create'])->name('languages.create');
+    Route::post('/languages', [AdminLanguageController::class, 'store'])->name('languages.store');
+    Route::get('/languages/{language}/edit', [AdminLanguageController::class, 'edit'])->name('languages.edit');
+    Route::put('/languages/{language}', [AdminLanguageController::class, 'update'])->name('languages.update');
+    Route::patch('/languages/{language}/default', [AdminLanguageController::class, 'setDefault'])->name('languages.default');
+    Route::patch('/languages/{language}/toggle', [AdminLanguageController::class, 'toggle'])->name('languages.toggle');
+    Route::delete('/languages/{language}', [AdminLanguageController::class, 'destroy'])->name('languages.destroy');
+    Route::post('/translations', [AdminContentTranslationController::class, 'store'])->name('translations.store');
+
+    // Phase 13B shared multi-currency (module-independent platform
+    // infrastructure — never gated behind Hotels/Tours/Taxi).
+    Route::get('/currencies', [AdminCurrencyController::class, 'index'])->name('currencies.index');
+    Route::get('/currencies/create', [AdminCurrencyController::class, 'create'])->name('currencies.create');
+    Route::post('/currencies', [AdminCurrencyController::class, 'store'])->name('currencies.store');
+    Route::get('/currencies/{currency}/edit', [AdminCurrencyController::class, 'edit'])->name('currencies.edit');
+    Route::put('/currencies/{currency}', [AdminCurrencyController::class, 'update'])->name('currencies.update');
+    Route::patch('/currencies/{currency}/default', [AdminCurrencyController::class, 'setDefault'])->name('currencies.default');
+    Route::patch('/currencies/{currency}/toggle', [AdminCurrencyController::class, 'toggle'])->name('currencies.toggle');
+    Route::delete('/currencies/{currency}', [AdminCurrencyController::class, 'destroy'])->name('currencies.destroy');
+    Route::post('/exchange-rates', [AdminExchangeRateController::class, 'store'])->name('exchange-rates.store');
+    Route::delete('/exchange-rates/{exchangeRate}', [AdminExchangeRateController::class, 'destroy'])->name('exchange-rates.destroy');
+    Route::post('/exchange-rates/settings', [AdminExchangeRateController::class, 'updateSettings'])->name('exchange-rates.settings');
+
     Route::resource('pages', AdminPageController::class)->except(['show']);
     Route::resource('menus', MenuController::class)->except(['show']);
 
@@ -746,6 +817,8 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::prefix('homepage-sections')->name('homepage-sections.')->group(function () {
         Route::get('/', [HomepageSectionController::class, 'index'])->name('index');
         Route::put('/reorder', [HomepageSectionController::class, 'reorder'])->name('reorder');
+        Route::put('/merchandising/reorder', [HomepageSectionController::class, 'reorderMerchandising'])->name('merchandising.reorder');
+        Route::get('/{homepageSection}/items/search', [HomepageSectionController::class, 'searchItems'])->name('items.search');
         Route::put('/{homepageSection}', [HomepageSectionController::class, 'update'])->name('update');
     });
 
@@ -1105,6 +1178,15 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
 // booking). Hidden with 404 while the taxi module is disabled.
 Route::get('/taxi', [TaxiEnquiryController::class, 'show'])->middleware('module:taxi')->name('taxi.enquiry');
 Route::post('/taxi/enquiry', [TaxiEnquiryController::class, 'store'])->middleware('module:taxi')->name('taxi.enquiry.store');
+Route::post('/taxi/quote', [TaxiEnquiryController::class, 'quote'])
+    ->middleware(['module:taxi', 'throttle:30,1'])
+    ->name('taxi.quote');
+Route::post('/taxi/book', [TaxiEnquiryController::class, 'book'])
+    ->middleware(['module:taxi', 'throttle:10,1'])
+    ->name('taxi.book');
+Route::get('/taxi/confirmation/{taxiBooking}', [TaxiEnquiryController::class, 'confirmation'])
+    ->middleware(['module:taxi', 'signed', 'tracking.privacy'])
+    ->name('taxi.confirmation');
 
 // Phase 12A.9 public customer tracking (token-authenticated, no login).
 // Token shape enforced; privacy headers + throttled refresh included.

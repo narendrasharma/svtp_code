@@ -1,200 +1,312 @@
 <script setup>
-import { Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
-import AppLayout from '../../Layouts/AppLayout.vue';
-import SeoHead from '../../Components/SeoHead.vue';
-import ReviewSection from '../../Components/Hotel/ReviewSection.vue';
 import { appUrl } from '../../appUrl';
+import { useLocalization } from '../../i18n';
+import PublicLayout from '../../Layouts/PublicLayout.vue';
+import SeoHead from '../../Components/SeoHead.vue';
+import ImageWithFallback from '../../Components/Public/Media/ImageWithFallback.vue';
+import RatingDisplay from '../../Components/Public/UI/RatingDisplay.vue';
+import MoneyDisplay from '../../Components/Public/UI/MoneyDisplay.vue';
+import EmptyState from '../../Components/Public/States/EmptyState.vue';
+import ErrorState from '../../Components/Public/States/ErrorState.vue';
+import PropertyReviews from '../../Components/Public/Hotels/PropertyReviews.vue';
+import RoomTypeCard from '../../Components/Public/Hotels/RoomTypeCard.vue';
+import { mediaUrl } from '../../Components/Public/homepage';
 
-const props = defineProps({ property: Object, seo: Object, reviewSummary: Object, reviews: Object, reviewCategories: Object, reviewSort: String });
+const props = defineProps({
+    property: { type: Object, required: true },
+    seo: { type: Object, default: () => ({}) },
+    reviewSummary: { type: Object, default: null },
+    reviews: { type: Object, default: null },
+    reviewCategories: { type: Object, default: () => ({}) },
+    reviewSort: { type: String, default: 'recent' },
+    stay: { type: Object, default: () => ({}) },
+});
 
-const checkIn = ref('');
-const checkOut = ref('');
-const rooms = ref(1);
-const adults = ref(2);
-const children = ref(0);
+const { locale, t } = useLocalization();
+const stay = reactive({
+    check_in: props.stay.check_in || '',
+    check_out: props.stay.check_out || '',
+    rooms: props.stay.rooms || 1,
+    adults: props.stay.adults || 2,
+    children: props.stay.children || 0,
+});
 const checking = ref(false);
 const checkError = ref('');
-const checkResult = ref(null);
-const ratesResult = ref(null);
-const selectedPlan = ref(null);
-const bookingError = ref('');
-const guestName = ref('');
-const guestEmail = ref('');
-const guestPhone = ref('');
-const specialRequests = ref('');
-const termsAccepted = ref(false);
+const availability = ref(null);
+const rates = ref(null);
+const selectedRate = ref(null);
+const galleryOpen = ref(false);
+const galleryIndex = ref(0);
 
-async function checkAvailability() {
-    checkError.value = '';
-    checkResult.value = null;
-    ratesResult.value = null;
-    if (!checkIn.value || !checkOut.value) { checkError.value = 'Choose check-in and check-out dates.'; return; }
-    checking.value = true;
+const hasDates = computed(() => Boolean(stay.check_in && stay.check_out));
+const gallery = computed(() => props.property.gallery?.length ? props.property.gallery : [{ url: null, alt: props.property.name, primary: true }]);
+const primaryImage = computed(() => gallery.value[0]);
+const secondaryImages = computed(() => gallery.value.slice(1, 5));
+const searchHref = computed(() => {
+    const params = new URLSearchParams();
+    Object.entries(stay).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) params.set(key, value);
+    });
+    return appUrl('/search/hotels?' + params.toString());
+});
+const locationText = computed(() => [props.property.city, props.property.destination, props.property.state].filter(Boolean).filter((value, index, list) => list.indexOf(value) === index).join(' · '));
+const bookingHref = computed(() => {
+    if (!selectedRate.value) return '#rooms';
+
+    const params = new URLSearchParams({
+        room_type_id: String(selectedRate.value.room_type_id),
+        rate_plan_id: String(selectedRate.value.rate_plan_id),
+        check_in: stay.check_in,
+        check_out: stay.check_out,
+        rooms: String(stay.rooms),
+        adults: String(stay.adults),
+        children: String(stay.children),
+    });
+
+    return appUrl('/hotels/' + props.property.slug + '/book?' + params.toString());
+});
+
+function formatDate(value) {
+    if (!value) return t('common.select_dates', 'Select dates');
     try {
-        const params = { check_in: checkIn.value, check_out: checkOut.value, rooms: rooms.value, adults: adults.value, children: children.value };
-        const [{ data: avail }, { data: rates }] = await Promise.all([
-            axios.get(appUrl(`/hotels/${props.property.slug}/availability`), { params: { check_in: checkIn.value, check_out: checkOut.value, rooms: rooms.value } }),
-            axios.get(appUrl(`/hotels/${props.property.slug}/rates`), { params }),
+        return new Intl.DateTimeFormat(locale.value || 'en', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value + 'T12:00:00'));
+    } catch {
+        return value;
+    }
+}
+
+function formatTime(value) {
+    if (!value) return null;
+    try {
+        return new Intl.DateTimeFormat(locale.value || 'en', { hour: 'numeric', minute: '2-digit' }).format(new Date('2020-01-01T' + value));
+    } catch {
+        return value;
+    }
+}
+
+function groupedAmenities() {
+    const groups = {};
+    (props.property.amenities || []).forEach((amenity) => {
+        const group = amenity.category || t('common.general', 'General');
+        if (!groups[group]) groups[group] = [];
+        groups[group].push(amenity);
+    });
+    return groups;
+}
+
+function roomAvailability(room) {
+    return availability.value?.room_types?.find((item) => item.slug === room.slug) || null;
+}
+
+function roomRates(room) {
+    return rates.value?.room_types?.find((item) => item.slug === room.slug)?.plans || [];
+}
+
+async function checkAvailability(options = {}) {
+    checkError.value = '';
+    selectedRate.value = null;
+
+    if (!stay.check_in || !stay.check_out) {
+        checkError.value = t('common.choose_dates_first', 'Choose check-in and check-out dates to check availability.');
+        return;
+    }
+
+    checking.value = true;
+
+    try {
+        const base = {
+            check_in: stay.check_in,
+            check_out: stay.check_out,
+            rooms: Number(stay.rooms),
+            adults: Number(stay.adults),
+            children: Number(stay.children),
+        };
+        const response = await Promise.all([
+            axios.get(appUrl('/hotels/' + props.property.slug + '/availability'), { params: base }),
+            axios.get(appUrl('/hotels/' + props.property.slug + '/rates'), { params: base }),
         ]);
-        checkResult.value = avail;
-        ratesResult.value = rates;
-    } catch (e) {
-        checkError.value = e.response?.data?.message ?? Object.values(e.response?.data?.errors ?? {}).flat().join(' ') ?? 'Could not check availability.';
+        availability.value = response[0].data;
+        rates.value = response[1].data;
+    } catch (error) {
+        availability.value = null;
+        rates.value = null;
+        checkError.value = error.response?.data?.message || t('common.availability_error', 'Availability could not be checked. Please try again.');
     } finally {
         checking.value = false;
     }
 }
 
-function roomStatus(slug) {
-    return checkResult.value?.room_types?.find(r => r.slug === slug) ?? null;
+function selectRate(rate, room) {
+    selectedRate.value = { ...rate, room_type_id: rate.room_type_id || room.id, room_slug: room.slug, room_name: room.name };
 }
 
-function roomPlans(slug) {
-    return ratesResult.value?.room_types?.find(r => r.slug === slug)?.plans?.filter(p => p.available) ?? [];
+function scrollToRooms() {
+    document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function selectPlan(plan) {
-    selectedPlan.value = plan;
-    bookingError.value = '';
+function openGallery(index) {
+    galleryIndex.value = index;
+    galleryOpen.value = true;
 }
 
-function submitBooking() {
-    if (!selectedPlan.value || !guestName.value || !guestEmail.value || !guestPhone.value) {
-        bookingError.value = 'Enter your name, email and phone before confirming.';
-        return;
-    }
-    router.post(appUrl(`/hotels/${props.property.slug}/book`), {
-        room_type_id: selectedPlan.value.room_type_id,
-        rate_plan_id: selectedPlan.value.rate_plan_id,
-        check_in: checkIn.value,
-        check_out: checkOut.value,
-        rooms: rooms.value,
-        adults: adults.value,
-        children: children.value,
-        guest_name: guestName.value,
-        guest_email: guestEmail.value,
-        guest_phone: guestPhone.value,
-        special_requests: specialRequests.value,
-        terms_accepted: termsAccepted.value,
-        quote_fingerprint: selectedPlan.value.quote_fingerprint,
-        idempotency_key: crypto.randomUUID(),
-    }, { onError: errors => { bookingError.value = Object.values(errors).flat().join(' ') || 'Could not create the reservation.'; } });
+function closeGallery() {
+    galleryOpen.value = false;
 }
 
-function stars(n) {
-    if (n === null || n === undefined) return 'Unrated';
-    return '★'.repeat(Number(n)) + '☆'.repeat(5 - Number(n));
+function onKeydown(event) {
+    if (event.key === 'Escape') closeGallery();
+    if (!galleryOpen.value || gallery.value.length < 2) return;
+    if (event.key === 'ArrowRight') galleryIndex.value = (galleryIndex.value + 1) % gallery.value.length;
+    if (event.key === 'ArrowLeft') galleryIndex.value = (galleryIndex.value - 1 + gallery.value.length) % gallery.value.length;
 }
 
-const groupedAmenities = (list) => {
-    const groups = {};
-    for (const a of (list ?? [])) (groups[a.category ?? 'General'] ??= []).push(a.name);
-    return groups;
-};
+onMounted(() => {
+    window.addEventListener('keydown', onKeydown);
+    if (hasDates.value) checkAvailability({ silent: true });
+});
+
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 </script>
-<template><AppLayout>
-<SeoHead :title="seo.title" :description="seo.description" :image="seo.image" :canonical="seo.canonical" :structured-data="seo.structuredData" />
-<div class="container py-4">
-<Link :href="appUrl('/hotels')">← All stays</Link>
-<h1 class="mt-2 mb-1">{{ property.name }}</h1>
-<p class="text-muted">{{ property.type }} · <span class="text-warning">{{ stars(property.star_rating) }}</span> · {{ property.city }}<span v-if="property.state">, {{ property.state }}</span> {{ property.country_code }}</p>
-<a v-if="reviewSummary?.reviews_count" href="#reviews" class="d-inline-flex gap-2 align-items-center mb-3"><strong>{{ Number(reviewSummary.rating_average).toFixed(1) }} ★</strong><span>{{ reviewSummary.reviews_count }} guest reviews</span></a>
 
-<div v-if="property.gallery?.length" class="row g-2 mb-3">
-<div v-for="(img, i) in property.gallery" :key="i" class="col-6 col-md-4"><img :src="img.url" :alt="img.alt ?? property.name" class="img-fluid rounded" loading="lazy" /></div>
-</div>
+<template>
+    <PublicLayout main-class="property-detail-page">
+        <SeoHead :title="seo.title" :description="seo.description" :image="seo.image" :canonical="seo.canonical" :structured-data="seo.structuredData" />
 
-<div class="row g-3">
-<div class="col-lg-8">
-<div v-if="property.short_description" class="lead">{{ property.short_description }}</div>
-<div v-if="property.description" v-html="property.description" class="mt-2"></div>
-<div class="card p-3 mt-3"><h4>Amenities</h4>
-<div v-for="(names, group) in groupedAmenities(property.amenities)" :key="group" class="mb-2"><strong>{{ group }}</strong><br />{{ names.join(' · ') }}</div>
-<p v-if="!property.amenities?.length" class="text-muted mb-0">No amenities listed yet.</p>
-</div>
-<div v-for="group in property.customFields ?? []" :key="group.group" class="card p-3 mt-3"><h4>{{ group.group }}</h4>
-<dl class="row mb-0">
-<template v-for="field in group.fields" :key="field.label || field.value">
-<dt class="col-sm-4">{{ field.label || '—' }}</dt>
-<dd class="col-sm-8"><a v-if="field.type === 'url'" :href="field.value" target="_blank" rel="noopener noreferrer">{{ field.value }}</a><span v-else>{{ field.value }}</span></dd>
+        <main>
+            <div class="public-container property-detail-container">
+                <nav class="property-breadcrumbs" aria-label="Breadcrumb">
+                    <Link :href="searchHref"><i class="bi bi-arrow-left" data-dir-icon="arrow" aria-hidden="true"></i>{{ t('common.back_to_stays', 'Back to stays') }}</Link>
+                </nav>
+
+                <section class="property-identity">
+                    <div class="property-identity__copy">
+                        <div class="property-identity__badges">
+                            <span v-if="property.type" class="public-badge public-badge--neutral">{{ property.type }}</span>
+                            <span v-if="property.star_rating" class="property-classification"><i v-for="star in property.star_rating" :key="star" class="bi bi-star-fill" aria-hidden="true"></i><span class="visually-hidden">{{ property.star_rating }} {{ t('common.property_stars', 'property stars') }}</span></span>
+                        </div>
+                        <h1>{{ property.name }}</h1>
+                        <p v-if="locationText" class="property-identity__location"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ locationText }}</p>
+                        <div class="property-identity__rating">
+                            <RatingDisplay :rating="reviewSummary?.rating_average" :review-count="reviewSummary?.reviews_count" :label="t('common.not_rated', 'Not rated')" />
+                            <a v-if="reviewSummary?.reviews_count" href="#reviews">{{ reviewSummary.reviews_count }} {{ reviewSummary.reviews_count === 1 ? t('common.review', 'review') : t('common.reviews', 'reviews') }}</a>
+                        </div>
+                    </div>
+                    <div class="property-identity__actions">
+                        <a v-if="property.website" :href="property.website" target="_blank" rel="noopener noreferrer" class="public-button public-button--outline public-button--sm">{{ t('common.visit_website', 'Visit website') }}</a>
+                        <button type="button" class="public-button public-button--primary public-button--sm" @click="scrollToRooms">{{ hasDates ? t('common.view_rates', 'View rates') : t('common.check_availability', 'Check availability') }}</button>
+                    </div>
+                </section>
+
+                <section
+                    class="property-gallery"
+                    :class="{ 'property-gallery--single': !secondaryImages.length }"
+                    aria-label="Property photos"
+                >
+                    <button type="button" class="property-gallery__primary" @click="openGallery(0)">
+                        <ImageWithFallback :src="mediaUrl(primaryImage.url)" :alt="primaryImage.alt || property.name" aspect="editorial" kind="hotel" :label="property.type || t('common.hotel', 'Hotel')" loading="eager" />
+                        <span class="property-gallery__view-label"><i class="bi bi-images" aria-hidden="true"></i>{{ t('common.view_all_photos', 'View all photos') }}</span>
+                    </button>
+                    <div v-if="secondaryImages.length" class="property-gallery__secondary">
+                        <button v-for="(image, index) in secondaryImages" :key="index" type="button" @click="openGallery(index + 1)">
+                            <ImageWithFallback :src="mediaUrl(image.url)" :alt="image.alt || property.name" aspect="square" kind="hotel" :label="property.type || t('common.hotel', 'Hotel')" loading="lazy" />
+                        </button>
+                    </div>
+                </section>
+
+                <section class="property-stay-panel" aria-labelledby="stay-panel-heading">
+                    <div class="property-stay-panel__intro">
+                        <span class="public-eyebrow">{{ t('common.plan_your_stay', 'Plan your stay') }}</span>
+                        <h2 id="stay-panel-heading">{{ hasDates ? t('common.stay_context', 'Your stay details') : t('common.check_availability', 'Check availability') }}</h2>
+                        <p>{{ hasDates ? formatDate(stay.check_in) + ' – ' + formatDate(stay.check_out) : t('common.select_dates_for_exact_rates', 'Choose dates and guests to see exact availability and rates.') }}</p>
+                    </div>
+                    <form class="property-stay-form" @submit.prevent="checkAvailability">
+                        <label class="public-field"><span class="public-field__label">{{ t('common.check_in', 'Check-in') }}</span><input v-model="stay.check_in" class="public-input" type="date" required></label>
+                        <label class="public-field"><span class="public-field__label">{{ t('common.check_out', 'Check-out') }}</span><input v-model="stay.check_out" class="public-input" type="date" required></label>
+                        <label class="public-field"><span class="public-field__label">{{ t('common.rooms', 'Rooms') }}</span><input v-model="stay.rooms" class="public-input" type="number" min="1" max="10"></label>
+                        <label class="public-field"><span class="public-field__label">{{ t('common.adults', 'Adults') }}</span><input v-model="stay.adults" class="public-input" type="number" min="1" max="20"></label>
+                        <label class="public-field"><span class="public-field__label">{{ t('common.children', 'Children') }}</span><input v-model="stay.children" class="public-input" type="number" min="0" max="20"></label>
+                        <button type="submit" class="public-button public-button--primary" :disabled="checking">{{ checking ? t('common.checking', 'Checking…') : t('common.update_stay', 'Update stay') }}</button>
+                    </form>
+                    <p v-if="checkError" class="property-stay-panel__error" role="alert">{{ checkError }}</p>
+                    <p v-if="availability" class="property-stay-panel__result" :class="{ 'is-available': availability.available }"><i class="bi" :class="availability.available ? 'bi-check-circle' : 'bi-info-circle'" aria-hidden="true"></i>{{ availability.available ? t('common.available_for_stay', 'Options available for your stay') : t('common.no_rooms_for_dates', 'No rooms available for these dates') }}</p>
+                </section>
+
+                <div class="property-detail-layout">
+                    <div class="property-detail-main">
+                        <section v-if="property.short_description || property.description" class="property-content-section" aria-labelledby="overview-heading">
+                            <span class="public-eyebrow">{{ t('common.overview', 'Overview') }}</span>
+                            <h2 id="overview-heading">{{ t('common.about_this_property', 'About this property') }}</h2>
+                            <p v-if="property.short_description" class="property-lede">{{ property.short_description }}</p>
+                            <div v-if="property.description" class="property-description" v-html="property.description"></div>
+                        </section>
+
+                        <section id="rooms" class="property-content-section property-rooms-section" aria-labelledby="rooms-heading">
+                            <div class="property-section-heading"><span class="public-eyebrow">{{ t('common.accommodation', 'Accommodation') }}</span><h2 id="rooms-heading">{{ t('common.rooms_and_rates', 'Rooms & rates') }}</h2><p>{{ hasDates ? t('common.rooms_rates_description', 'Compare room types and the commercial terms available for your selected stay.') : t('common.browse_room_types', 'Browse the room types, then add dates when you are ready to check availability.') }}</p></div>
+                            <div v-if="property.rooms?.length" class="property-room-list">
+                                <RoomTypeCard v-for="room in property.rooms" :key="room.slug" :room="room" :rates="roomRates(room)" :availability="roomAvailability(room)" :has-dates="hasDates" :selected-rate="selectedRate" @select="selectRate($event, room)" />
+                            </div>
+                            <EmptyState v-else :title="t('common.no_room_types', 'Room details coming soon')" :description="t('common.no_room_types_description', 'This property has not published room types yet.')"><a v-if="property.phone" :href="'tel:' + property.phone" class="public-button public-button--outline">{{ t('common.contact_property', 'Contact property') }}</a></EmptyState>
+                        </section>
+
+                        <section v-if="Object.keys(groupedAmenities()).length" class="property-content-section" aria-labelledby="amenities-heading">
+                            <div class="property-section-heading"><span class="public-eyebrow">{{ t('common.at_the_property', 'At the property') }}</span><h2 id="amenities-heading">{{ t('common.amenities', 'Amenities') }}</h2></div>
+                            <div class="property-amenity-groups"><div v-for="(amenities, group) in groupedAmenities()" :key="group" class="property-amenity-group"><h3>{{ group }}</h3><ul><li v-for="amenity in amenities" :key="amenity.name"><i :class="amenity.icon || 'bi bi-check2'" aria-hidden="true"></i><span>{{ amenity.name }}</span></li></ul></div></div>
+                        </section>
+
+                        <section v-if="property.customFields?.length" class="property-content-section" aria-labelledby="details-heading">
+                            <div class="property-section-heading"><span class="public-eyebrow">{{ t('common.details', 'Details') }}</span><h2 id="details-heading">{{ t('common.property_highlights', 'Property highlights') }}</h2></div>
+                            <div class="property-facts"><div v-for="group in property.customFields" :key="group.group" class="property-fact-group"><h3>{{ group.group }}</h3><dl><template v-for="field in group.fields" :key="field.label || field.value"><dt>{{ field.label }}</dt><dd><a v-if="field.type === 'url'" :href="field.value" target="_blank" rel="noopener noreferrer">{{ field.value }}</a><span v-else>{{ field.value }}</span></dd></template></dl></div></div>
+                        </section>
+
+                        <PropertyReviews :summary="reviewSummary" :reviews="reviews" :categories="reviewCategories" :sort="reviewSort" :property-slug="property.slug" :stay="stay" />
+                    </div>
+
+                    <aside class="property-detail-aside">
+                        <div class="property-aside-card property-aside-card--sticky">
+                            <span class="public-eyebrow">{{ t('common.good_to_know', 'Good to know') }}</span>
+                            <h2>{{ t('common.property_policies', 'Property policies') }}</h2>
+                            <dl class="property-policy-list">
+                                <div v-if="property.check_in_time"><dt>{{ t('common.check_in', 'Check-in') }}</dt><dd>{{ formatTime(property.check_in_time) }}</dd></div>
+                                <div v-if="property.check_out_time"><dt>{{ t('common.check_out', 'Check-out') }}</dt><dd>{{ formatTime(property.check_out_time) }}</dd></div>
+                                <div v-if="property.children_policy"><dt>{{ t('common.children', 'Children') }}</dt><dd>{{ property.children_policy }}</dd></div>
+                                <div v-if="property.pet_policy"><dt>{{ t('common.pets', 'Pets') }}</dt><dd>{{ property.pet_policy }}</dd></div>
+                                <div v-if="property.smoking_policy"><dt>{{ t('common.smoking', 'Smoking') }}</dt><dd>{{ property.smoking_policy }}</dd></div>
+                            </dl>
+                            <p v-if="property.check_in_instructions" class="property-policy-note">{{ property.check_in_instructions }}</p>
+                            <p v-if="property.house_rules" class="property-policy-note">{{ property.house_rules }}</p>
+                        </div>
+                        <div class="property-aside-card">
+                            <span class="public-eyebrow">{{ t('common.location', 'Location') }}</span>
+                            <h2>{{ locationText || t('common.property_location', 'Property location') }}</h2>
+                            <p v-if="property.address_line_1">{{ property.address_line_1 }}<span v-if="property.address_line_2">, {{ property.address_line_2 }}</span></p>
+                            <p v-if="property.postal_code || property.country_code">{{ property.postal_code }} {{ property.country_code }}</p>
+                            <a v-if="property.website" :href="property.website" target="_blank" rel="noopener noreferrer" class="public-button public-button--outline public-button--sm">{{ t('common.visit_website', 'Visit website') }}</a>
+                        </div>
+                        <div v-if="selectedRate" class="property-selection-card">
+                            <span class="public-eyebrow">{{ t('common.your_selection', 'Your selection') }}</span>
+                            <h2>{{ selectedRate.room_name }}</h2>
+                            <p>{{ selectedRate.name }}</p>
+                            <MoneyDisplay :money="selectedRate.display_total" />
+                            <Link :href="bookingHref" class="public-button public-button--primary public-button--lg">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </main>
+
+        <div v-if="selectedRate" class="property-mobile-selection">
+            <div><span>{{ selectedRate.room_name }}</span><MoneyDisplay :money="selectedRate.display_total" /></div>
+            <Link :href="bookingHref" class="public-button public-button--primary public-button--sm">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
+        </div>
+
+        <div v-if="galleryOpen" class="property-lightbox" role="dialog" aria-modal="true" :aria-label="t('common.property_photos', 'Property photos')" @click.self="closeGallery">
+            <button type="button" class="public-icon-button property-lightbox__close" :aria-label="t('common.close', 'Close')" @click="closeGallery"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            <button v-if="gallery.length > 1" type="button" class="property-lightbox__prev" :aria-label="t('common.previous_photo', 'Previous photo')" @click="galleryIndex = (galleryIndex - 1 + gallery.length) % gallery.length"><i class="bi bi-arrow-left" data-dir-icon="arrow" aria-hidden="true"></i></button>
+            <ImageWithFallback :src="mediaUrl(gallery[galleryIndex]?.url)" :alt="gallery[galleryIndex]?.alt || property.name" aspect="editorial" kind="hotel" :label="property.name" loading="eager" />
+            <button v-if="gallery.length > 1" type="button" class="property-lightbox__next" :aria-label="t('common.next_photo', 'Next photo')" @click="galleryIndex = (galleryIndex + 1) % gallery.length"><i class="bi bi-arrow-right" data-dir-icon="arrow" aria-hidden="true"></i></button>
+        </div>
+    </PublicLayout>
 </template>
-</dl>
-</div>
-<div class="card p-3 mt-3"><h4>Rooms</h4>
-<div v-if="property.rooms?.length" class="row g-3">
-<div v-for="room in property.rooms" :key="room.slug" class="col-md-6">
-<div class="border rounded p-3 h-100">
-<img v-if="room.image" :src="room.image" :alt="room.name" class="img-fluid rounded mb-2" loading="lazy" />
-<h5 class="mb-1">{{ room.name }}</h5>
-<p class="small text-muted mb-1">Sleeps {{ room.max_adults }}<span v-if="room.max_children"> + {{ room.max_children }} children</span> (max {{ room.max_occupancy }})<span v-if="room.size"> · {{ room.size }}</span></p>
-<p v-if="room.beds" class="small mb-1">Beds: {{ room.beds }}</p>
-<p v-if="room.amenities?.length" class="small mb-1">{{ room.amenities.map(a => a.name).join(' · ') }}</p>
-<p v-if="room.short_description" class="small mb-2">{{ room.short_description }}</p>
-<p v-if="roomStatus(room.slug)" class="small mb-2" :class="roomStatus(room.slug).available ? 'text-success' : 'text-danger'"><strong>{{ roomStatus(room.slug).available ? `Available (${roomStatus(room.slug).available_rooms} left)` : 'Not available for selected dates' }}</strong></p>
-<div v-for="plan in roomPlans(room.slug)" :key="plan.code" class="small border-top pt-1 mt-1">
-<strong>{{ plan.name }}</strong> <span class="text-muted">({{ plan.meal_plan }})</span><br />
-<span class="fs-6">{{ plan.currency }} {{ plan.total }}</span> <span class="text-muted">total · incl. taxes/fees</span>
-<button type="button" class="btn btn-sm btn-svtp ms-2" @click="selectPlan(plan)">Reserve</button>
-</div>
-<div v-if="selectedPlan" class="card p-3 mb-3 border-primary"><h4>Confirm reservation</h4>
-<p class="small mb-2">{{ selectedPlan.name }} · {{ selectedPlan.currency }} {{ selectedPlan.total }} · payment remains unpaid until collected.</p>
-<input v-model="guestName" class="form-control mb-2" maxlength="150" placeholder="Full name" />
-<input v-model="guestEmail" class="form-control mb-2" type="email" maxlength="150" placeholder="Email" />
-<input v-model="guestPhone" class="form-control mb-2" maxlength="40" placeholder="Phone" />
-<textarea v-model="specialRequests" class="form-control mb-2" maxlength="2000" rows="2" placeholder="Special requests (optional)"></textarea>
-<label class="small mb-2"><input v-model="termsAccepted" type="checkbox" class="me-1" /> I accept the booking terms.</label>
-<p v-if="bookingError" class="text-danger small mb-2">{{ bookingError }}</p>
-<button type="button" class="btn btn-svtp w-100" @click="submitBooking">Confirm reservation</button>
-</div>
-<button type="button" class="btn btn-sm btn-outline-primary" @click="room._open = !room._open">{{ room._open ? 'Hide details' : 'View Room Details' }}</button>
-<div v-if="room._open" class="mt-2">
-<div v-if="room.description" v-html="room.description" class="small"></div>
-<div v-for="group in room.customFields ?? []" :key="group.group" class="mt-2">
-<h6 class="text-muted text-uppercase small mb-1">{{ group.group }}</h6>
-<p v-for="field in group.fields" :key="field.label || field.value" class="small mb-1"><template v-if="field.label"><strong>{{ field.label }}:</strong> </template><a v-if="field.type === 'url'" :href="field.value" target="_blank" rel="noopener noreferrer">{{ field.value }}</a><span v-else>{{ field.value }}</span></p>
-</div>
-<div v-if="room.gallery?.length" class="row g-1 mt-2">
-<div v-for="(img, j) in room.gallery" :key="j" class="col-4"><img :src="img.url" :alt="img.alt ?? room.name" class="img-fluid rounded" loading="lazy" /></div>
-</div>
-</div>
-</div></div>
-</div>
-<p v-else class="text-muted mb-0">Rooms will be listed here soon — contact the property for details.</p>
-</div>
-<div class="card p-3 mt-3"><h4>Good to know</h4><p class="mb-1">Check-in: <strong>{{ property.check_in_time ?? '—' }}</strong> · Check-out: <strong>{{ property.check_out_time ?? '—' }}</strong></p>
-<p v-if="property.children_policy" class="mb-1">Children: {{ property.children_policy }}</p>
-<p v-if="property.pet_policy" class="mb-1">Pets: {{ property.pet_policy }}</p>
-<p v-if="property.smoking_policy" class="mb-1">Smoking: {{ property.smoking_policy }}</p>
-<p v-if="property.check_in_instructions" class="mb-1">{{ property.check_in_instructions }}</p>
-<p v-if="property.house_rules" class="mb-0">{{ property.house_rules }}</p>
-</div>
-<ReviewSection v-if="reviewSummary && reviews" :summary="reviewSummary" :reviews="reviews" :categories="reviewCategories" :sort="reviewSort" :property-slug="property.slug" />
-</div>
-<div class="col-lg-4">
-<div class="card p-3 mb-3"><h4>Check availability</h4>
-<div class="row g-2">
-<div class="col-6"><label class="form-label small" for="av-in">Check-in</label><input id="av-in" v-model="checkIn" type="date" class="form-control" /></div>
-<div class="col-6"><label class="form-label small" for="av-out">Check-out</label><input id="av-out" v-model="checkOut" type="date" class="form-control" /></div>
-<div class="col-6"><label class="form-label small" for="av-rooms">Rooms</label><input id="av-rooms" v-model="rooms" type="number" min="1" max="100" class="form-control" /></div>
-<div class="col-6"><label class="form-label small" for="av-adults">Adults</label><input id="av-adults" v-model="adults" type="number" min="1" max="200" class="form-control" /></div>
-<div class="col-6"><label class="form-label small" for="av-children">Children</label><input id="av-children" v-model="children" type="number" min="0" max="200" class="form-control" /></div>
-<div class="col-6 d-flex align-items-end"><button class="btn btn-svtp w-100" :disabled="checking" @click="checkAvailability">{{ checking ? 'Checking…' : 'Check' }}</button></div>
-</div>
-<p v-if="checkError" class="text-danger small mt-2 mb-0">{{ checkError }}</p>
-<p v-if="checkResult" class="mt-2 mb-0" :class="checkResult.available ? 'text-success' : 'text-danger'"><strong>{{ checkResult.available ? 'Available for your dates' : 'No rooms available for selected dates' }}</strong></p>
-</div>
-<div class="card p-3 mb-3"><h4>Location</h4>
-<p class="mb-1">{{ property.address_line_1 }}<span v-if="property.address_line_2">, {{ property.address_line_2 }}</span></p>
-<p class="mb-0">{{ property.city }}<span v-if="property.state">, {{ property.state }}</span> {{ property.postal_code }} {{ property.country_code }}</p>
-</div>
-<div v-if="property.phone || property.email || property.website" class="card p-3"><h4>Contact</h4>
-<p v-if="property.phone" class="mb-1">Phone: {{ property.phone }}</p>
-<p v-if="property.email" class="mb-1">Email: {{ property.email }}</p>
-<p v-if="property.website" class="mb-0">Web: <a :href="property.website" target="_blank" rel="noopener">{{ property.website }}</a></p>
-</div>
-</div>
-</div>
-</div>
-</AppLayout></template>

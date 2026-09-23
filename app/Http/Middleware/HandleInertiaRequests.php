@@ -8,6 +8,8 @@ use App\Models\TourCategory;
 use App\Services\ImpersonationService;
 use App\Services\PublicMenuService;
 use App\Support\AdminNavigation;
+use App\Support\CurrencyRegistry;
+use App\Support\Localization;
 use App\Support\ModuleManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -169,6 +171,85 @@ class HandleInertiaRequests extends Middleware
             },
             'platformModules' => fn () => app(ModuleManager::class)->all(),
             'quickActions' => fn () => $this->quickActions($request),
+            // Phase 13A shared localization contract (module-independent).
+            'localization' => fn () => $this->localization(),
+            'localeStrings' => fn () => $this->localeStrings(),
+            // Phase 13B shared currency contract (module-independent).
+            // Only enabled currencies + display codes; never provider
+            // keys, secrets, or raw admin configuration.
+            'currency' => fn () => $this->currency(),
+        ];
+    }
+
+    /**
+     * Phase 13A shared localization contract. Only public-safe fields
+     * (no internal ids/flags beyond what the switcher needs).
+     *
+     * @return array<string, mixed>
+     */
+    private function localization(): array
+    {
+        $locale = Localization::currentLocale();
+        $default = Localization::defaultLocale();
+
+        return [
+            'locale' => $locale,
+            'direction' => Localization::direction($locale),
+            'default_locale' => $default,
+            'languages' => Localization::activeLanguages(),
+        ];
+    }
+
+    /**
+     * Current-locale UI strings (common domain only). Representative
+     * foundation — full copy conversion happens with the fresh frontend.
+     * Falls back to English when a key is missing.
+     *
+     * @return array<string, string>
+     */
+    private function localeStrings(): array
+    {
+        $locale = Localization::currentLocale();
+
+        $strings = [];
+        foreach (['common', 'navigation', 'booking'] as $group) {
+            $loaded = trans($group, [], $locale);
+            if (is_array($loaded)) {
+                foreach ($loaded as $key => $value) {
+                    if (is_string($value)) {
+                        $strings["{$group}.{$key}"] = $value;
+                    }
+                }
+            }
+        }
+
+        // Fill gaps from English so the frontend never blanks.
+        $fallback = trans('common', [], 'en');
+        if (is_array($fallback)) {
+            foreach ($fallback as $key => $value) {
+                $compound = "common.{$key}";
+                if (is_string($value) && ! isset($strings[$compound])) {
+                    $strings[$compound] = $value;
+                }
+            }
+        }
+
+        return $strings;
+    }
+
+    /**
+     * Phase 13B shared currency contract. Only public-safe fields.
+     *
+     * @return array<string, mixed>
+     */
+    private function currency(): array
+    {
+        $selected = CurrencyRegistry::resolveSelected();
+
+        return [
+            'selected' => $selected,
+            'default' => CurrencyRegistry::defaultDisplayCode(),
+            'currencies' => CurrencyRegistry::activeCurrencies(),
         ];
     }
 

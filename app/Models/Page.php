@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Page extends Model
 {
     use HasFactory;
+    use HasTranslations;
 
     /**
      * -----------------------------------------------------------------
@@ -75,6 +77,16 @@ class Page extends Model
      * -----------------------------------------------------------------
      */
     public const TEMPLATE_DEFAULT = 'default';
+
+    /**
+     * Phase 13A representative translatable domain (shared platform).
+     *
+     * @return array<int, string>
+     */
+    public static function translatableFields(): array
+    {
+        return ['title', 'excerpt', 'content', 'meta_title', 'meta_description'];
+    }
 
     /**
      * Return all available template identifiers.

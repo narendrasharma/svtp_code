@@ -34,9 +34,26 @@ const props = defineProps({
         default: false,
     },
 
+    privatePage: {
+        type: Boolean,
+        default: false,
+    },
+
     structuredData: {
         type: Object,
         default: null,
+    },
+
+    // Phase 13A locale contract: explicit overrides win, otherwise the
+    // shared localization prop / localizedSeo payload supplies them.
+    locale: {
+        type: String,
+        default: null,
+    },
+
+    alternates: {
+        type: Array,
+        default: () => [],
     },
 });
 
@@ -45,6 +62,30 @@ const structuredJson = computed(() => props.structuredData
     : null);
 
 const page = usePage();
+
+const localization = computed(() => page.props.localization ?? {});
+const localizedSeo = computed(() => page.props.localizedSeo ?? {});
+
+const currentLocale = computed(() => {
+    return props.locale
+        || localizedSeo.value.locale
+        || localization.value.locale
+        || 'en';
+});
+
+const hreflangLinks = computed(() => {
+    // Only emit hreflang for real, validated alternate URLs. Phase 13A
+    // defers locale-prefixed routes, so this is [] until then.
+    const fromProp = Array.isArray(props.alternates) ? props.alternates : [];
+    const fromSeo = Array.isArray(localizedSeo.value.hreflang) ? localizedSeo.value.hreflang : [];
+    const merged = [...fromProp, ...fromSeo];
+
+    return merged.filter((entry) => entry
+        && typeof entry.locale === 'string'
+        && typeof entry.url === 'string'
+        && entry.locale !== ''
+        && /^(https?:\/\/|\/)/i.test(entry.url));
+});
 
 const settings = computed(() => {
     return page.props.siteSettings ?? {};
@@ -143,6 +184,13 @@ const robots = computed(() => {
             :content="robots"
         >
 
+        <meta
+            v-if="privatePage"
+            head-key="referrer"
+            name="referrer"
+            content="no-referrer"
+        >
+
         <!-- Open Graph -->
         <meta
             head-key="og:title"
@@ -202,6 +250,21 @@ const robots = computed(() => {
             head-key="canonical"
             rel="canonical"
             :href="canonical"
+        >
+
+        <meta
+            head-key="og:locale"
+            property="og:locale"
+            :content="currentLocale"
+        >
+
+        <link
+            v-for="entry in hreflangLinks"
+            :key="`hreflang-${entry.locale}`"
+            :head-key="`hreflang-${entry.locale}`"
+            rel="alternate"
+            :hreflang="entry.locale"
+            :href="entry.url"
         >
     </Head>
 </template>

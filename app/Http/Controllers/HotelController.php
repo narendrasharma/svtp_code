@@ -14,6 +14,7 @@ use App\Services\HotelCustomFieldService;
 use App\Services\HotelPricingService;
 use App\Services\HotelRatingSummaryService;
 use App\Services\HotelReviewService;
+use App\Services\MoneyPresenter;
 use App\Support\HotelSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,9 +72,14 @@ class HotelController extends Controller
         $filters = $request->validate([
             'review_sort' => ['sometimes', 'in:recent,highest,lowest'],
             'reviews_page' => ['sometimes', 'integer', 'min:1', 'max:100000'],
+            'check_in' => ['sometimes', 'date_format:Y-m-d', 'required_with:check_out'],
+            'check_out' => ['sometimes', 'date_format:Y-m-d', 'required_with:check_in', 'after:check_in'],
+            'rooms' => ['sometimes', 'integer', 'min:1', 'max:10'],
+            'adults' => ['sometimes', 'integer', 'min:1', 'max:20'],
+            'children' => ['sometimes', 'integer', 'min:0', 'max:20'],
         ]);
         $property = Property::published()
-            ->with(['propertyType:id,name', 'city:id,name', 'state:id,name', 'amenities' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'), 'images'])
+            ->with(['propertyType:id,name', 'city:id,name', 'state:id,name', 'destination:id,name', 'amenities' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'), 'images'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -104,6 +110,13 @@ class HotelController extends Controller
             'reviews' => fn () => $summary !== null ? $reviews->publicReviews($property, $filters['review_sort'] ?? 'recent') : null,
             'reviewCategories' => $summary !== null ? HotelReview::CATEGORY_RATINGS : [],
             'reviewSort' => $filters['review_sort'] ?? 'recent',
+            'stay' => [
+                'check_in' => $filters['check_in'] ?? null,
+                'check_out' => $filters['check_out'] ?? null,
+                'rooms' => (int) ($filters['rooms'] ?? 1),
+                'adults' => (int) ($filters['adults'] ?? 2),
+                'children' => (int) ($filters['children'] ?? 0),
+            ],
             'seo' => [
                 'title' => $property->meta_title ?: $property->name,
                 'description' => $property->meta_description ?: $property->short_description,
@@ -265,6 +278,14 @@ class HotelController extends Controller
                     'taxes' => $quote['taxes'],
                     'fees' => $quote['fees'],
                     'total' => $quote['total'],
+                    'display_subtotal' => MoneyPresenter::present($quote['subtotal'], $quote['currency']),
+                    'display_taxes' => MoneyPresenter::present($this->chargeTotal($quote['taxes']), $quote['currency']),
+                    'display_fees' => MoneyPresenter::present($this->chargeTotal($quote['fees']), $quote['currency']),
+                    // Phase 13B representative display integration: the
+                    // authoritative total/currency above are untouched
+                    // (fingerprint covers them); display_total is for
+                    // visitor presentation in the selected currency only.
+                    'display_total' => MoneyPresenter::present($quote['total'], $quote['currency']),
                     'quote_fingerprint' => HotelBookingService::fingerprint($quote),
                 ];
             }
@@ -292,6 +313,14 @@ class HotelController extends Controller
     }
 
     /**
+     * @param  array<int, array{name: string, amount: string}>  $charges
+     */
+    protected function chargeTotal(array $charges): string
+    {
+        return array_reduce($charges, fn (string $total, array $charge): string => bcadd($total, (string) $charge['amount'], 2), '0.00');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function cardFor(Property $property): array
@@ -303,6 +332,7 @@ class HotelController extends Controller
             'slug' => $property->slug,
             'type' => $property->propertyType?->name,
             'city' => $property->city?->name,
+            'destination' => $property->destination?->name,
             'country_code' => $property->country_code,
             'star_rating' => $property->star_rating,
             'short_description' => $property->short_description,

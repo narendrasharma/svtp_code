@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SavePageRequest;
 use App\Models\Page;
+use App\Support\Localization;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -98,6 +99,8 @@ class PageController extends Controller
     {
         return Inertia::render('Admin/Pages/Form', [
             'templates' => Page::availableTemplates(),
+            'translationLocales' => Localization::activeLanguages(),
+            'translations' => [],
         ]);
     }
 
@@ -112,9 +115,13 @@ class PageController extends Controller
 
     public function edit(Page $page): Response
     {
+        $page->loadMissing('translations');
+
         return Inertia::render('Admin/Pages/Form', [
             'page' => $page,
             'templates' => Page::availableTemplates(),
+            'translationLocales' => Localization::activeLanguages(),
+            'translations' => $page->translationsMap(),
         ]);
     }
 

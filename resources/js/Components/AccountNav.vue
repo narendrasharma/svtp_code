@@ -2,23 +2,25 @@
 import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { appUrl } from '../appUrl';
+import { useLocalization } from '../i18n';
 
 defineProps({
     active: { type: String, default: 'dashboard' },
 });
 
 const page = usePage();
+const { t } = useLocalization();
 const unread = computed(() => Number(page.props.notificationsUnreadCount ?? 0));
 
 const tabs = [
-    { key: 'hotels', label: 'My Hotel Bookings', href: '/account/hotel-bookings', icon: 'bi-buildings' },
-    { key: 'taxi', label: 'My Taxi Bookings', href: '/account/taxi/bookings', icon: 'bi-taxi-front' },
-    { key: 'dashboard', label: 'Dashboard', href: '/account', icon: 'bi-speedometer2' },
-    { key: 'bookings', label: 'My Bookings', href: '/account/bookings', icon: 'bi-calendar-check' },
-    { key: 'support', label: 'Support', href: '/account/support', icon: 'bi-life-preserver' },
-    { key: 'notifications', label: 'Notifications', href: '/notifications', icon: 'bi-bell' },
-    { key: 'profile', label: 'Profile', href: '/account/profile', icon: 'bi-person-gear' },
-    { key: 'vendor', label: 'Become a Vendor', href: '/vendor/apply', icon: 'bi-shop' },
+    { key: 'hotels', label: () => t('common.my_hotel_bookings', 'My Hotel Bookings'), href: '/account/hotel-bookings', icon: 'bi-buildings' },
+    { key: 'taxi', label: () => t('common.my_taxi_bookings', 'My Taxi Bookings'), href: '/account/taxi/bookings', icon: 'bi-taxi-front' },
+    { key: 'dashboard', label: () => t('common.dashboard', 'Dashboard'), href: '/account', icon: 'bi-speedometer2' },
+    { key: 'bookings', label: () => t('common.my_tour_bookings', 'My Tour Bookings'), href: '/account/bookings', icon: 'bi-calendar-check' },
+    { key: 'support', label: () => t('common.support', 'Support'), href: '/account/support', icon: 'bi-life-preserver' },
+    { key: 'notifications', label: () => t('common.notifications', 'Notifications'), href: '/notifications', icon: 'bi-bell' },
+    { key: 'profile', label: () => t('common.profile', 'Profile'), href: '/account/profile', icon: 'bi-person-gear' },
+    { key: 'vendor', label: () => t('common.become_vendor', 'Become a Vendor'), href: '/vendor/apply', icon: 'bi-shop' },
 ];
 const visibleTabs = computed(() => tabs.filter(tab => tab.key !== 'hotels'
     || page.props.platformModules?.some(module => module.key === 'hotels' && module.enabled)));
@@ -33,7 +35,7 @@ const visibleTabs = computed(() => tabs.filter(tab => tab.key !== 'hotels'
             class="btn btn-sm"
             :class="active === tab.key ? 'btn-svtp' : 'btn-outline-svtp'"
         >
-            <i class="bi me-1" :class="tab.icon"></i>{{ tab.label }}
+            <i class="bi me-1" :class="tab.icon"></i>{{ tab.label() }}
             <span v-if="tab.key === 'notifications' && unread > 0" class="badge bg-danger ms-1">{{ unread > 99 ? '99+' : unread }}</span>
         </Link>
         <Link :href="appUrl('/admin/logout')" method="post" as="button" class="btn btn-sm btn-outline-secondary ms-auto">

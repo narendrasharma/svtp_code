@@ -1,6 +1,19 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 @import './admin-theme.css';
+@import './rtl.css';
+@import './public-system.css';
+@import './public-homepage.css';
+@import './public-hotel-search.css';
+@import './public-hotel-detail.css';
+@import './public-hotel-booking.css';
+@import './public-hotel-customer.css';
+@import './public-tour-search.css';
+@import './public-tour-detail.css';
+@import './public-tour-booking.css';
+@import './public-tour-customer.css';
+@import './public-taxi.css';
+@import './public-taxi-customer.css';
 
 /*ckeditor image oversizzing fix*/
 .tour-content figure.image > img {

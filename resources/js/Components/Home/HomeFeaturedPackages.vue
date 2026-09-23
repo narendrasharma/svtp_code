@@ -19,7 +19,7 @@ defineProps({
             </div>
         </div>
         <div class="text-center mt-5">
-            <a :href="appUrl('/packages')" class="btn btn-outline-svtp">Browse All Tours</a>
+            <a :href="appUrl('/search/tours')" class="btn btn-outline-svtp">Browse All Tours</a>
             <a href="https://wa.me/918923427393" target="_blank" rel="noopener" class="btn btn-svtp ms-2">
                 <i class="bi bi-whatsapp me-1"></i>Plan My Trip on WhatsApp
             </a>

@@ -1,28 +1,87 @@
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
+import { appUrl } from '../../../appUrl';
+import { useLocalization } from '../../../i18n';
+import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import SeoHead from '../../../Components/SeoHead.vue';
 import AccountNav from '../../../Components/AccountNav.vue';
 import Pagination from '../../../Components/Pagination.vue';
-import ReviewBookingAction from '../../../Components/Hotel/ReviewBookingAction.vue';
-import { appUrl } from '../../../appUrl';
-defineProps({ bookings: Object, reviewsEnabled: Boolean });
+import EmptyState from '../../../Components/Public/States/EmptyState.vue';
+import BookingCard from '../../../Components/Public/Hotel/Bookings/BookingCard.vue';
+
+const props = defineProps({
+    bookings: { type: Object, required: true },
+    filters: { type: Object, default: () => ({ scope: 'all' }) },
+    reviewsEnabled: { type: Boolean, default: false },
+});
+
+const { t } = useLocalization();
+
+const scopes = computed(() => [
+    { key: 'all', label: t('common.all_stays', 'All stays') },
+    { key: 'upcoming', label: t('common.upcoming', 'Upcoming') },
+    { key: 'current', label: t('common.current_stay', 'Current stay') },
+    { key: 'past', label: t('common.past', 'Past') },
+    { key: 'cancelled', label: t('common.cancelled', 'Cancelled') },
+]);
+
+const currentScope = computed(() => props.filters?.scope || 'all');
+
+function scopeHref(scope) {
+    return appUrl(scope === 'all' ? '/account/hotel-bookings' : `/account/hotel-bookings?scope=${scope}`);
+}
 </script>
+
 <template>
-    <AppLayout>
-        <div class="container py-5">
-            <h1>My Hotel Bookings</h1>
+    <PublicLayout main-class="hotel-customer-page">
+        <SeoHead :title="t('common.my_hotel_bookings', 'My hotel bookings')" noindex />
+
+        <div class="hotel-customer-container">
             <AccountNav active="hotels" />
-            <div v-for="booking in bookings.data" :key="booking.id" class="card p-3 mb-2">
-                <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ booking.booking_number }}</strong><span>{{ booking.status }}</span></div>
-                <div>{{ booking.property_name_snapshot }}</div>
-                <small class="text-muted">{{ booking.check_in?.slice(0, 10) }} → {{ booking.check_out?.slice(0, 10) }} · {{ booking.currency }} {{ booking.total }}</small>
-                <div class="d-flex flex-wrap gap-2 mt-3">
-                    <Link class="btn btn-sm btn-outline-primary" :href="appUrl(`/account/hotel-bookings/${booking.id}`)">View booking</Link>
-                    <ReviewBookingAction :booking-id="booking.id" :eligibility="booking.review" :enabled="reviewsEnabled" />
+
+            <header class="hotel-customer-header">
+                <div>
+                    <span class="public-eyebrow">{{ t('common.your_trips', 'Your trips') }}</span>
+                    <h1 class="public-heading public-heading--1">{{ t('common.my_hotel_bookings', 'My hotel bookings') }}</h1>
+                    <p>{{ t('common.my_hotel_bookings_description', 'Keep your stays, payment status and next steps together in one calm place.') }}</p>
                 </div>
+                <div class="hotel-customer-header__mark" aria-hidden="true"><i class="bi bi-buildings"></i></div>
+            </header>
+
+            <nav class="hotel-customer-filters" :aria-label="t('common.booking_filters', 'Booking filters')">
+                <Link
+                    v-for="scope in scopes"
+                    :key="scope.key"
+                    :href="scopeHref(scope.key)"
+                    class="hotel-customer-filter"
+                    :class="{ 'is-active': currentScope === scope.key }"
+                    :aria-current="currentScope === scope.key ? 'page' : undefined"
+                    preserve-scroll
+                >
+                    {{ scope.label }}
+                </Link>
+            </nav>
+
+            <div v-if="bookings.data?.length" class="hotel-customer-booking-list">
+                <BookingCard v-for="booking in bookings.data" :key="booking.id" :booking="booking" :reviews-enabled="reviewsEnabled" />
             </div>
-            <p v-if="!bookings.data.length" class="text-muted">No hotel bookings yet.</p>
-            <Pagination :links="bookings.links" />
+
+            <EmptyState
+                v-else
+                class="hotel-customer-empty"
+                :title="currentScope === 'all' ? t('common.no_bookings_yet', 'No hotel bookings yet') : t('common.no_matching_bookings', 'No bookings in this view')"
+                :description="currentScope === 'all' ? t('common.no_bookings_yet_description', 'When you book a stay, its confirmation, dates and after-stay actions will appear here.') : t('common.no_matching_bookings_description', 'Try another booking view or explore a new stay.')"
+            >
+                <Link :href="appUrl('/search/hotels')" class="public-button public-button--primary">
+                    {{ t('common.explore_hotels', 'Explore hotels') }}
+                    <i class="bi bi-arrow-up-right" data-dir-icon="arrow" aria-hidden="true"></i>
+                </Link>
+            </EmptyState>
+
+            <div class="hotel-customer-pagination">
+                <Pagination :links="bookings.links" />
+            </div>
         </div>
-    </AppLayout>
+    </PublicLayout>
 </template>

@@ -1,0 +1,65 @@
+/* Phase 13A RTL + logical-property foundation.
+ *
+ * RTL must NEVER mean transform: scaleX(-1) or crude inversion.
+ * Direction comes from <html dir="ltr|rtl"> (server-rendered, then kept
+ * in sync by app.js). Shared shells below use logical properties so the
+ * future marketplace design system is RTL-capable from day one.
+ *
+ * Scope is deliberately narrow: shared shells/primitives only. The
+ * legacy public frontend is NOT rewritten in this phase.
+ */
+
+/* Shared direction-aware shell alignment (logical, not left/right). */
+.admin-shell,
+.admin-main-wrapper,
+.admin-topbar {
+    text-align: start;
+}
+
+/* Sidebar anchoring flips with direction instead of hardcoded left. */
+html[dir="rtl"] .admin-sidebar {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+    border-inline-end: 1px solid var(--admin-sidebar-border);
+    border-right: 0;
+}
+
+html[dir="rtl"] .admin-main-wrapper {
+    margin-left: 0;
+    margin-inline-start: 270px;
+}
+
+@media (max-width: 991.98px) {
+    html[dir="rtl"] .admin-sidebar {
+        transform: translateX(105%);
+    }
+
+    html[dir="rtl"] .admin-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    html[dir="rtl"] .admin-main-wrapper {
+        margin-inline-start: 0;
+    }
+}
+
+/* Dropdown/popover alignment follows inline direction. */
+html[dir="rtl"] .admin-quick-add-menu {
+    right: auto;
+    inset-inline-end: 0;
+}
+
+/* Logical spacing helpers for future shared components. */
+.ms-inline { margin-inline-start: 0.5rem; }
+.me-inline { margin-inline-end: 0.5rem; }
+.ps-inline { padding-inline-start: 1rem; }
+.pe-inline { padding-inline-end: 1rem; }
+.text-start { text-align: start; }
+.text-end { text-align: end; }
+
+/* Directional icons opt in to mirroring via [data-dir-icon];
+ * logos, photos, maps and non-directional icons are never mirrored. */
+html[dir="rtl"] [data-dir-icon="arrow"],
+html[dir="rtl"] [data-dir-icon="chevron"] {
+    transform: scaleX(-1);
+}

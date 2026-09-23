@@ -2,7 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\City;
+use App\Models\Destination;
 use App\Models\HomepageSection;
+use App\Models\Place;
+use App\Models\Property;
+use App\Models\TourPackage;
 use Illuminate\Support\Collection;
 
 /**
@@ -18,6 +23,212 @@ use Illuminate\Support\Collection;
  */
 class HomepageSectionService
 {
+    /**
+     * Server-controlled Phase 13D registry. The older definitions below are
+     * retained for the temporary legacy homepage manager and are never used
+     * as public handler names by the merchandising composer.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function merchandisingDefinitions(): array
+    {
+        return [
+            'hero_search' => [
+                'label' => 'Hero Search',
+                'description' => 'Search entry point with tabs for enabled commerce modules.',
+                'module' => null,
+                'source_modes' => [],
+                'entity_types' => [],
+                'defaults' => [
+                    'title' => 'Find your next journey',
+                    'subtitle' => 'Search hotels, tours and rides from one place.',
+                    'default_tab' => 'tours',
+                ],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                    'default_tab' => ['nullable', 'string', 'in:hotels,tours,taxi'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true, 'default_tab' => true],
+            ],
+            'featured_cities' => [
+                'label' => 'Featured Cities',
+                'description' => 'Admin-curated active cities with bounded public metadata.',
+                'module' => null,
+                'source_modes' => ['automatic', 'manual'],
+                'entity_types' => ['city'],
+                'defaults' => ['title' => 'Featured Cities', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'featured_destinations' => [
+                'label' => 'Featured Destinations',
+                'description' => 'Active destinations kept distinct from their parent cities.',
+                'module' => null,
+                'source_modes' => ['automatic', 'manual'],
+                'entity_types' => ['destination'],
+                'defaults' => ['title' => 'Featured Destinations', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'featured_hotels' => [
+                'label' => 'Featured Hotels',
+                'description' => 'Published properties with compact review and display-money data.',
+                'module' => 'hotels',
+                'source_modes' => ['automatic', 'manual'],
+                'entity_types' => ['property'],
+                'defaults' => ['title' => 'Featured Hotels', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'top_rated_hotels' => [
+                'label' => 'Top Rated Hotels',
+                'description' => 'Published properties ranked by approved hotel reviews.',
+                'module' => 'hotels',
+                'source_modes' => ['automatic'],
+                'entity_types' => [],
+                'defaults' => ['title' => 'Top Rated Hotels', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'featured_tours' => [
+                'label' => 'Featured Tours',
+                'description' => 'Active and approved tours with authoritative and display money.',
+                'module' => 'tours',
+                'source_modes' => ['automatic', 'manual'],
+                'entity_types' => ['tour'],
+                'defaults' => ['title' => 'Featured Tours', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'featured_places' => [
+                'label' => 'Featured Places',
+                'description' => 'Active places and attractions with destination context.',
+                'module' => null,
+                'source_modes' => ['automatic', 'manual'],
+                'entity_types' => ['place'],
+                'defaults' => ['title' => 'Featured Places', 'subtitle' => null],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true],
+            ],
+            'custom_cta' => [
+                'label' => 'Custom CTA',
+                'description' => 'A simple safe call to action with a validated URL.',
+                'module' => null,
+                'source_modes' => [],
+                'entity_types' => [],
+                'defaults' => [
+                    'title' => 'Plan your next escape',
+                    'subtitle' => 'Start with a destination and make the rest simple.',
+                    'cta_label' => 'Explore trips',
+                    'cta_url' => '/discover/locations',
+                ],
+                'rules' => [
+                    'title' => ['nullable', 'string', 'max:120'],
+                    'subtitle' => ['nullable', 'string', 'max:240'],
+                    'cta_label' => ['nullable', 'string', 'max:80'],
+                    'cta_url' => ['nullable', 'string', 'max:500', 'regex:/^(\/(?!\/)|https:\/\/)/'],
+                ],
+                'schema' => ['title' => true, 'subtitle' => true, 'cta_label' => true, 'cta_url' => true],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function merchandisingOrder(): array
+    {
+        return array_keys(static::merchandisingDefinitions());
+    }
+
+    public static function isSupportedType(?string $type): bool
+    {
+        return is_string($type) && array_key_exists($type, static::merchandisingDefinitions());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function merchandisingDefinition(string $type): array
+    {
+        return static::merchandisingDefinitions()[$type] ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function merchandisingEntityTypes(string $type): array
+    {
+        return static::merchandisingDefinition($type)['entity_types'] ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function merchandisingValidationRules(string $type): array
+    {
+        return static::merchandisingDefinition($type)['rules'] ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function merchandisingSettingKeys(string $type): array
+    {
+        return array_keys(static::merchandisingValidationRules($type));
+    }
+
+    /**
+     * Explicit manual-selection entity map. Request data may select one of
+     * these semantic keys, never an arbitrary model class.
+     *
+     * @return array<string, class-string>
+     */
+    public static function manualEntityModels(): array
+    {
+        return [
+            'city' => City::class,
+            'destination' => Destination::class,
+            'property' => Property::class,
+            'tour' => TourPackage::class,
+            'place' => Place::class,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $stored
+     * @return array<string, mixed>
+     */
+    public static function mergeMerchandisingSettings(string $type, ?array $stored): array
+    {
+        $definition = static::merchandisingDefinition($type);
+        $allowed = static::merchandisingSettingKeys($type);
+
+        return array_merge(
+            $definition['defaults'] ?? [],
+            array_intersect_key($stored ?? [], array_flip($allowed))
+        );
+    }
+
     /**
      * System-defined sections in default homepage order.
      *
@@ -286,5 +497,83 @@ class HomepageSectionService
             'key' => $section['key'],
             'settings' => $section['settings'],
         ]);
+    }
+
+    /**
+     * Insert missing generic merchandising rows without changing existing
+     * configuration. The migration normally creates these rows; this guard
+     * also makes a partially upgraded install recover on the next manager
+     * visit.
+     */
+    public function ensureMerchandisingStored(): void
+    {
+        $existing = HomepageSection::query()->merchandising()->pluck('section_key')->all();
+
+        foreach (static::merchandisingOrder() as $position => $key) {
+            if (in_array($key, $existing, true)) {
+                continue;
+            }
+
+            $definition = static::merchandisingDefinition($key);
+
+            HomepageSection::query()->create([
+                'section_key' => $key,
+                'section_type' => $key,
+                'is_active' => true,
+                'sort_order' => ($position + 1) * 10,
+                'source_mode' => $definition['source_modes'][0] ?? null,
+                'item_limit' => $definition['source_modes'] !== [] ? 8 : null,
+                'settings' => null,
+            ]);
+        }
+    }
+
+    /**
+     * Admin-safe generic configuration. Raw settings and Eloquent models do
+     * not cross this boundary.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function merchandisingAll(): Collection
+    {
+        $rows = HomepageSection::query()
+            ->merchandising()
+            ->with(['items', 'translations'])
+            ->ordered()
+            ->get();
+
+        return $rows
+            ->filter(fn (HomepageSection $section): bool => static::isSupportedType($section->section_type))
+            ->map(function (HomepageSection $section): array {
+                $type = (string) $section->section_type;
+                $definition = static::merchandisingDefinition($type);
+
+                return [
+                    'id' => (int) $section->id,
+                    'key' => (string) $section->section_key,
+                    'type' => $type,
+                    'label' => $definition['label'],
+                    'description' => $definition['description'],
+                    'is_active' => (bool) $section->is_active,
+                    'sort_order' => (int) $section->sort_order,
+                    'source_mode' => $section->source_mode,
+                    'item_limit' => $section->item_limit,
+                    'title' => $section->translated('title'),
+                    'subtitle' => $section->translated('subtitle'),
+                    'cta_label' => $section->translated('cta_label'),
+                    'settings' => static::mergeMerchandisingSettings($type, $section->settings),
+                    'schema' => $definition['schema'],
+                    'source_modes' => $definition['source_modes'],
+                    'entity_types' => $definition['entity_types'],
+                    'manual_items' => $section->items->map(fn ($item): array => [
+                        'id' => (int) $item->id,
+                        'entity_type' => (string) $item->entity_type,
+                        'entity_id' => (int) $item->entity_id,
+                        'sort_order' => (int) $item->sort_order,
+                    ])->values()->all(),
+                    'translations' => $section->translationsMap(),
+                ];
+            })
+            ->values();
     }
 }

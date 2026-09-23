@@ -1,77 +1,151 @@
 <script setup>
+import { computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
 import AccountNav from '../../../Components/AccountNav.vue';
 import Pagination from '../../../Components/Pagination.vue';
+import ImageWithFallback from '../../../Components/Public/Media/ImageWithFallback.vue';
+import MoneyDisplay from '../../../Components/Public/UI/MoneyDisplay.vue';
+import Badge from '../../../Components/Public/UI/Badge.vue';
 import { appUrl } from '../../../appUrl';
+import { useLocalization } from '../../../i18n';
 
 const props = defineProps({
-    bookings: Object,
+    bookings: { type: Object, required: true },
     filters: { type: Object, default: () => ({}) },
-    statuses: { type: Array, default: () => [] },
 });
 
+const { t, locale } = useLocalization();
 const endpoint = appUrl('/account/bookings');
 const filters = useForm({
     search: props.filters.search ?? '',
-    status: props.filters.status ?? '',
     scope: props.filters.scope ?? '',
 });
+
+const scopes = computed(() => [
+    { value: '', label: t('common.all_tours', 'All tours') },
+    { value: 'upcoming', label: t('common.upcoming', 'Upcoming') },
+    { value: 'past', label: t('common.past', 'Past') },
+]);
 
 function applyFilters() {
     filters.get(endpoint, { preserveState: true, preserveScroll: true });
 }
+
 function clearFilters() {
     filters.reset();
     filters.get(endpoint, { preserveState: true, preserveScroll: true });
 }
+
 function formatDate(value) {
-    return value ? new Date(value).toLocaleDateString('en-IN') : '—';
+    if (!value) return '—';
+
+    return new Intl.DateTimeFormat(locale.value || 'en', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`));
+}
+
+function durationLabel(packageData) {
+    const days = Number(packageData?.duration_days);
+    const nights = Number(packageData?.duration_nights);
+
+    if (!Number.isFinite(days) || days < 1) return '';
+    if (days === 1) return t('common.same_day', 'Same day');
+
+    return `${days} ${days === 1 ? t('common.day', 'day') : t('common.days', 'days')}${nights > 0 ? ` · ${nights} ${nights === 1 ? t('common.night', 'night') : t('common.nights', 'nights')}` : ''}`;
+}
+
+function statusVariant(status) {
+    return status === 'cancelled' ? 'neutral' : status === 'confirmed' || status === 'completed' ? 'brand' : 'accent';
+}
+
+function statusLabel(status) {
+    return {
+        pending: t('common.pending', 'Pending'),
+        confirmed: t('common.confirmed', 'Confirmed'),
+        completed: t('common.completed', 'Completed'),
+        cancelled: t('common.cancelled', 'Cancelled'),
+        unpaid: t('common.unpaid', 'Unpaid'),
+        partially_paid: t('common.partially_paid', 'Partially paid'),
+        paid: t('common.paid', 'Paid'),
+        refunded: t('common.refunded', 'Refunded'),
+    }[status] ?? status;
 }
 </script>
 
 <template>
     <AppLayout>
-        <SeoHead title="My Bookings" noindex />
-        <div class="container py-5">
-            <p class="section-eyebrow">My account</p>
-            <h1 class="section-title mb-4">My Bookings</h1>
-            <AccountNav active="bookings" />
+        <SeoHead :title="t('common.my_tour_bookings', 'My Tour Bookings')" noindex private-page />
 
-            <form class="glass-card p-3 mb-3" @submit.prevent="applyFilters">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-4"><label for="booking-search" class="form-label small">Booking reference</label><input id="booking-search" v-model="filters.search" class="form-control form-control-sm" placeholder="BK-…" /></div>
-                    <div class="col-md-3"><label for="booking-status" class="form-label small">Status</label><select id="booking-status" v-model="filters.status" class="form-select form-select-sm"><option value="">All statuses</option><option v-for="option in statuses" :key="option.value" :value="option.value">{{ option.label }}</option></select></div>
-                    <div class="col-md-3"><label for="booking-scope" class="form-label small">When</label><select id="booking-scope" v-model="filters.scope" class="form-select form-select-sm"><option value="">All trips</option><option value="upcoming">Upcoming</option><option value="past">Past</option></select></div>
-                    <div class="col-md-2 d-flex gap-2">
-                        <button class="btn btn-sm btn-svtp flex-fill" :disabled="filters.processing">Filter</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="clearFilters">Clear</button>
+        <main class="tour-customer-page">
+            <div class="container tour-customer-container">
+                <div class="tour-customer-heading">
+                    <div>
+                        <p class="public-eyebrow">{{ t('common.my_account', 'My account') }}</p>
+                        <h1>{{ t('common.my_tour_bookings', 'My Tour Bookings') }}</h1>
+                        <p>{{ t('common.my_tour_bookings_intro', 'Keep track of your tour plans, booking details, and next steps in one place.') }}</p>
                     </div>
+                    <Link :href="appUrl('/packages')" class="public-button public-button--primary">
+                        {{ t('common.explore_tours', 'Explore tours') }}
+                    </Link>
                 </div>
-            </form>
 
-            <div v-if="bookings.data.length" class="glass-card p-3 p-md-4">
-                <div class="table-responsive"><table class="table align-middle mb-0">
-                    <thead><tr><th>Reference</th><th>Tour</th><th>Travel Date</th><th>Travellers</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                    <tbody>
-                        <tr v-for="booking in bookings.data" :key="booking.id">
-                            <td class="fw-semibold">{{ booking.booking_reference_id }}</td>
-                            <td>{{ booking.package?.title ?? '—' }}</td>
-                            <td class="text-nowrap">{{ formatDate(booking.travel_date) }}</td>
-                            <td>{{ Number(booking.total_adults || 0) + Number(booking.total_children || 0) }}</td>
-                            <td class="text-nowrap">₹{{ Number(booking.total_amount).toLocaleString('en-IN') }}</td>
-                            <td><span class="badge bg-secondary">{{ booking.booking_status }}</span></td>
-                            <td><Link :href="`${endpoint}/${booking.id}`" class="btn btn-sm btn-outline-svtp">View</Link></td>
-                        </tr>
-                    </tbody>
-                </table></div>
+                <AccountNav active="bookings" />
+
+                <form class="tour-customer-filters" @submit.prevent="applyFilters">
+                    <label class="tour-customer-filter-field">
+                        <span>{{ t('common.booking_reference', 'Booking reference') }}</span>
+                        <input v-model="filters.search" class="public-input" type="search" :placeholder="t('common.booking_reference_placeholder', 'BK-…')">
+                    </label>
+                    <label class="tour-customer-filter-field">
+                        <span>{{ t('common.trip_view', 'Trip view') }}</span>
+                        <select v-model="filters.scope" class="public-input">
+                            <option v-for="scope in scopes" :key="scope.value" :value="scope.value">{{ scope.label }}</option>
+                        </select>
+                    </label>
+                    <div class="tour-customer-filter-actions">
+                        <button class="public-button public-button--outline" type="submit" :disabled="filters.processing">{{ t('common.filter', 'Filter') }}</button>
+                        <button class="public-button public-button--ghost" type="button" @click="clearFilters">{{ t('common.clear', 'Clear') }}</button>
+                    </div>
+                </form>
+
+                <section v-if="bookings.data?.length" class="tour-customer-booking-grid" aria-live="polite">
+                    <article v-for="booking in bookings.data" :key="booking.id" class="tour-customer-booking-card">
+                        <div class="tour-customer-booking-card__media">
+                            <ImageWithFallback :src="booking.package?.cover_image" :alt="booking.package?.title || t('common.tour', 'Tour')" aspect="editorial" kind="tour" :label="booking.package?.title" />
+                            <span class="tour-customer-booking-card__reference">{{ booking.booking_reference_id }}</span>
+                        </div>
+                        <div class="tour-customer-booking-card__body">
+                            <div class="tour-customer-booking-card__status-row">
+                                <Badge :variant="statusVariant(booking.booking_status)">{{ statusLabel(booking.booking_status) }}</Badge>
+                                <span class="tour-customer-booking-card__payment">{{ statusLabel(booking.payment_status) }}</span>
+                            </div>
+                            <h2>{{ booking.package?.title || t('common.tour', 'Tour') }}</h2>
+                            <p v-if="booking.package?.destination || booking.package?.city" class="tour-customer-booking-card__location">
+                                <i class="bi bi-geo-alt" aria-hidden="true"></i>{{ [booking.package?.destination, booking.package?.city].filter(Boolean).join(' · ') }}
+                            </p>
+                            <p v-if="durationLabel(booking.package)" class="tour-customer-booking-card__duration"><i class="bi bi-clock" aria-hidden="true"></i>{{ durationLabel(booking.package) }}</p>
+                            <dl class="tour-customer-booking-card__facts">
+                                <div><dt>{{ t('common.travel_date', 'Travel date') }}</dt><dd>{{ formatDate(booking.travel_date) }}</dd></div>
+                                <div><dt>{{ t('common.party', 'Party') }}</dt><dd>{{ booking.total_adults }} {{ t('common.adults_short', 'adults') }}<span v-if="booking.total_children"> · {{ booking.total_children }} {{ t('common.children_short', 'children') }}</span></dd></div>
+                                <div><dt>{{ t('common.total', 'Total') }}</dt><dd><MoneyDisplay :money="booking.total_money" /></dd></div>
+                            </dl>
+                            <Link :href="appUrl(`/account/bookings/${booking.id}`)" class="public-button public-button--outline tour-customer-booking-card__action">
+                                {{ t('common.view_booking', 'View booking') }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                            </Link>
+                        </div>
+                    </article>
+                </section>
+
+                <section v-else class="tour-customer-empty">
+                    <div class="tour-customer-empty__icon" aria-hidden="true"><i class="bi bi-compass"></i></div>
+                    <p class="public-eyebrow">{{ t('common.your_next_journey', 'Your next journey') }}</p>
+                    <h2>{{ t('common.no_tour_bookings', 'No Tour bookings yet') }}</h2>
+                    <p>{{ t('common.no_tour_bookings_note', 'Your confirmed and upcoming tour plans will appear here.') }}</p>
+                    <Link :href="appUrl('/packages')" class="public-button public-button--primary">{{ t('common.explore_tours', 'Explore tours') }}</Link>
+                </section>
+
                 <Pagination :links="bookings.links" />
             </div>
-            <div v-else class="glass-card p-5 text-center">
-                <p class="text-muted mb-3">No bookings found. Your adventures start here.</p>
-                <a :href="appUrl('/packages')" class="btn btn-svtp">Browse Tours</a>
-            </div>
-        </div>
+        </main>
     </AppLayout>
 </template>

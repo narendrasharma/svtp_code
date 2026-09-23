@@ -203,6 +203,35 @@ class TourSearchTest extends TestCase
                 ->where('package.slug', 'mathura-vrindavan-darshan'));
     }
 
+    public function test_public_tour_search_page_uses_compact_discovery_results(): void
+    {
+        $state = State::create(['name' => 'Coastal State', 'slug' => 'coastal-state']);
+        $city = City::create(['state_id' => $state->id, 'name' => 'Coastal City', 'slug' => 'coastal-city']);
+        $tour = $this->createPackage($city, 'Coastal Heritage Journey');
+
+        $this->get('/search/tours?location_type=city&location_id='.$city->id.'&travel_date=2026-10-04&adults=2&children=1')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tours/Search')
+                ->where('search.location_type', 'city')
+                ->where('search.location_id', (string) $city->id)
+                ->where('search.travel_date', '2026-10-04')
+                ->where('search.adults', 2)
+                ->where('search.children', 1)
+                ->where('seo.noindex', true)
+                ->where('results.data.0.id', $tour->id)
+                ->where('results.data.0.title', 'Coastal Heritage Journey')
+                ->has('results.data.0.display_money')
+                ->missing('results.data.0.gallery')
+                ->missing('results.data.0.vendor_profile')
+                ->missing('results.data.0.day_wise_itinerary'));
+    }
+
+    public function test_unfiltered_legacy_tour_listing_hands_off_to_discovery(): void
+    {
+        $this->get('/packages')
+            ->assertRedirect(route('search.tours', absolute: false));
+    }
+
     private function createPackage(City $city, string $title): TourPackage
     {
         return TourPackage::create([

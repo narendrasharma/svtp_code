@@ -12,7 +12,6 @@ use App\Models\TaxiAssignment;
 use App\Models\TaxiBooking;
 use App\Models\User;
 use App\Models\Vehicle;
-use App\Notifications\CrmNotification;
 use App\Support\TaxiSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -530,21 +529,7 @@ class TaxiBookingService
 
     protected function notifyCustomer(TaxiBooking $booking, string $kind): void
     {
-        if (! $booking->customer) {
-            return;
-        }
-
-        $booking->customer->notify(new CrmNotification($kind, [
-            'taxi_booking_id' => $booking->id,
-            'reference' => $booking->reference,
-            'pickup_at' => $booking->pickup_at->toDateTimeString(),
-            'pickup_address' => $booking->pickup_address,
-            'drop_address' => $booking->drop_address,
-            'driver' => $booking->assignedDriver?->fullName(),
-            'vehicle' => $booking->assignedVehicle ? $booking->assignedVehicle->name.' ('.$booking->assignedVehicle->registration_number.')' : null,
-            'status' => $booking->status,
-            'total' => number_format((float) $booking->total_amount, 2),
-        ]));
+        app(TaxiCustomerNotificationService::class)->send($booking, $kind);
     }
 
     protected function notifyVendor(TaxiBooking $booking, string $kind): void

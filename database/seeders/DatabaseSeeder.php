@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
+            LanguageSeeder::class,
+            CurrencySeeder::class,
+            HomepageSectionSeeder::class,
             CatalogDemoSeeder::class,
         ]);
     }

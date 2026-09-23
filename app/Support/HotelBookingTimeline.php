@@ -19,7 +19,7 @@ class HotelBookingTimeline
             ->get(['event', 'description', 'created_at'])
             ->map(fn (ActivityLog $log): array => [
                 'event' => self::label($log->event),
-                'description' => (string) ($log->description ?: self::label($log->event)),
+                'description' => self::label($log->event),
                 'created_at' => $log->created_at?->toIso8601String(),
             ])
             ->all();

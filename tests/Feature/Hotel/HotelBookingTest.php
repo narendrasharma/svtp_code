@@ -23,7 +23,9 @@ use App\Services\HotelPricingService;
 use App\Support\ModuleManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class HotelBookingTest extends TestCase
@@ -217,6 +219,35 @@ class HotelBookingTest extends TestCase
         Setting::setValue('hotel.booking.allow_guest_booking', '1');
         [$property] = $this->hotel(1);
         $this->post(route('hotel-booking.store', ['slug' => $property->slug]), [])->assertStatus(404);
+    }
+
+    public function test_checkout_requires_login_and_preserves_selection_for_authenticated_customer(): void
+    {
+        config()->set('app.url', 'http://localhost');
+        URL::forceRootUrl('http://localhost');
+        [$property, $room, $plan] = $this->hotel(2);
+        $customer = User::factory()->create(['role' => 'customer', 'phone' => '+15551234567']);
+        $query = [
+            'room_type_id' => $room->id,
+            'rate_plan_id' => $plan->id,
+            'check_in' => '2027-04-10',
+            'check_out' => '2027-04-12',
+            'rooms' => 2,
+            'adults' => 3,
+            'children' => 1,
+        ];
+
+        $this->actingAs($customer)
+            ->get(route('hotel-booking.create', ['slug' => $property->slug] + $query, absolute: false))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Hotels/Booking')
+                ->where('selection.room_type_id', $room->id)
+                ->where('selection.rate_plan_id', $plan->id)
+                ->where('stay.rooms', 2)
+                ->where('stay.adults', 3)
+                ->where('stay.children', 1)
+                ->where('customer.phone', '+15551234567')
+            );
     }
 
     public function test_booking_enabled_setting_and_hotel_module_are_required(): void

@@ -158,7 +158,7 @@ class AdminNavigation
                 'items' => [
                     self::item('pages', 'Pages', 'bi-file-earmark-text', 'admin.pages.index', null, 'content.pages', ['page', 'cms', 'about', 'privacy', 'terms', 'faq', 'blog', 'gallery', 'team'], 10),
                     self::item('menus', 'Menus', 'bi-list', 'admin.menus.index', null, 'content.menus', ['menu', 'navigation', 'header', 'footer', 'link'], 20),
-                    self::item('homepage-sections', 'Homepage Sections', 'bi-columns-gap', 'admin.homepage-sections.index', null, 'content.pages', ['homepage', 'home', 'section', 'hero'], 30),
+                    self::item('homepage-sections', 'Homepage Sections', 'bi-columns-gap', 'admin.homepage-sections.index', null, 'homepage.manage', ['homepage', 'home', 'section', 'hero'], 30),
                     self::item('banners', 'Banners', 'bi-images', 'admin.banners.index', null, 'marketing.view', ['banner', 'slider', 'hero image'], 40),
                 ],
             ],
@@ -176,6 +176,8 @@ class AdminNavigation
                 'label' => 'System',
                 'items' => [
                     self::item('settings', 'Settings', 'bi-gear', 'admin.settings.index', null, 'settings.view', ['setting', 'configuration', 'general', 'contact', 'social', 'marketplace commission'], 10),
+                    self::item('languages', 'Languages', 'bi-translate', 'admin.languages.index', null, 'settings.view', ['language', 'locale', 'translation', 'rtl', 'arabic', 'hindi'], 15),
+                    self::item('currencies', 'Currencies', 'bi-currency-exchange', 'admin.currencies.index', null, 'currencies.view', ['currency', 'exchange rate', 'fx', 'money', 'usd', 'inr', 'display currency'], 16),
                     self::item('settings-seo', 'SEO Settings', 'bi-search', 'admin.settings.index', null, 'settings.view', ['seo', 'meta', 'search engine', 'google', 'og image', 'index'], 20),
                     self::item('modules', 'Modules', 'bi-grid-1x2', 'admin.modules.index', null, 'modules.manage', ['module', 'taxi', 'hotels', 'tours module', 'enable', 'disable'], 30),
                     self::item('number-series', 'Number Series', 'bi-123', 'admin.number-series.index', null, 'settings.view', ['number series', 'reference', 'prefix', 'sequence', 'booking reference', 'invoice number'], 40),

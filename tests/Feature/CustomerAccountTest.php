@@ -117,6 +117,68 @@ class CustomerAccountTest extends TestCase
         $this->actingAs($other)->get(route('account.bookings.show', $booking))->assertForbidden();
     }
 
+    public function test_tour_booking_detail_uses_safe_snapshot_dto_and_server_action_flags(): void
+    {
+        $owner = $this->customer();
+        $booking = Booking::factory()->confirmed()->create([
+            'user_id' => $owner->id,
+            'customer_name' => 'Booking Snapshot Name',
+            'customer_email' => 'snapshot@example.test',
+            'customer_phone' => '9000000000',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('account.bookings.show', $booking))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('booking.customer.name', 'Booking Snapshot Name')
+                ->where('booking.customer.email', 'snapshot@example.test')
+                ->has('booking.pricing.total_money')
+                ->where('actions.can_cancel', true)
+                ->where('actions.can_review', false)
+                ->missing('booking.user_id')
+                ->missing('booking.vendor_profile_id')
+                ->missing('booking.customer_email')
+            );
+    }
+
+    public function test_completed_paid_tour_owner_can_submit_only_one_verified_review(): void
+    {
+        $owner = $this->customer();
+        $booking = Booking::factory()->create([
+            'user_id' => $owner->id,
+            'booking_status' => 'completed',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('account.bookings.show', $booking))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('actions.can_review', true)
+                ->where('review', null)
+            );
+
+        $this->actingAs($owner)
+            ->post(route('review.store', $booking), [
+                'rating' => 5,
+                'comment' => 'A useful customer review.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('reviews', [
+            'booking_id' => $booking->id,
+            'user_id' => $owner->id,
+            'rating' => 5,
+            'is_approved' => false,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('review.store', $booking), [
+                'rating' => 4,
+                'comment' => 'A duplicate review.',
+            ])
+            ->assertSessionHasErrors('booking');
+    }
+
     // ---------- Invoice ----------
 
     public function test_invoice_policy_owner_stranger_admin(): void

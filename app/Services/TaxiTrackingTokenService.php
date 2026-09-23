@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\TaxiBooking;
 use App\Models\TaxiTrackingToken;
 use App\Models\User;
+use App\Notifications\TaxiTrackingLinkNotification;
 use App\Support\TaxiSettings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 /**
@@ -65,6 +67,8 @@ class TaxiTrackingTokenService
 
             $this->audit($booking, 'taxi_tracking.generated', "Customer tracking link generated for {$booking->reference}.", $actor);
 
+            $this->notifyCustomer($booking, $this->publicUrl($raw));
+
             return ['token' => $raw, 'url' => $this->publicUrl($raw), 'record' => $record->fresh()];
         });
     }
@@ -119,6 +123,22 @@ class TaxiTrackingTokenService
     public function publicUrl(string $rawToken): string
     {
         return rtrim((string) config('app.url'), '/').'/taxi/track/'.$rawToken;
+    }
+
+    protected function notifyCustomer(TaxiBooking $booking, string $trackingUrl): void
+    {
+        $customer = $booking->customer;
+
+        if ($customer) {
+            $customer->notify(new TaxiTrackingLinkNotification($booking, $trackingUrl));
+
+            return;
+        }
+
+        if (filled($booking->customer_email)) {
+            Notification::route('mail', $booking->customer_email)
+                ->notify(new TaxiTrackingLinkNotification($booking, $trackingUrl, true));
+        }
     }
 
     protected function audit(TaxiBooking $booking, string $event, string $description, ?User $actor): void

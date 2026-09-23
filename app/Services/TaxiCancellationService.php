@@ -138,7 +138,9 @@ class TaxiCancellationService
     public function notify(TaxiBooking $booking, string $kind, ?User $driver = null, array $extra = []): void
     {
         $data = array_merge(['reference' => $booking->reference, 'taxi_booking_id' => $booking->id, 'pickup_at' => $booking->pickup_at->toDateTimeString()], $extra);
-        foreach (collect([$booking->customer, $booking->vendorProfile?->user, $driver])->filter()->unique('id') as $user) {
+        app(TaxiCustomerNotificationService::class)->send($booking, $kind, $extra);
+
+        foreach (collect([$booking->vendorProfile?->user, $driver])->filter()->unique('id') as $user) {
             $user->notify(new CrmNotification($kind, $data));
         }
     }

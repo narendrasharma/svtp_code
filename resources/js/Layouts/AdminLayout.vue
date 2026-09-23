@@ -67,6 +67,8 @@ let systemMedia = null;
 
 const navigation = computed(() => page.props.adminNavigation ?? []);
 const quickActions = computed(() => page.props.quickActions ?? []);
+// Phase 13A: shared shell follows the current locale direction.
+const direction = computed(() => page.props.localization?.direction ?? 'ltr');
 
 function openPalette() {
     isPaletteOpen.value = true;
@@ -103,7 +105,7 @@ watch(() => page.url, () => {
 
 <template>
     <ImpersonationBanner />
-    <div class="admin-shell" :class="{ 'is-collapsed': isCollapsed }">
+    <div class="admin-shell" :class="{ 'is-collapsed': isCollapsed }" :dir="direction">
         <aside class="admin-sidebar" :class="{ 'is-open': isSidebarOpen }">
             <div class="admin-sidebar-heading">
                 <DashboardBrand panel-label="Admin Console" />

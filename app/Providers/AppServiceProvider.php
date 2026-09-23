@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\Discovery\SearchProvider;
+use App\Contracts\ExchangeRateProvider;
 use App\Events;
 use App\Listeners;
 use App\Models\Booking;
@@ -29,7 +31,9 @@ use App\Policies\VendorPayoutAccountPolicy;
 use App\Policies\VendorPlanPolicy;
 use App\Policies\VendorProfilePolicy;
 use App\Policies\VendorWithdrawalRequestPolicy;
+use App\Services\Discovery\DatabaseLocationSearchProvider;
 use App\Services\ImpersonationService;
+use App\Services\ManualExchangeRateProvider;
 use App\Services\Payouts\ManualPayoutProcessor;
 use App\Services\Payouts\PayoutProcessor;
 use App\Support\AuditRegistry;
@@ -52,7 +56,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Phase 13C discovery seam: database driver today; future
+        // Scout/Meilisearch/Algolia adapters bind here.
+        $this->app->bind(
+            SearchProvider::class,
+            DatabaseLocationSearchProvider::class
+        );
     }
 
     /**
@@ -96,6 +105,11 @@ class AppServiceProvider extends ServiceProvider
         // Phase 8 payout seam: manual settlement today; future providers
         // bind here without touching controllers or ledger accounting.
         $this->app->bind(PayoutProcessor::class, ManualPayoutProcessor::class);
+
+        // Phase 13B FX provider seam: manual rates always work with zero
+        // external APIs. Remote adapters implement ExchangeRateProvider
+        // and are selected via the currency.provider setting.
+        $this->app->bind(ExchangeRateProvider::class, ManualExchangeRateProvider::class);
 
         Gate::define('impersonate', function ($user, $target) {
             return app(ImpersonationService::class)->canImpersonate($user, $target);

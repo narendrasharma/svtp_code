@@ -1,32 +1,39 @@
 <script setup>
+import { useLocalization } from '../../i18n';
+
 defineProps({ review: { type: Object, required: true } });
+
+const { locale, t } = useLocalization();
+
+function formatDate(value) {
+    if (!value) return '';
+
+    try {
+        return new Intl.DateTimeFormat(locale.value || 'en', { dateStyle: 'medium' }).format(new Date(`${value}T12:00:00`));
+    } catch {
+        return value;
+    }
+}
 </script>
 
 <template>
-    <article class="card p-3 p-md-4 hotel-review-card">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-            <div class="d-flex flex-column gap-1">
-                <strong>{{ review.customer_name }}</strong>
-                <span v-if="review.verified_stay" class="small text-success"><i class="bi bi-patch-check me-1" aria-hidden="true"></i>Verified stay</span>
+    <article class="hotel-customer-review-card">
+        <div class="hotel-customer-review-card__topline">
+            <div>
+                <strong>{{ review.customer_name || t('common.you', 'You') }}</strong>
+                <span v-if="review.verified_stay" class="hotel-customer-review-card__verified"><i class="bi bi-patch-check" aria-hidden="true"></i>{{ t('common.verified_stay', 'Verified stay') }}</span>
             </div>
-            <div class="text-end">
-                <span class="text-warning" :aria-label="`${review.overall_rating} out of 5 stars`">{{ '★'.repeat(review.overall_rating) }}{{ '☆'.repeat(5 - review.overall_rating) }}</span>
-                <div v-if="review.review_date" class="small text-muted"><time :datetime="review.review_date">{{ review.review_date }}</time></div>
+            <div class="hotel-customer-review-card__rating">
+                <span :aria-label="`${review.overall_rating} out of 5 stars`" aria-hidden="true">{{ '★'.repeat(review.overall_rating) }}{{ '☆'.repeat(5 - review.overall_rating) }}</span>
+                <time v-if="review.review_date" :datetime="review.review_date">{{ formatDate(review.review_date) }}</time>
             </div>
         </div>
-        <h3 v-if="review.title" class="h6 mt-3 mb-2">{{ review.title }}</h3>
-        <p class="review-text mt-2 mb-0">{{ review.comment }}</p>
-        <div v-if="review.vendor_reply" class="border-start border-3 rounded p-3 mt-3">
-            <div class="d-flex flex-wrap justify-content-between gap-2 small">
-                <strong><i class="bi bi-buildings me-1" aria-hidden="true"></i>Property response</strong>
-                <time v-if="review.vendor_reply.date" class="text-muted" :datetime="review.vendor_reply.date">{{ review.vendor_reply.date }}</time>
-            </div>
-            <p class="review-text small mb-0 mt-2">{{ review.vendor_reply.comment }}</p>
+        <h3 v-if="review.title">{{ review.title }}</h3>
+        <p>{{ review.comment }}</p>
+        <div v-if="review.vendor_reply" class="hotel-customer-review-card__reply">
+            <strong><i class="bi bi-buildings" aria-hidden="true"></i>{{ t('common.property_response', 'Property response') }}</strong>
+            <time v-if="review.vendor_reply.date" :datetime="review.vendor_reply.date">{{ formatDate(review.vendor_reply.date) }}</time>
+            <p>{{ review.vendor_reply.comment }}</p>
         </div>
     </article>
 </template>
-
-<style scoped>
-.hotel-review-card { min-width: 0; }
-.review-text { white-space: pre-line; overflow-wrap: anywhere; }
-</style>

@@ -132,7 +132,12 @@ class PublicBookingFlowTest extends TestCase
             ->assertJsonPath('child_unit_price', 2000)
             ->assertJsonPath('subtotal', 12000)
             ->assertJsonPath('total_amount', 12000)
-            ->assertJsonPath('currency', 'INR');
+            ->assertJsonPath('currency', 'INR')
+            ->assertJsonPath('display_breakdown.adults.quantity', 2)
+            ->assertJsonPath('display_breakdown.adults.total_money.amount', '8000.00')
+            ->assertJsonPath('display_breakdown.children.quantity', 2)
+            ->assertJsonPath('display_breakdown.children.total_money.amount', '4000.00')
+            ->assertJsonPath('display_breakdown.total_money.amount', '12000.00');
 
         $this->postJson(route('booking.estimate'), [
             'package_id' => $this->tourPackage(['is_active' => false])->id, 'total_adults' => 1,

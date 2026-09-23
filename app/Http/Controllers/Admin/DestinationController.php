@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\Destination;
 use App\Models\State;
 use App\Services\LocationHierarchy;
+use App\Support\Localization;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -78,7 +79,10 @@ class DestinationController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Destinations/Form', $this->formData());
+        return Inertia::render('Admin/Destinations/Form', $this->formData() + [
+            'translationLocales' => Localization::activeLanguages(),
+            'translations' => [],
+        ]);
     }
 
     public function store(SaveDestinationRequest $request): RedirectResponse
@@ -97,7 +101,12 @@ class DestinationController extends Controller
 
     public function edit(Destination $destination): Response
     {
-        return Inertia::render('Admin/Destinations/Form', $this->formData($destination));
+        $destination->loadMissing('translations');
+
+        return Inertia::render('Admin/Destinations/Form', $this->formData($destination) + [
+            'translationLocales' => Localization::activeLanguages(),
+            'translations' => $destination->translationsMap(),
+        ]);
     }
 
     public function update(SaveDestinationRequest $request, Destination $destination): RedirectResponse
