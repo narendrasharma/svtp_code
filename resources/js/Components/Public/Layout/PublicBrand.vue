@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { appUrl } from '../../../appUrl';
 
@@ -13,11 +13,16 @@ const props = defineProps({
 const page = usePage();
 const settings = computed(() => page.props.siteSettings ?? {});
 const siteName = computed(() => settings.value.site_name || 'Travel marketplace');
+const logoFailed = ref(false);
+
+watch(() => settings.value.site_logo, () => {
+    logoFailed.value = false;
+});
 
 const logoUrl = computed(() => {
     const logo = settings.value.site_logo;
 
-    if (!logo) {
+    if (!logo || logoFailed.value) {
         return null;
     }
 
@@ -40,7 +45,7 @@ const initials = computed(() => siteName.value
 <template>
     <Link :href="appUrl('/')" class="public-brand" :aria-label="siteName">
         <span v-if="logoUrl" class="public-brand__mark" :class="{ 'public-brand__mark--compact': compact }">
-            <img :src="logoUrl" :alt="siteName" class="public-brand__image">
+            <img :src="logoUrl" :alt="siteName" class="public-brand__image" @error="logoFailed = true">
         </span>
         <span v-else class="public-brand__mark" aria-hidden="true">{{ initials }}</span>
         <span v-if="!compact" class="public-brand__name">{{ siteName }}</span>

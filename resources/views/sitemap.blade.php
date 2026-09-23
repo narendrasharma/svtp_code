@@ -23,6 +23,12 @@
     </url>
 
     <url>
+        <loc>{{ url('/places') }}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <url>
         <loc>{{ url('/about') }}</loc>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
@@ -34,29 +40,13 @@
         <priority>0.6</priority>
     </url>
 
+    @if ($hasFaqPage)
     <url>
         <loc>{{ url('/faq') }}</loc>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
-
-    <url>
-        <loc>{{ url('/gallery') }}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-    </url>
-
-    <url>
-        <loc>{{ url('/team') }}</loc>
-        <changefreq>monthly</changefreq>
-        <priority>0.5</priority>
-    </url>
-
-    <url>
-        <loc>{{ url('/testimonials') }}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-    </url>
+    @endif
 
 
     {{-- Tour Packages --}}
@@ -70,6 +60,20 @@
 
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
+    </url>
+    @endforeach
+
+    {{-- Cities --}}
+    @foreach ($cities as $city)
+    <url>
+        <loc>{{ url('/cities/' . $city->slug) }}</loc>
+
+        @if ($city->updated_at)
+        <lastmod>{{ $city->updated_at->toAtomString() }}</lastmod>
+        @endif
+
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
     </url>
     @endforeach
 

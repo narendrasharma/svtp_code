@@ -66,7 +66,7 @@ function submit() {
                 </div>
                 <div class="col-md-6">
                     <label :for="fieldId('route')" class="form-label">Pickup &amp; Drop*</label>
-                    <input :id="fieldId('route')" v-model="form.pickup_drop" class="form-control" placeholder="e.g. Delhi to Mathura" required />
+                    <input :id="fieldId('route')" v-model="form.pickup_drop" class="form-control" placeholder="e.g. Airport to city centre" required />
                     <div v-if="form.errors.pickup_drop" class="text-danger small mt-1">{{ form.errors.pickup_drop }}</div>
                 </div>
                 <div class="col-md-6">

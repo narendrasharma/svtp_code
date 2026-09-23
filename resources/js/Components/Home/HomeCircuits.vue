@@ -1,6 +1,6 @@
 <script setup>
 const circuits = [
-    { name: 'Braj — Vrindavan & Mathura', note: 'Gokul, Nandgaon, Barsana, Govardhan', icon: 'bi-flower3' },
+    { name: 'Cultural escapes', note: 'Museums, landmarks, neighbourhoods', icon: 'bi-flower3' },
     { name: 'Uttar Pradesh Circuit', note: 'Ayodhya, Varanasi, Prayagraj', icon: 'bi-bank2' },
     { name: 'Rajasthan Circuit', note: 'Khatu Shyam Ji, Salasar Balaji', icon: 'bi-building' },
     { name: 'Uttarakhand Circuit', note: 'Haridwar, Rishikesh', icon: 'bi-water' },

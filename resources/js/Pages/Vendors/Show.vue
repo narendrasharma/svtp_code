@@ -27,7 +27,7 @@ const props = defineProps({
                         </div>
                         <p class="text-muted mb-1 small">
                             <span v-if="vendor.city">{{ vendor.city }}<span v-if="vendor.state">, {{ vendor.state }}</span> · </span>
-                            <span v-if="vendor.joined_at">On SVTP since {{ vendor.joined_at }}</span>
+                            <span v-if="vendor.joined_at">On the platform since {{ vendor.joined_at }}</span>
                         </p>
                         <p v-if="vendor.average_rating" class="mb-0 small">
                             <i class="bi bi-star-fill text-warning"></i> {{ vendor.average_rating }} ({{ vendor.reviews_count }} review{{ vendor.reviews_count === 1 ? '' : 's' }}) · {{ vendor.tours_count }} tour{{ vendor.tours_count === 1 ? '' : 's' }}

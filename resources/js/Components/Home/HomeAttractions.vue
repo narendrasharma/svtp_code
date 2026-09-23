@@ -10,7 +10,7 @@ defineProps({
 <template>
     <section class="container py-5">
         <p class="section-eyebrow text-center">प्रमुख स्थल</p>
-        <h2 class="section-title text-center mb-2">{{ settings.heading || 'Explore Braj — Must-Visit Places' }}</h2>
+        <h2 class="section-title text-center mb-2">{{ settings.heading || 'Explore places worth remembering' }}</h2>
         <p class="text-muted text-center mb-5">A quick look at the sites every darshan route revolves around.</p>
         <div class="row g-4">
             <div v-for="a in attractions" :key="a.name" class="col-md-3 col-6">

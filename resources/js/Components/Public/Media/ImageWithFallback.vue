@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     src: { type: String, default: null },
@@ -14,6 +14,10 @@ const failed = ref(!props.src);
 function onError() {
     failed.value = true;
 }
+
+watch(() => props.src, (src) => {
+    failed.value = !src;
+});
 </script>
 
 <template>

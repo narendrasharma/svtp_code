@@ -1,237 +1,139 @@
-// ---------------------------------------------------------------------------
-// Placeholder imagery — sourced from Wikimedia Commons under CC BY-SA / CC BY
-// licenses (free for commercial use with attribution). Swap these for your
-// own photography before launch; keep the same variable names so nothing
-// else needs to change.
-//
-// Attribution (keep a line like this in your site footer / credits page):
-//   Temple & festival photography via Wikimedia Commons contributors,
-//   licensed CC BY-SA 3.0 / 4.0 and CC BY 2.0.
-// ---------------------------------------------------------------------------
+// Generic starter content for legacy-compatible public components.
+// Published marketplace content and settings remain the source of truth.
 
 function wiki(file, width = 1600) {
-    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`;
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/'
+        + encodeURIComponent(file)
+        + '?width='
+        + width;
 }
 
 export const heroSlides = [
     {
-        image: wiki('Prem mandir Vrindavan.JPG'),
-        devanagari: '॥ राधे राधे ॥',
-        title: 'Journey to the Land of Shree Krishna',
-        subtitle: 'Guided pilgrimages through Vrindavan, Mathura, Gokul, Barsana and Govardhan — with transparent pricing and real online booking.',
+        image: wiki('Santorini sunset.jpg'),
+        devanagari: '',
+        title: 'Find a journey that fits your pace',
+        subtitle: 'Explore places, stays, and experiences with clear information and flexible discovery.',
     },
     {
-        image: wiki('Bankebihari temple main gate Vrindavan.JPG'),
-        devanagari: '॥ जय श्री बांके बिहारी ॥',
-        title: 'Darshan at the Temples of Braj Bhoomi',
-        subtitle: 'Skip the confusion — curated temple-trail itineraries with local guides who know every gali of Vrindavan.',
+        image: wiki('Fushimi Inari Taisha, Kyoto.jpg'),
+        devanagari: '',
+        title: 'Go further with useful local context',
+        subtitle: 'Build a more comfortable trip around the places and experiences you actually want to see.',
     },
     {
-        image: wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg'),
-        devanagari: '॥ होली है ॥',
-        title: 'Feel the Colours of Braj ki Holi',
-        subtitle: 'Lathmar Holi in Barsana, Phoolon Wali Holi in Vrindavan — book your festival-season package early.',
-    },
-    {
-        image: wiki('Ganga aarti haridwar 02.jpg'),
-        devanagari: '॥ हर हर गंगे ॥',
-        title: 'Extend Your Yatra to Haridwar & Rishikesh',
-        subtitle: 'Combine your Braj darshan with the Ganga aarti at Har Ki Pauri on our Uttarakhand circuit.',
+        image: wiki('Lisbon view from Miradouro da Senhora do Monte.jpg'),
+        devanagari: '',
+        title: 'Make room for memorable details',
+        subtitle: 'Browse published journeys and shape the next part of your travel story.',
     },
 ];
 
 export const categoryImages = {
-    braj: wiki('Prem mandir Vrindavan.JPG', 900),
-    temple: wiki('Bankebihari temple main gate Vrindavan.JPG', 900),
-    up_circuit: wiki('Taj-Mahal.jpg', 900),
-    rajasthan: wiki('Taj-Mahal.jpg', 900),
-    uttarakhand: wiki('Ganga aarti haridwar 02.jpg', 900),
-    festival: wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg', 900),
+    nature: wiki('Algarve coastline.jpg', 900),
+    culture: wiki('Fushimi Inari Taisha, Kyoto.jpg', 900),
+    city: wiki('Lisbon view from Miradouro da Senhora do Monte.jpg', 900),
+    coast: wiki('Santorini sunset.jpg', 900),
+    mountains: wiki('Swiss Alps.jpg', 900),
+    default: wiki('Algarve coastline.jpg', 900),
 };
 
 export function categoryImage(category) {
-    return categoryImages[category] || categoryImages.braj;
+    return categoryImages[category] || categoryImages.default;
 }
 
 export const dailyShlokas = [
-    {
-        sanskrit: 'ॐ नमो भगवते वासुदेवाय',
-        translation: 'Salutations to Lord Vasudeva, the all-pervading divine consciousness.',
-        source: 'Vaishnava Mahamantra',
-    },
-    {
-        sanskrit: 'हरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे । हरे राम हरे राम राम राम हरे हरे ॥',
-        translation: 'The Maha Mantra — chanted for the remembrance and glorification of Radha-Krishna.',
-        source: 'Kali-Santarana Upanishad',
-    },
-    {
-        sanskrit: 'यदा यदा हि धर्मस्य ग्लानिर्भवति भारत । अभ्युत्थानमधर्मस्य तदात्मानं सृजाम्यहम् ॥',
-        translation: 'Whenever righteousness declines, I manifest myself to restore dharma.',
-        source: 'Bhagavad Gita 4.7',
-    },
-    {
-        sanskrit: 'गोविन्दं आदिपुरुषं तमहं भजामि',
-        translation: 'I worship Govinda, the original, primeval Lord.',
-        source: 'Brahma Samhita 5.1',
-    },
-    {
-        sanskrit: 'वृन्दावनं परित्यज्य पादमेकं न गच्छति',
-        translation: 'Krishna never leaves Vrindavan, not even by a single step.',
-        source: 'Traditional Braj saying',
-    },
+    { sanskrit: 'Take the scenic route when time allows.', translation: 'A little room in the itinerary often creates the best travel memories.', source: 'Travel note' },
+    { sanskrit: 'Leave space for the unexpected.', translation: 'The most useful plan balances structure with room to wander.', source: 'Travel note' },
+    { sanskrit: 'Notice the details along the way.', translation: 'Neighbourhoods, food, and local rhythms give a destination its character.', source: 'Travel note' },
 ];
 
 export const festivalGuides = [
-    {
-        name: 'Lathmar Holi, Barsana',
-        image: wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg', 900),
-        blurb: 'Women playfully strike men with sticks in Radha Rani\'s hometown — the most electric Holi celebration in India.',
-        tag: 'Feb–Mar',
-    },
-    {
-        name: 'Phoolon Wali Holi, Vrindavan',
-        image: wiki('Bankebihari temple main gate Vrindavan.JPG', 900),
-        blurb: 'Priests shower devotees with flower petals at Banke Bihari Temple — no colour, just fragrance and devotion.',
-        tag: 'Feb–Mar',
-    },
-    {
-        name: 'Janmashtami, Mathura & Vrindavan',
-        image: wiki('Prem mandir Vrindavan.JPG', 900),
-        blurb: 'Krishna\'s birthplace comes alive with midnight aarti, Dahi Handi and temple decorations across Braj.',
-        tag: 'Aug–Sep',
-    },
+    { name: 'Spring escapes', image: wiki('Algarve coastline.jpg', 900), blurb: 'Comfortable weather and longer days for exploring at an easy pace.', tag: 'Mar–May' },
+    { name: 'Summer coastlines', image: wiki('Santorini sunset.jpg', 900), blurb: 'Plan early starts, relaxed afternoons, and a little time by the water.', tag: 'Jun–Aug' },
+    { name: 'Autumn city breaks', image: wiki('Lisbon view from Miradouro da Senhora do Monte.jpg', 900), blurb: 'A thoughtful season for neighbourhood walks, culture, and food.', tag: 'Sep–Nov' },
 ];
 
 export const culturalTrivia = [
-    {
-        question: 'Why is Krishna often shown with a peacock feather?',
-        answer: 'The peacock feather (mor-pankh) symbolises grace and beauty. Legend holds Krishna wore one Radha gave him during their time in the Vrindavan forests, and it became one of his defining emblems.',
-    },
-    {
-        question: 'What does "Radhe Radhe" mean as a greeting?',
-        answer: 'It invokes Radha, Krishna\'s eternal consort, and is the everyday greeting across Braj — used instead of "namaste" in Vrindavan, Mathura, Barsana and Nandgaon.',
-    },
-    {
-        question: 'What is Vrindavan known as, poetically?',
-        answer: 'The "Land of Kunj" — kunj means a grove or bower. Vrindavan\'s forests, especially Nidhivan and Seva Kunj, are believed to be where Krishna performed his Raas Leela with Radha and the gopis.',
-    },
-    {
-        question: 'What is a "parikrama"?',
-        answer: 'A circumambulation — walking a sacred circuit around a temple, town, or hill (like the 21 km Govardhan Parikrama) as an act of devotion.',
-    },
+    { question: 'What makes a good travel plan?', answer: 'Start with the places that matter most, then leave enough time to experience them without rushing.' },
+    { question: 'How can a trip feel more comfortable?', answer: 'Group nearby places together, confirm practical details early, and keep transitions simple.' },
+    { question: 'Why explore beyond the main sight?', answer: 'The surrounding streets, local food, and everyday routines often reveal the character of a destination.' },
 ];
 
 export const festivalGuidesDetailed = [
     {
-        name: 'Lathmar Holi, Barsana & Nandgaon',
-        image: wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg', 1200),
-        window: 'Late Feb – Early Mar',
-        description: 'Women of Barsana (Radha\'s hometown) playfully strike men from Nandgaon with sticks while they shield themselves — a joyful re-enactment of Krishna\'s teasing of Radha and her friends.',
-        tips: ['Book Barsana & Nandgaon accommodation weeks ahead — it sells out fast', 'Wear clothes you don\'t mind staining', 'Arrive early morning for the best spot near the temple courtyard'],
+        name: 'A slower coastal weekend',
+        image: wiki('Algarve coastline.jpg', 1200),
+        window: 'Spring',
+        description: 'Pair a walkable base with one or two carefully chosen day trips and let the landscape set the rhythm.',
+        tips: ['Keep the first day light', 'Confirm local transport before setting out', 'Leave one unplanned afternoon'],
     },
     {
-        name: 'Phoolon Wali Holi, Vrindavan',
-        image: wiki('Bankebihari temple main gate Vrindavan.JPG', 1200),
-        window: 'Day before Holi',
-        description: 'At Banke Bihari Temple, priests shower the crowd with fresh flower petals for 15–20 minutes — no colour, just fragrance, chanting and devotion.',
-        tips: ['Reach the temple at least an hour before the scheduled time', 'Keep hands free to catch petals as prasad', 'Pair it with darshan at Radha Vallabh Temple nearby'],
-    },
-    {
-        name: 'Janmashtami, Mathura & Vrindavan',
-        image: wiki('Prem mandir Vrindavan.JPG', 1200),
-        window: 'Aug – Sep',
-        description: 'Krishna\'s birthplace comes alive at midnight with elaborate aarti, cradle ceremonies and Dahi Handi, drawing devotees from across the country to Krishna Janmabhoomi and the major temples.',
-        tips: ['Midnight darshan queues can run long — plan your evening around it', 'Prem Mandir\'s light-and-sound show is worth catching', 'Sattvik/vegetarian food only during the fasting period'],
-    },
-    {
-        name: 'Ganga Dussehra, Haridwar',
-        image: wiki('Ganga aarti haridwar 02.jpg', 1200),
-        window: 'May – Jun',
-        description: 'Marks the descent of the Ganga to earth. Devotees take a holy dip at Har Ki Pauri and attend the evening Ganga Aarti — a natural extension if you\'re combining Braj with the Uttarakhand circuit.',
-        tips: ['Evening aarti gets crowded — arrive 45 minutes early for a ghat-side spot', 'Combine with Rishikesh for a 2-day extension'],
+        name: 'A neighbourhood-led city break',
+        image: wiki('Lisbon view from Miradouro da Senhora do Monte.jpg', 1200),
+        window: 'Autumn',
+        description: 'Choose a central base, explore on foot, and build the itinerary around food, culture, and local streets.',
+        tips: ['Book time-sensitive visits ahead', 'Use public transport where it is practical', 'Ask locally for a quieter route'],
     },
 ];
 
 export const contactInfo = {
-    companyName: 'Shree Vrindavan Tour Packages',
-    phone: '+91 89234 27393',
-    phone2: '+91 90843 97393',
-    phone2Href: 'tel:+919084397393',
-    phoneHref: 'tel:+918923427393',
-    marketingPhone: '+91 70176 21518',
-    marketingPhoneHref: 'tel:+917017621518',
-    ceo: 'Kanhaiya Upadhyay',
-    marketingHead: 'Narendra Sharma',
-    travelConsultants: [
-        { name: 'Abhishek Upadhyay', phone: '+91 844550786', phoneHref: 'tel:+91844550786' },
-        { name: 'Ashok', phone: null, phoneHref: null },
-    ],
-    email: 'info@shreevrindavantourpackages.com',
-    website: 'www.shreevrindavantourpackages.com',
-    websiteHref: 'https://www.shreevrindavantourpackages.com',
-    headOffice: 'Behind ATV, Near Pawan Kunj, Mathura, Uttar Pradesh.',
-    mapUrl: 'https://maps.app.goo.gl/hvnfoqfjsMf4D5748',
-    mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3539.820901453969!2d77.6192256!3d27.4748346!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x397373370beb6725%3A0xfebdbab354cac92e!2sShree%20Vrindavan%20Tour%20Packages!5e0!3m2!1sen!2sin!4v1788339214038!5m2!1sen!2sin',
-    hours: 'Support 7:00 AM – 10:00 PM',
+    companyName: 'Travel marketplace',
+    phone: null,
+    phone2: null,
+    phone2Href: null,
+    phoneHref: null,
+    marketingPhone: null,
+    marketingPhoneHref: null,
+    ceo: null,
+    marketingHead: null,
+    travelConsultants: [],
+    email: null,
+    website: null,
+    websiteHref: null,
+    headOffice: null,
+    mapUrl: null,
+    mapEmbedUrl: null,
+    hours: null,
 };
 
-export const socialLinks = [
-    { icon: 'bi-facebook', href: '#', label: 'Facebook' },
-    { icon: 'bi-instagram', href: '#', label: 'Instagram' },
-    { icon: 'bi-youtube', href: '#', label: 'YouTube' },
-    { icon: 'bi-whatsapp', href: 'https://wa.me/918923427393', label: 'WhatsApp' },
-];
+export const socialLinks = [];
 
 export const whyChooseUs = [
-    { icon: 'bi-clock-history', title: 'Darshan-First Planning', text: 'Routes built around temple timings and crowd flow — not a rushed tourist checklist.' },
-    { icon: 'bi-signpost-2', title: 'Local Braj Routes', text: 'Alternate lanes, festival diversions and parking know-how our drivers have used for years.' },
-    { icon: 'bi-shield-check', title: 'Family & Senior Friendly', text: 'Clean vehicles, calm driving and proper support for elders and children.' },
-    { icon: 'bi-cash-coin', title: 'Transparent Pricing', text: 'What you see is what you pay — no hidden guide fees or surprise parking charges.' },
+    { icon: 'bi-compass', title: 'Clear discovery', text: 'Find useful destination and experience context before you decide.' },
+    { icon: 'bi-calendar2-check', title: 'Flexible planning', text: 'Shape your journey around the time, places, and pace that suit you.' },
+    { icon: 'bi-shield-check', title: 'Visible details', text: 'Published availability and practical information stay easy to compare.' },
+    { icon: 'bi-headset', title: 'Helpful support', text: 'Use the configured contact channels when you need a hand.' },
 ];
 
 export const attractions = [
-    { name: 'Banke Bihari Temple', image: wiki('Bankebihari temple main gate Vrindavan.JPG', 900), blurb: 'Vrindavan\'s most-loved temple — famous for its curtain darshan, closed every few seconds so devotees don\'t linger too long before the deity.' },
-    { name: 'Prem Mandir', image: wiki('Prem mandir Vrindavan.JPG', 900), blurb: 'A marble masterpiece lit in changing colours at night, its carvings retelling scenes from Krishna\'s life.' },
-    { name: 'ISKCON Vrindavan', image: wiki('Prem mandir Vrindavan.JPG', 900), blurb: 'A striking white-marble temple complex known worldwide for its kirtans and welcoming atmosphere.' },
-    { name: 'Yamuna Ghats', image: wiki('Ganga aarti haridwar 02.jpg', 900), blurb: 'Keshi Ghat is the spot for a sunset boat ride and a quieter view of the town away from the main streets.' },
+    { name: 'Lisbon', image: wiki('Lisbon view from Miradouro da Senhora do Monte.jpg', 900), blurb: 'Layered streets, viewpoints, and a generous food culture.' },
+    { name: 'Kyoto', image: wiki('Fushimi Inari Taisha, Kyoto.jpg', 900), blurb: 'A place to balance well-known landmarks with quieter neighbourhoods.' },
+    { name: 'Algarve', image: wiki('Algarve coastline.jpg', 900), blurb: 'Coastal paths, open skies, and time to slow down.' },
+    { name: 'The Alps', image: wiki('Swiss Alps.jpg', 900), blurb: 'Mountain landscapes for active days and restorative pauses.' },
 ];
 
 export const bestTimeToVisit = [
-    { period: 'Oct – Dec', weather: 'Cool, 15–25°C', goodFor: 'Sightseeing, temple visits & long walks' },
-    { period: 'Jan – Mar', weather: 'Pleasant', goodFor: 'Holi celebrations & spring festivals' },
-    { period: 'Apr – Jun', weather: 'Hot, 35–45°C', goodFor: 'Budget travel, less crowded darshan (AC cabs recommended)' },
-    { period: 'Jul – Sep', weather: 'Monsoon, green & humid', goodFor: 'Lush scenery, Janmashtami season' },
+    { period: 'Spring', weather: 'Mild', goodFor: 'Walking, gardens, and longer days' },
+    { period: 'Summer', weather: 'Warm', goodFor: 'Coastlines, outdoor dining, and late evenings' },
+    { period: 'Autumn', weather: 'Comfortable', goodFor: 'Cities, food, and cultural visits' },
+    { period: 'Winter', weather: 'Cool', goodFor: 'Museums, markets, and quieter stays' },
 ];
 
 export const galleryImages = [
-    wiki('Prem mandir Vrindavan.JPG', 700),
-    wiki('Bankebihari temple main gate Vrindavan.JPG', 700),
-    wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg', 700),
-    wiki('Ganga aarti haridwar 02.jpg', 700),
-    wiki('Taj-Mahal.jpg', 700),
-    wiki('A night view of the Love Temple Vrindavan India 2015.jpg', 700),
+    wiki('Algarve coastline.jpg', 700),
+    wiki('Fushimi Inari Taisha, Kyoto.jpg', 700),
+    wiki('Lisbon view from Miradouro da Senhora do Monte.jpg', 700),
+    wiki('Santorini sunset.jpg', 700),
 ];
 
-export const blogPosts = [
-    { title: 'A First-Timer\'s Guide to Vrindavan Darshan', excerpt: 'What to wear, when to go, and the temple sequence that saves you the most walking.', image: wiki('Bankebihari temple main gate Vrindavan.JPG', 800), date: 'Dummy content — replace with a real post' },
-    { title: '5 Things Nobody Tells You About Braj Holi', excerpt: 'From Lathmar Holi timing to what to actually wear so the colour washes out easily.', image: wiki('Lathmar Holi 2022 in Nandgaon, Uttar Pradesh.jpg', 800), date: 'Dummy content — replace with a real post' },
-    { title: 'Beyond the Big Temples: Quiet Corners of Vrindavan', excerpt: 'Nidhivan, Seva Kunj and the early-morning Keshi Ghat — for travellers who want stillness.', image: wiki('Prem mandir Vrindavan.JPG', 800), date: 'Dummy content — replace with a real post' },
-];
-
-export const faqItems = [
-    { q: 'What is included in your tour packages?', a: 'Most packages include a private AC cab, driver support, route planning, pickup/drop and guidance on temple sequence. Exact inclusions vary by duration and vehicle — check each package\'s inclusions list.' },
-    { q: 'Do you arrange pickup from other cities?', a: 'Yes — we can arrange pickup from Delhi, Agra, Jaipur and other nearby cities. Mention your pickup city when enquiring and we\'ll quote accordingly.' },
-    { q: 'Is this suitable for senior citizens?', a: 'Yes. We plan comfortable breaks, minimise unnecessary walking, and can suggest a senior-friendly temple order.' },
-    { q: 'Can I customise my itinerary?', a: 'Absolutely — share your dates, number of people and must-visit temples, and we\'ll put together a realistic route.' },
-];
-
-export const reviewsSummary = { average: 4.8, count: 180, breakdown: [ { stars: 5, pct: 84 }, { stars: 4, pct: 12 }, { stars: 3, pct: 3 }, { stars: 2, pct: 1 }, { stars: 1, pct: 0 } ] };
+export const blogPosts = [];
+export const faqItems = [];
+export const reviewsSummary = { average: null, count: 0, breakdown: [] };
 
 export const trustBadges = [
-    { icon: 'bi-patch-check-fill', label: 'Govt. Registered Tour Operator' },
-    { icon: 'bi-shield-lock-fill', label: 'Secure Online Payments' },
-    { icon: 'bi-headset', label: '24/7 WhatsApp Support' },
-    { icon: 'bi-star-fill', label: '4.8/5 Average Rating' },
-    { icon: 'bi-people-fill', label: '50,000+ Pilgrims Guided' },
-    { icon: 'bi-award-fill', label: 'Local Braj Guides' },
+    { icon: 'bi-compass', label: 'Destination discovery' },
+    { icon: 'bi-card-checklist', label: 'Clear travel details' },
+    { icon: 'bi-headset', label: 'Configured support' },
+    { icon: 'bi-shield-check', label: 'Secure customer flows' },
 ];

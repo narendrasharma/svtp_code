@@ -9,7 +9,7 @@ defineProps({
 <template>
     <section class="container py-5">
         <p class="section-eyebrow text-center">संपर्क करें</p>
-        <h2 class="section-title text-center mb-5">{{ settings.heading || 'Contact Our Braj Travel Team' }}</h2>
+        <h2 class="section-title text-center mb-5">{{ settings.heading || 'Contact the travel team' }}</h2>
         <div class="row g-4">
             <div class="col-lg-5">
                 <div class="glass-card p-4 h-100">

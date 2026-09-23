@@ -1,43 +1,59 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import EmptyState from '../../Components/Public/States/EmptyState.vue';
+import PublicPageHero from '../../Components/Public/Content/PublicPageHero.vue';
+import SeoHead from '../../Components/SeoHead.vue';
 import { appUrl } from '../../appUrl';
-import { blogPosts } from '../../festiveAssets';
-import SeoHead from "@/Components/SeoHead.vue";
+
+const props = defineProps({
+    posts: { type: Array, default: () => [] },
+});
 </script>
 
 <template>
     <AppLayout>
         <SeoHead
-            title="Travel Blog"
-            description="Discover travel guides, destination inspiration, tips and useful information for your next journey."
+            title="Travel journal"
+            description="Read published travel guides and destination stories from this marketplace."
+            :canonical="appUrl('/blog')"
+            :noindex="!posts.length"
         />
-        <section class="trust-strip py-5 mb-4">
-            <div class="container text-center">
-                <p class="section-eyebrow text-white opacity-75">यात्रा गाइड</p>
-                <h1 class="text-white" style="font-family: var(--font-display);">Travel Blog &amp; Guides</h1>
-                <p class="opacity-75 mb-0">Practical, search-friendly guides for planning your Braj trip.</p>
-            </div>
-        </section>
-
-        <div class="container py-2 pb-5">
-            <div class="row g-4">
-                <div v-for="post in blogPosts" :key="post.title" class="col-md-4">
-                    <div class="blog-card">
-                        <img :src="post.image" :alt="post.title" loading="lazy" />
-                        <div class="blog-card-body">
-                            <h5 class="text-svtp">{{ post.title }}</h5>
-                            <p class="small text-muted">{{ post.excerpt }}</p>
-                            <small class="text-muted fst-italic d-block mb-2">{{ post.date }}</small>
-                            <a :href="appUrl('/packages')" class="btn btn-outline-svtp btn-sm">Related Tours</a>
-                        </div>
+        <PublicPageHero
+            eyebrow="Ideas for the journey"
+            title="Travel journal"
+            description="Published guides and destination stories will gather here as the journal grows."
+        />
+        <main class="public-container py-5">
+            <div v-if="posts.length" class="row g-4">
+                <article v-for="post in posts" :key="post.id || post.slug" class="col-md-6 col-xl-4">
+                    <div class="public-content-panel h-100">
+                        <img v-if="post.image" :src="post.image" :alt="post.title" class="blog-image" loading="lazy">
+                        <p v-if="post.published_at" class="public-eyebrow mt-3 mb-2">{{ post.published_at }}</p>
+                        <h2 class="public-heading public-heading--3">{{ post.title }}</h2>
+                        <p v-if="post.excerpt" class="text-muted">{{ post.excerpt }}</p>
+                        <a v-if="post.url" :href="post.url" class="public-button public-button--outline public-button--sm">Read article</a>
                     </div>
-                </div>
+                </article>
             </div>
-            <p class="text-center text-muted small mt-5">
-                These are placeholder posts to show the layout. Real articles (Banke Bihari timings, how to
-                reach Vrindavan from Delhi, a 2-day itinerary, a Holi guide, etc.) can go live here once written
-                — each one should link to its relevant tour package.
-            </p>
-        </div>
+            <EmptyState v-else title="The journal is being prepared" description="Published articles will appear here when the marketplace has a blog collection to share.">
+                <template #icon><i class="bi bi-journal-richtext" aria-hidden="true"></i></template>
+            </EmptyState>
+        </main>
     </AppLayout>
 </template>
+
+<style scoped>
+.public-content-panel {
+    padding: 1.5rem;
+    border: 1px solid rgba(31, 72, 67, 0.1);
+    border-radius: 1.25rem;
+    background: #fffdf8;
+}
+
+.blog-image {
+    width: 100%;
+    height: 12rem;
+    border-radius: 0.9rem;
+    object-fit: cover;
+}
+</style>

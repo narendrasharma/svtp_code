@@ -34,8 +34,7 @@ const navigation = computed(() => [
     moduleEnabled('hotels') ? { key: 'hotels', label: t('navigation.hotels', 'Hotels'), href: '/hotels' } : null,
     moduleEnabled('tours') ? { key: 'tours', label: t('navigation.tours', 'Tours'), href: '/search/tours' } : null,
     moduleEnabled('taxi') ? { key: 'taxi', label: t('navigation.taxi', 'Taxi'), href: '/taxi' } : null,
-    moduleEnabled('tours') ? { key: 'destinations', label: t('navigation.destinations', 'Destinations'), href: '/destinations' } : null,
-    { key: 'blog', label: t('navigation.blog', 'Blog'), href: '/blog' },
+    { key: 'destinations', label: t('navigation.destinations', 'Destinations'), href: '/destinations' },
     { key: 'about', label: t('navigation.about', 'About'), href: '/about' },
 ].filter(Boolean));
 

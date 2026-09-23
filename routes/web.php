@@ -86,6 +86,7 @@ use App\Http\Controllers\Admin\VendorDocumentController as AdminVendorDocumentCo
 use App\Http\Controllers\Admin\VendorFinanceController as AdminVendorFinanceController;
 use App\Http\Controllers\Admin\VendorPlanController as AdminVendorPlanController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\CityController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DiscoveryController;
@@ -151,7 +152,9 @@ use App\Http\Controllers\Vendor\VendorDocumentController;
 use App\Http\Controllers\Vendor\VendorDocumentDownloadController;
 use App\Http\Controllers\Vendor\VendorProfileController;
 use App\Http\Controllers\VendorStorefrontController;
+use App\Models\City;
 use App\Models\Destination;
+use App\Models\Page;
 use App\Models\Place;
 use App\Models\Review;
 use App\Models\TourPackage;
@@ -164,11 +167,18 @@ Route::get('/sitemap.xml', function () {
         ->select('slug', 'updated_at')
         ->get();
 
+    $cities = City::query()
+        ->active()
+        ->select('slug', 'updated_at')
+        ->get();
+
     $destinations = Destination::query()
+        ->active()
         ->select('slug', 'updated_at')
         ->get();
 
     $places = Place::query()
+        ->active()
         ->select('slug', 'updated_at')
         ->get();
 
@@ -178,9 +188,13 @@ Route::get('/sitemap.xml', function () {
         ->whereNotNull('slug')
         ->select('slug', 'updated_at')
         ->get();
+    $hasFaqPage = Page::query()
+        ->active()
+        ->where('slug', 'faq')
+        ->exists();
 
     return response()
-        ->view('sitemap', compact('packages', 'destinations', 'places', 'vendors'))
+        ->view('sitemap', compact('packages', 'cities', 'destinations', 'places', 'vendors', 'hasFaqPage'))
         ->header('Content-Type', 'application/xml');
 });
 
@@ -252,28 +266,40 @@ Route::post('/bookings/{booking}/pay', [PublicBookingController::class, 'pay'])
     ->name('booking.pay')
     ->middleware(['module:tours', 'signed', 'tracking.privacy']);
 
-Route::get('/about', fn () => Inertia::render('Static/About'))->name('about');
+Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/our-team', fn () => Inertia::render('Static/Team'))->name('team');
 Route::get('/contact', [EnquiryController::class, 'create'])->name('contact');
 Route::post('/enquiries', [EnquiryController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('enquiries.store');
-Route::get('/faq', fn () => Inertia::render('Static/Faq'))->name('faq');
-Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations')->middleware('module:tours');
-Route::get('/destinations/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show')->middleware('module:tours');
-Route::get('/places/{place:slug}', [PublicPlaceController::class, 'show'])->name('places.show')->middleware('module:tours');
+Route::get('/faq', [PageController::class, 'faq'])->name('faq');
+Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations');
+Route::get('/destinations/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
+Route::get('/cities/{city:slug}', [CityController::class, 'show'])->name('cities.show');
+Route::get('/places', [PublicPlaceController::class, 'index'])->name('places');
+Route::get('/places/{place:slug}', [PublicPlaceController::class, 'show'])->name('places.show');
 Route::get('/gallery', fn () => Inertia::render('Static/Gallery'))->name('gallery');
 Route::get('/blog', fn () => Inertia::render('Blog/Index'))->name('blog');
-Route::get('/privacy', fn () => Inertia::render('Static/Privacy'))->name('privacy');
-Route::get('/terms', fn () => Inertia::render('Static/Terms'))->name('terms');
-Route::get('/spiritual-wisdom', fn () => Inertia::render('Static/SpiritualWisdom'))->name('wisdom');
+Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [PageController::class, 'terms'])->name('terms');
+Route::redirect('/spiritual-wisdom', '/destinations')->name('wisdom');
 Route::get('/testimonials', function () {
     return Inertia::render('Static/Testimonials', [
         'testimonials' => Review::where('is_approved', true)
             ->with('user:id,name', 'package:id,title')
             ->latest()
             ->take(24)
-            ->get(['id', 'user_id', 'package_id', 'reviewer_name', 'rating', 'comment', 'created_at']),
+            ->get(['id', 'user_id', 'package_id', 'reviewer_name', 'rating', 'comment', 'created_at'])
+            ->map(static fn (Review $review): array => [
+                'id' => $review->id,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'reviewer_name' => $review->reviewer_name ?: $review->user?->name,
+                'package_title' => $review->package?->title,
+                'published_at' => $review->created_at?->toDateString(),
+            ])
+            ->values()
+            ->all(),
     ]);
 })->name('testimonials');
 

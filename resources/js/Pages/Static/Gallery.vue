@@ -1,41 +1,90 @@
 <script setup>
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
-import { galleryImages } from '../../festiveAssets';
-import SeoHead from "@/Components/SeoHead.vue";
+import EmptyState from '../../Components/Public/States/EmptyState.vue';
+import PublicPageHero from '../../Components/Public/Content/PublicPageHero.vue';
+import SeoHead from '../../Components/SeoHead.vue';
+import { appUrl } from '../../appUrl';
 
+const props = defineProps({
+    images: { type: Array, default: () => [] },
+});
 const active = ref(null);
 </script>
 
 <template>
     <AppLayout>
         <SeoHead
-            title="Travel Gallery"
-            description="Explore memorable destinations, tours and travel experiences through our photo gallery."
+            title="Gallery"
+            description="A visual journal of published travel places and experiences."
+            :canonical="appUrl('/gallery')"
+            :noindex="true"
         />
-        <section class="trust-strip py-5 mb-4">
-            <div class="container text-center">
-                <p class="section-eyebrow text-white opacity-75">फोटो गैलरी</p>
-                <h1 class="text-white" style="font-family: var(--font-display);">Gallery</h1>
-                <p class="opacity-75 mb-0">Temples, ghats and festival colours from across Braj.</p>
-            </div>
-        </section>
+        <PublicPageHero eyebrow="Visual journal" title="Gallery" description="A visual journal of published travel places and experiences." />
 
-        <div class="container py-2 pb-5">
-            <div class="gallery-grid" style="grid-template-columns: repeat(3, 1fr);">
-                <a v-for="(img, i) in galleryImages" :key="i" href="#" @click.prevent="active = img">
-                    <img :src="img" :alt="`Gallery photo ${i + 1}`" loading="lazy" style="height: 220px;" />
-                </a>
+        <main class="public-container py-5">
+            <div v-if="images.length" class="row g-3">
+                <div v-for="(image, index) in images" :key="image.id || image.src || index" class="col-6 col-lg-4">
+                    <button type="button" class="gallery-tile" @click="active = image">
+                        <img :src="image.src" :alt="image.alt || 'Published travel image'" loading="lazy">
+                    </button>
+                </div>
             </div>
-            <p class="text-center text-muted small mt-4">
-                Placeholder photography — swap in real trip photos any time via <code>galleryImages</code> in
-                <code>festiveAssets.js</code>, or wire this up to your admin panel's Galleries module later.
-            </p>
-        </div>
-
-        <div v-if="active" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-             style="background: rgba(36,6,19,0.85); z-index: 2000;" @click="active = null">
-            <img :src="active" alt="Enlarged gallery photo" style="max-width: 90vw; max-height: 85vh; border-radius: 16px;" />
+            <EmptyState v-else :title="'The gallery is being prepared'" description="Published images will appear here when the marketplace has a gallery collection to share.">
+                <template #icon><i class="bi bi-images" aria-hidden="true"></i></template>
+            </EmptyState>
+        </main>
+        <div v-if="active" class="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Image preview" @click.self="active = null">
+            <button type="button" class="btn-close btn-close-white" aria-label="Close image preview" @click="active = null"></button>
+            <img :src="active.src" :alt="active.alt || 'Published travel image'">
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.public-content-panel {
+    padding: 1.5rem;
+    border: 1px solid rgba(31, 72, 67, 0.1);
+    border-radius: 1.25rem;
+    background: #fffdf8;
+}
+
+.gallery-tile {
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 1.25rem;
+    background: #edf3ef;
+}
+
+.gallery-tile img,
+.team-image img {
+    display: block;
+    width: 100%;
+    height: 15rem;
+    object-fit: cover;
+}
+
+.gallery-lightbox {
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background: rgba(18, 35, 33, 0.9);
+}
+
+.gallery-lightbox .btn-close {
+    position: absolute;
+    inset-block-start: 1.5rem;
+    inset-inline-end: 1.5rem;
+}
+
+.gallery-lightbox img {
+    max-width: min(92vw, 70rem);
+    max-height: 84vh;
+    border-radius: 1rem;
+}
+</style>

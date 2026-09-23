@@ -57,9 +57,8 @@ const socialLinks = computed(() => [
                 <div>
                     <h2 class="public-footer__title">Explore</h2>
                     <ul class="public-footer__links">
-                        <li v-if="moduleEnabled('tours')"><Link :href="appUrl('/destinations')">{{ t('navigation.destinations', 'Destinations') }}</Link></li>
-                        <li><Link :href="appUrl('/blog')">Blog</Link></li>
-                        <li><Link :href="appUrl('/faq')">FAQs</Link></li>
+                        <li><Link :href="appUrl('/destinations')">{{ t('navigation.destinations', 'Destinations') }}</Link></li>
+                        <li><Link :href="appUrl('/places')">{{ t('navigation.places', 'Places') }}</Link></li>
                     </ul>
                 </div>
 
@@ -77,8 +76,8 @@ const socialLinks = computed(() => [
                     <ul class="public-footer__links">
                         <li><Link :href="appUrl('/about')">{{ t('navigation.about', 'About') }}</Link></li>
                         <li><Link :href="appUrl('/contact')">{{ t('navigation.contact', 'Contact') }}</Link></li>
-                        <li><Link :href="appUrl('/privacy')">Privacy</Link></li>
-                        <li><Link :href="appUrl('/terms')">Terms</Link></li>
+                        <li><Link :href="appUrl('/privacy')">{{ t('navigation.privacy', 'Privacy') }}</Link></li>
+                        <li><Link :href="appUrl('/terms')">{{ t('navigation.terms', 'Terms') }}</Link></li>
                     </ul>
                 </div>
             </div>

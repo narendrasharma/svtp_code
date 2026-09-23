@@ -47,6 +47,24 @@ class PublicPlacePageTest extends TestCase
         $this->get('/places/not-a-real-place')->assertNotFound();
     }
 
+    public function test_place_index_excludes_inactive_places_and_detail_hides_them(): void
+    {
+        [$place, $destination] = $this->placeRecords();
+        $hidden = Place::factory()->inactive()->create([
+            'destination_id' => $destination->id,
+            'name' => 'Hidden public place',
+            'slug' => 'hidden-public-place',
+        ]);
+
+        $this->get(route('places', absolute: false))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Static/Places')
+                ->has('places', 1)
+                ->where('places.0.id', $place->id));
+
+        $this->get(route('places.show', $hidden, absolute: false))->assertNotFound();
+    }
+
     /**
      * @return array{Place, Destination, TourPackage, TourPackage}
      */

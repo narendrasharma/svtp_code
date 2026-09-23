@@ -51,7 +51,7 @@ function submit() {
                             <div class="row g-3">
                                 <div class="col-md-8">
                                     <label class="form-label">Business Name *</label>
-                                    <input v-model="form.business_name" class="form-control" :class="{ 'is-invalid': form.errors.business_name }" placeholder="Shree Vrindavan Travels" />
+                                    <input v-model="form.business_name" class="form-control" :class="{ 'is-invalid': form.errors.business_name }" placeholder="Your travel business" />
                                     <div v-if="form.errors.business_name" class="invalid-feedback">{{ form.errors.business_name }}</div>
                                 </div>
                                 <div class="col-md-4">

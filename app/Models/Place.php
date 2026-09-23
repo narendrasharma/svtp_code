@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Database\Factories\PlaceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,16 @@ class Place extends Model
 {
     /** @use HasFactory<PlaceFactory> */
     use HasFactory;
+
+    use HasTranslations;
+
+    /**
+     * @return array<int, string>
+     */
+    public static function translatableFields(): array
+    {
+        return ['name', 'description', 'meta_title', 'meta_description'];
+    }
 
     protected $fillable = [
         'destination_id', 'name', 'slug', 'description', 'image',

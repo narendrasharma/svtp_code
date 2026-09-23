@@ -62,6 +62,19 @@ class PublicDestinationPageTest extends TestCase
         $this->get('/destinations/not-a-real-destination')->assertNotFound();
     }
 
+    public function test_city_landing_reuses_public_geography_contract(): void
+    {
+        [$destination] = $this->destinationRecords();
+
+        $this->get(route('cities.show', $destination->city, absolute: false))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Static/City')
+                ->where('city.kind', 'city')
+                ->where('city.name', 'Mathura')
+                ->has('city.destinations', 1)
+                ->where('city.destinations.0.id', $destination->id));
+    }
+
     /**
      * @return array{Destination, Place, TourPackage, TourPackage}
      */

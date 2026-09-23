@@ -1,35 +1,36 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
-import SeoHead from "@/Components/SeoHead.vue";
+import EmptyState from '../../Components/Public/States/EmptyState.vue';
+import PublicPageHero from '../../Components/Public/Content/PublicPageHero.vue';
+import SeoHead from '../../Components/SeoHead.vue';
 
-const faqs = [
-    { q: 'How do I book a tour?', a: 'Choose a package, select your travel date and number of travelers, then pay securely via Razorpay or Paytm.' },
-    { q: 'Is there a WhatsApp booking option?', a: 'Yes — tap the WhatsApp icon on any page to chat with our team directly.' },
-    { q: 'Can I customize a package?', a: 'Yes, contact us and we will tailor an itinerary to your needs.' },
-    { q: 'How do I get my booking confirmation?', a: 'You will receive a QR pass and downloadable PDF invoice right after payment.' },
-];
+const props = defineProps({
+    page: { type: Object, default: () => ({}) },
+});
 </script>
 
 <template>
     <AppLayout>
         <SeoHead
-            title="Frequently Asked Questions"
-            description="Find answers about tour bookings, payments, cancellations, travel arrangements and our services."
+            :title="page.meta_title || page.title || 'Frequently asked questions'"
+            :description="page.meta_description || 'Answers about using this travel marketplace.'"
+            :canonical="$page.props.localizedSeo?.canonical"
+            :noindex="!page.content_available"
         />
-        <div class="container py-5" style="max-width: 720px;">
-            <h1 class="brand-heading mb-4">Frequently Asked Questions</h1>
-            <div class="accordion" id="faqAccordion">
-                <div v-for="(item, i) in faqs" :key="i" class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" :class="{ collapsed: i !== 0 }" type="button" data-bs-toggle="collapse" :data-bs-target="`#faq-${i}`">
-                            {{ item.q }}
-                        </button>
-                    </h2>
-                    <div :id="`faq-${i}`" class="accordion-collapse collapse" :class="{ show: i === 0 }" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">{{ item.a }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <PublicPageHero
+            eyebrow="Help and guidance"
+            :title="page.title || 'Frequently asked questions'"
+            :description="page.excerpt || 'Answers will appear here as the marketplace publishes its help content.'"
+        />
+        <main class="public-container py-5">
+            <article v-if="page.content_available && page.content" class="public-rich-content" v-html="page.content"></article>
+            <EmptyState
+                v-else
+                title="Help content is being prepared"
+                description="Published answers will appear here when this marketplace has FAQ content to share."
+            >
+                <template #icon><i class="bi bi-chat-square-text" aria-hidden="true"></i></template>
+            </EmptyState>
+        </main>
     </AppLayout>
 </template>

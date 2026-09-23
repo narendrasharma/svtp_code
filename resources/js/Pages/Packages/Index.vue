@@ -4,11 +4,7 @@ import AppLayout from '../../Layouts/AppLayout.vue';
 import PackageCard from '../../Components/PackageCard.vue';
 import { router } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
-import { whyChooseUs, faqItems, attractions } from '../../festiveAssets';
 import SeoHead from "@/Components/SeoHead.vue";
-
-const openFaq = ref(0);
-function toggleFaq(i) { openFaq.value = openFaq.value === i ? -1 : i; }
 
 const props = defineProps({
     packages: Object,
@@ -97,7 +93,7 @@ function resetFilters() {
             <div class="container text-center">
                 <p class="section-eyebrow text-white opacity-75">दर्शन यात्रा निर्देशिका</p>
                 <h1 class="text-white" style="font-family: var(--font-display);">Destinations &amp; Tour Packages</h1>
-                <p class="opacity-75 mb-0">Vrindavan, Mathura, Agra, Delhi same-day trips, temple trails and Holi specials — all in one place.</p>
+                <p class="opacity-75 mb-0">Browse published journeys, destinations, and travel experiences in one place.</p>
             </div>
         </section>
 
@@ -229,52 +225,6 @@ function resetFilters() {
             </nav>
         </div>
 
-        <!-- Why book with us -->
-        <section class="bg-cream-warm py-5 mt-5">
-            <div class="container">
-                <h2 class="section-title text-center mb-5">Why Book Through Us?</h2>
-                <div class="row g-4">
-                    <div v-for="w in whyChooseUs" :key="w.title" class="col-md-3 col-6 text-center">
-                        <i class="bi" :class="w.icon" style="font-size:1.6rem;color:var(--gulal-deep);"></i>
-                        <h6 class="mt-2 text-svtp">{{ w.title }}</h6>
-                        <p class="small text-muted">{{ w.text }}</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Popular destinations quick links -->
-        <section class="container py-5">
-            <h2 class="section-title text-center mb-5">Popular Destinations in Braj</h2>
-            <div class="row g-4">
-                <div v-for="a in attractions" :key="a.name" class="col-md-3 col-6">
-                    <div class="attraction-card">
-                        <img :src="a.image" :alt="a.name" loading="lazy" />
-                        <div class="attraction-card-body">
-                            <h6 class="text-svtp mb-0">{{ a.name }}</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ -->
-        <section class="bg-cream-warm py-5">
-            <div class="container">
-                <h2 class="section-title text-center mb-5">Tour Package FAQs</h2>
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div v-for="(f, i) in faqItems" :key="f.q" class="faq-item" @click="toggleFaq(i)">
-                            <div class="faq-q">
-                                <span>{{ f.q }}</span>
-                                <i class="bi" :class="openFaq === i ? 'bi-dash-circle-fill' : 'bi-plus-circle-fill'" style="color: var(--gulal);"></i>
-                            </div>
-                            <p v-if="openFaq === i" class="faq-a">{{ f.a }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </AppLayout>
 </template>
 

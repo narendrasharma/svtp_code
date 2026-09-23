@@ -28,9 +28,9 @@ const form = useForm({ email: '', password: '' });
             <div class="login-divider" aria-hidden="true"><span>❋</span></div>
 
             <div class="text-center mb-4">
-                <p class="login-eyebrow">Sacred Braj Administration</p>
+                <p class="login-eyebrow">Marketplace administration</p>
                 <h1 id="admin-login-title" class="login-title">Welcome Back</h1>
-                <p class="login-subtitle">Sign in to manage Shree Vrindavan Tour Packages.</p>
+                <p class="login-subtitle">Sign in to manage the travel marketplace.</p>
             </div>
 
             <form @submit.prevent="form.post(appUrl('/admin/login'))">

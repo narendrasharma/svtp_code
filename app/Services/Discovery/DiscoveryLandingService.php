@@ -14,6 +14,7 @@ use App\Services\TourBookingPricingService;
 use App\Support\Localization;
 use App\Support\ModuleManager;
 use App\Support\SeoLocalization;
+use Illuminate\Support\Collection;
 
 /**
  * City/Destination/Place landing contracts (Phase 13C).
@@ -46,30 +47,18 @@ final class DiscoveryLandingService
 
         $hotels = $hotelsOn
             ? Property::query()->published()->where('city_id', $city->id)
-                ->with(['propertyType:id,name', 'images'])
+                ->with(['propertyType:id,name', 'city:id,name', 'images'])
                 ->orderByDesc('is_featured')->orderBy('name')->orderBy('id')
                 ->take(6)->get()
-                ->map(fn (Property $property): array => [
-                    'id' => (int) $property->id,
-                    'slug' => (string) $property->slug,
-                    'name' => DiscoveryResult::displayName($property, 'name', $locale) ?? $property->name,
-                    'image' => ($property->images->firstWhere('is_primary', true) ?? $property->images->first())?->url(),
-                    'url' => route('hotels.show', $property->slug, false),
-                ])->all()
+                ->pipe(fn (Collection $properties): array => $this->hotelCards($properties, $locale))
             : [];
 
         $tours = $toursOn
             ? TourPackage::query()->publiclyVisible()->where('city_id', $city->id)
+                ->with(['city:id,name'])->withLocaleTranslations($locale)
                 ->orderByDesc('is_featured')->orderBy('title')->orderBy('id')
-                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days'])
-                ->map(fn (TourPackage $tour): array => [
-                    'id' => (int) $tour->id,
-                    'slug' => (string) $tour->slug,
-                    'title' => DiscoveryResult::displayName($tour, 'title', $locale) ?? $tour->title,
-                    'image' => $tour->cover_image,
-                    'duration_days' => (int) $tour->duration_days,
-                    'url' => route('packages.show', $tour, false),
-                ])->all()
+                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days', 'duration_nights', 'price', 'discounted_price'])
+                ->pipe(fn (Collection $tourPackages): array => $this->tourCards($tourPackages, $locale))
             : [];
 
         $destinations = Destination::query()->active()->where('city_id', $city->id)
@@ -84,6 +73,7 @@ final class DiscoveryLandingService
             ])->all();
 
         $places = Place::query()->active()->whereHas('destination', fn ($inner) => $inner->where('city_id', $city->id))
+            ->withLocaleTranslations($locale)
             ->ordered()->take(12)->get(['id', 'name', 'slug', 'image'])
             ->map(fn (Place $place): array => [
                 'id' => (int) $place->id,
@@ -97,7 +87,7 @@ final class DiscoveryLandingService
             $city,
             'meta_title',
             'meta_description',
-            route('discover.locations', ['type' => 'city', 'id' => $city->id], true),
+            route('cities.show', $city, absolute: true),
             $locale
         );
         $seo['title'] ??= $city->name.' — Travel Guide';
@@ -141,34 +131,23 @@ final class DiscoveryLandingService
             ? Property::query()->published()
                 ->where(fn ($inner) => $inner->where('destination_id', $destination->id)
                     ->when($destination->city_id !== null, fn ($or) => $or->orWhere('city_id', $destination->city_id)))
-                ->with(['propertyType:id,name', 'images'])
+                ->with(['propertyType:id,name', 'city:id,name', 'images'])
                 ->orderByDesc('is_featured')->orderBy('name')->orderBy('id')
                 ->take(6)->get()
-                ->map(fn (Property $property): array => [
-                    'id' => (int) $property->id,
-                    'slug' => (string) $property->slug,
-                    'name' => DiscoveryResult::displayName($property, 'name', $locale) ?? $property->name,
-                    'image' => ($property->images->firstWhere('is_primary', true) ?? $property->images->first())?->url(),
-                    'url' => route('hotels.show', $property->slug, false),
-                ])->all()
+                ->pipe(fn (Collection $properties): array => $this->hotelCards($properties, $locale))
             : [];
 
         $tours = $toursOn
             ? TourPackage::query()->publiclyVisible()
                 ->whereHas('destinations', fn ($inner) => $inner->where('destinations.id', $destination->id))
+                ->with(['city:id,name'])->withLocaleTranslations($locale)
                 ->orderByDesc('is_featured')->orderBy('title')->orderBy('id')
-                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days'])
-                ->map(fn (TourPackage $tour): array => [
-                    'id' => (int) $tour->id,
-                    'slug' => (string) $tour->slug,
-                    'title' => DiscoveryResult::displayName($tour, 'title', $locale) ?? $tour->title,
-                    'image' => $tour->cover_image,
-                    'duration_days' => (int) $tour->duration_days,
-                    'url' => route('packages.show', $tour, false),
-                ])->all()
+                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days', 'duration_nights', 'price', 'discounted_price'])
+                ->pipe(fn (Collection $tourPackages): array => $this->tourCards($tourPackages, $locale))
             : [];
 
         $places = Place::query()->active()->where('destination_id', $destination->id)
+            ->withLocaleTranslations($locale)
             ->ordered()->take(12)->get(['id', 'name', 'slug', 'image'])
             ->map(fn (Place $place): array => [
                 'id' => (int) $place->id,
@@ -217,21 +196,15 @@ final class DiscoveryLandingService
         $toursOn = $this->modules->isEnabled(ModuleManager::TOURS);
         $hotelsOn = $this->modules->isEnabled(ModuleManager::HOTELS);
 
-        $place->loadMissing(['destination:id,name,city_id', 'destination.city:id,name']);
+        $place->loadMissing(['translations', 'destination:id,name,city_id', 'destination.city:id,name', 'destination.translations']);
 
         $tours = $toursOn
             ? TourPackage::query()->publiclyVisible()
                 ->whereHas('places', fn ($inner) => $inner->where('places.id', $place->id))
+                ->with(['city:id,name'])->withLocaleTranslations($locale)
                 ->orderByDesc('is_featured')->orderBy('title')->orderBy('id')
-                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days'])
-                ->map(fn (TourPackage $tour): array => [
-                    'id' => (int) $tour->id,
-                    'slug' => (string) $tour->slug,
-                    'title' => DiscoveryResult::displayName($tour, 'title', $locale) ?? $tour->title,
-                    'image' => $tour->cover_image,
-                    'duration_days' => (int) $tour->duration_days,
-                    'url' => route('packages.show', $tour, false),
-                ])->all()
+                ->take(6)->get(['id', 'title', 'slug', 'cover_image', 'duration_days', 'duration_nights', 'price', 'discounted_price'])
+                ->pipe(fn (Collection $tourPackages): array => $this->tourCards($tourPackages, $locale))
             : [];
 
         // Nearby hotels resolve through the place's destination context
@@ -241,16 +214,11 @@ final class DiscoveryLandingService
         if ($hotelsOn && $place->destination) {
             $nearbyHotels = Property::query()->published()
                 ->where('destination_id', $place->destination->id)
-                ->with(['images'])
+                ->with(['city:id,name', 'images'])
                 ->orderByDesc('is_featured')->orderBy('name')->orderBy('id')
-                ->take(6)->get()
-                ->map(fn (Property $property): array => [
-                    'id' => (int) $property->id,
-                    'slug' => (string) $property->slug,
-                    'name' => DiscoveryResult::displayName($property, 'name', $locale) ?? $property->name,
-                    'image' => ($property->images->firstWhere('is_primary', true) ?? $property->images->first())?->url(),
-                    'url' => route('hotels.show', $property->slug, false),
-                ])->all();
+                ->take(6)->get();
+
+            $nearbyHotels = $this->hotelCards($nearbyHotels, $locale);
         }
 
         $seo = SeoLocalization::forModel(
@@ -260,16 +228,16 @@ final class DiscoveryLandingService
             route('places.show', $place, true),
             $locale
         );
-        $seo['title'] ??= ((string) $place->name).' — Travel Guide';
+        $seo['title'] ??= (DiscoveryResult::displayName($place, 'name', $locale) ?? (string) $place->name).' — Travel Guide';
 
         return [
             'kind' => 'place',
             'id' => (int) $place->id,
             'slug' => (string) $place->slug,
             'name' => DiscoveryResult::displayName($place, 'name', $locale) ?? $place->name,
-            'description' => $place->description,
+            'description' => DiscoveryResult::displayName($place, 'description', $locale) ?? $place->description,
             'geography' => [
-                'destination' => $place->destination?->name,
+                'destination' => $place->destination ? DiscoveryResult::displayName($place->destination, 'name', $locale) : null,
                 'city' => $place->destination?->city?->name,
             ],
             'image' => $place->image,
@@ -319,5 +287,60 @@ final class DiscoveryLandingService
             'currency' => TourBookingPricingService::DEFAULT_CURRENCY,
             'display' => MoneyPresenter::present($effective, TourBookingPricingService::DEFAULT_CURRENCY),
         ];
+    }
+
+    /**
+     * @param  Collection<int, Property>  $properties
+     * @return array<int, array<string, mixed>>
+     */
+    private function hotelCards(Collection $properties, string $locale): array
+    {
+        if ($properties->isEmpty()) {
+            return [];
+        }
+
+        $plans = HotelRatePlan::query()
+            ->whereIn('property_id', $properties->pluck('id'))
+            ->active()
+            ->orderBy('base_rate')
+            ->get(['property_id', 'base_rate', 'currency'])
+            ->groupBy('property_id');
+
+        return $properties->map(function (Property $property) use ($locale, $plans): array {
+            $primary = $property->images->firstWhere('is_primary', true) ?? $property->images->first();
+            $plan = $plans->get($property->id)?->first();
+
+            return [
+                'id' => (int) $property->id,
+                'slug' => (string) $property->slug,
+                'name' => DiscoveryResult::displayName($property, 'name', $locale) ?? $property->name,
+                'image' => $primary?->url(),
+                'property_type' => $property->propertyType?->name,
+                'location' => $property->city?->name ?? $property->destination?->name,
+                'url' => route('hotels.show', $property->slug, false),
+                'display_money' => $plan
+                    ? MoneyPresenter::present((string) $plan->base_rate, (string) $plan->currency, null, $locale)
+                    : null,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * @param  Collection<int, TourPackage>  $tourPackages
+     * @return array<int, array<string, mixed>>
+     */
+    private function tourCards(Collection $tourPackages, string $locale): array
+    {
+        return $tourPackages->map(fn (TourPackage $tour): array => [
+            'id' => (int) $tour->id,
+            'slug' => (string) $tour->slug,
+            'title' => DiscoveryResult::displayName($tour, 'title', $locale) ?? $tour->title,
+            'image' => $tour->cover_image,
+            'duration_days' => (int) $tour->duration_days,
+            'duration_nights' => (int) $tour->duration_nights,
+            'destination' => $tour->city?->name,
+            'display_money' => self::startingPriceForTour($tour)['display'],
+            'url' => route('packages.show', $tour, false),
+        ])->values()->all();
     }
 }

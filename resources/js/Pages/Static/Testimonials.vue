@@ -1,58 +1,53 @@
 <script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
+import EmptyState from '../../Components/Public/States/EmptyState.vue';
+import PublicPageHero from '../../Components/Public/Content/PublicPageHero.vue';
+import SeoHead from '../../Components/SeoHead.vue';
 import StarRating from '../../Components/StarRating.vue';
-import { reviewsSummary } from '../../festiveAssets';
-import SeoHead from "@/Components/SeoHead.vue";
+import { appUrl } from '../../appUrl';
 
-defineProps({ testimonials: { type: Array, default: () => [] } });
+const props = defineProps({
+    testimonials: { type: Array, default: () => [] },
+});
 </script>
 
 <template>
     <AppLayout>
         <SeoHead
-            title="Customer Reviews & Testimonials"
-            description="Read genuine travel experiences and reviews shared by our customers."
+            title="Guest reviews"
+            description="Read published guest reviews from this travel marketplace."
+            :canonical="appUrl('/testimonials')"
+            :noindex="!testimonials.length"
         />
-        <section class="trust-strip py-5 mb-4">
-            <div class="container text-center">
-                <p class="section-eyebrow text-white opacity-75">भक्तों के अनुभव</p>
-                <h1 class="text-white" style="font-family: var(--font-display);">Guest Reviews</h1>
-                <p class="opacity-75 mb-0">Real feedback, collected after guests complete their tour.</p>
-            </div>
-        </section>
-
-        <div class="container py-2 pb-5">
-            <div class="row g-4 mb-5">
-                <div class="col-lg-4">
-                    <div class="glass-card p-4 text-center">
-                        <h2 class="price-tag mb-0">{{ reviewsSummary.average }}</h2>
-                        <StarRating :rating="reviewsSummary.average" />
-                        <p class="text-muted small mt-2 mb-0">Based on {{ reviewsSummary.count }}+ trips</p>
-                    </div>
-                </div>
-                <div class="col-lg-8">
-                    <div class="glass-card p-4">
-                        <div v-for="b in reviewsSummary.breakdown" :key="b.stars" class="review-bar-row">
-                            <span style="width: 44px;">{{ b.stars }} ★</span>
-                            <div class="review-bar-track"><div class="review-bar-fill" :style="{ width: b.pct + '%' }"></div></div>
-                            <span style="width: 36px;" class="text-muted">{{ b.pct }}%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <PublicPageHero
+            eyebrow="Published feedback"
+            title="Guest reviews"
+            description="Read feedback that has been approved for public display."
+        />
+        <main class="public-container py-5">
             <div v-if="testimonials.length" class="row g-4">
-                <div v-for="t in testimonials" :key="t.id" class="col-md-4">
-                    <div class="testimonial-card">
-                        <p class="testimonial-mark mb-1">॥</p>
-                        <StarRating :rating="t.rating" />
-                        <p class="mt-2 mb-3">{{ t.comment }}</p>
-                        <p class="fw-semibold mb-0">— {{ t.reviewer_name || t.user?.name || 'Guest' }}</p>
-                        <small class="text-muted">{{ t.package?.title }}</small>
-                    </div>
+                <div v-for="testimonial in testimonials" :key="testimonial.id" class="col-md-6 col-xl-4">
+                    <article class="public-content-panel h-100">
+                        <StarRating :rating="testimonial.rating" />
+                        <p class="mt-3 mb-4">{{ testimonial.comment }}</p>
+                        <p class="fw-semibold mb-1">{{ testimonial.reviewer_name || 'Guest' }}</p>
+                        <p v-if="testimonial.package_title" class="small text-muted mb-0">{{ testimonial.package_title }}</p>
+                        <time v-if="testimonial.published_at" class="small text-muted" :datetime="testimonial.published_at">{{ testimonial.published_at }}</time>
+                    </article>
                 </div>
             </div>
-            <p v-else class="text-center text-muted">Reviews will appear here as guests submit them.</p>
-        </div>
+            <EmptyState v-else title="Reviews will appear here" description="Published guest feedback will appear here after it has been approved.">
+                <template #icon><i class="bi bi-chat-quote" aria-hidden="true"></i></template>
+            </EmptyState>
+        </main>
     </AppLayout>
 </template>
+
+<style scoped>
+.public-content-panel {
+    padding: 1.5rem;
+    border: 1px solid rgba(31, 72, 67, 0.1);
+    border-radius: 1.25rem;
+    background: #fffdf8;
+}
+</style>
