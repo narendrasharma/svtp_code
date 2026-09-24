@@ -34,7 +34,7 @@ function destinationHref(place) {
 
         <main class="geo-page">
             <section class="geo-index-hero geo-index-hero--places">
-                <div class="container geo-index-hero__inner">
+                <div class="public-container geo-index-hero__inner">
                     <nav class="geo-breadcrumbs" aria-label="Breadcrumb">
                         <Link :href="appUrl('/')">{{ t('common.home', 'Home') }}</Link>
                         <span aria-hidden="true">/</span>
@@ -46,7 +46,7 @@ function destinationHref(place) {
                 </div>
             </section>
 
-            <section class="container geo-section">
+            <section class="public-container geo-section">
                 <SectionHeading
                     :eyebrow="t('common.places_to_explore', 'Places to explore')"
                     :title="t('common.places_section_title', 'Look closer')"

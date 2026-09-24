@@ -33,7 +33,8 @@ watch(() => props.src, (src) => {
                 'bi-building': kind === 'hotel',
                 'bi-compass': kind === 'tour',
                 'bi-signpost-2': kind === 'place' || kind === 'destination',
-                'bi-globe2': !['hotel', 'tour', 'place', 'destination'].includes(kind),
+                'bi-taxi-front-fill': kind === 'taxi',
+                'bi-globe2': !['hotel', 'tour', 'place', 'destination', 'taxi'].includes(kind),
             }"></i>
             <span v-if="label" class="public-media-frame__fallback-label">{{ label }}</span>
         </span>

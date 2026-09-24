@@ -1,13 +1,34 @@
 <script setup>
 import { appUrl } from '../../appUrl';
 import Logo from '../../Components/Logo.vue';
+import PublicAuthShell from '../../Components/Public/Layout/PublicAuthShell.vue';
 import { useForm } from '@inertiajs/vue3';
 
-const form = useForm({ email: '', password: '' });
+defineProps({
+    adminPortal: { type: Boolean, default: false },
+    canResetPassword: { type: Boolean, default: false },
+    canRegister: { type: Boolean, default: false },
+    status: { type: String, default: null },
+});
+
+const form = useForm({ email: '', password: '', remember: false });
 </script>
 
 <template>
-    <main class="admin-login-shell">
+    <div>
+    <PublicAuthShell v-if="!adminPortal" title="Welcome back" intro="Sign in to continue your booking or manage your trips.">
+        <p v-if="status" class="public-auth-status" role="status">{{ status }}</p>
+        <form class="public-auth-form" @submit.prevent="form.post(appUrl('/login'), { onFinish: () => form.reset('password') })">
+            <label class="public-auth-field" for="public-email">Email address<input id="public-email" v-model="form.email" class="public-input" type="email" autocomplete="username" required autofocus></label>
+            <small v-if="form.errors.email" class="public-auth-error">{{ form.errors.email }}</small>
+            <label class="public-auth-field" for="public-password">Password<input id="public-password" v-model="form.password" class="public-input" type="password" autocomplete="current-password" required></label>
+            <small v-if="form.errors.password" class="public-auth-error">{{ form.errors.password }}</small>
+            <div class="public-auth-row"><label class="public-auth-checkbox"><input v-model="form.remember" type="checkbox"> Remember me</label><a v-if="canResetPassword" :href="appUrl('/forgot-password')">Forgot password?</a></div>
+            <button type="submit" class="public-button public-button--primary" :disabled="form.processing">{{ form.processing ? 'Signing in…' : 'Sign in' }}</button>
+        </form>
+        <p v-if="canRegister" class="public-auth-footer">New to Triparo? <a :href="appUrl('/register')">Create an account</a></p>
+    </PublicAuthShell>
+    <main v-else class="admin-login-shell">
         <div class="admin-login-glow glow-blue" aria-hidden="true"></div>
         <div class="admin-login-glow glow-pink" aria-hidden="true"></div>
         <div class="admin-login-glow glow-gold" aria-hidden="true"></div>
@@ -62,6 +83,7 @@ const form = useForm({ email: '', password: '' });
             <p class="text-center small mt-3 mb-0">New traveller? <a :href="appUrl('/register')">Create an account</a></p>
         </section>
     </main>
+    </div>
 </template>
 
 <style scoped>

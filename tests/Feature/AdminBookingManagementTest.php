@@ -51,6 +51,20 @@ class AdminBookingManagementTest extends TestCase
             );
     }
 
+    public function test_canonical_and_legacy_tour_booking_urls_render(): void
+    {
+        $this->actingAsAdmin();
+        Booking::factory()->create();
+
+        $this->get(route('admin.bookings.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Admin/Bookings/Index'));
+
+        $this->get('/admin/bookings')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Admin/Bookings/Index'));
+    }
+
     public function test_admin_can_search_and_filter_bookings(): void
     {
         $this->actingAsAdmin();

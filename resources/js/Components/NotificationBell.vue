@@ -135,16 +135,22 @@ function timeAgo(value) {
 .notification-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: inherit; }
 .notification-bell:hover { background: rgba(127, 127, 127, 0.15); }
 .notification-bell-badge { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #dc3545; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
-.notification-dropdown { position: absolute; right: 0; top: calc(100% + 8px); z-index: 1050; width: min(360px, 90vw); max-height: 420px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(127, 127, 127, 0.3); border-radius: 12px; background: var(--bs-body-bg, #fff); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25); }
-.notification-dropdown-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(127, 127, 127, 0.2); }
-.notification-dropdown-empty { padding: 20px 14px; color: #6c757d; font-size: 0.9rem; text-align: center; }
+.notification-dropdown { position: absolute; right: 0; top: calc(100% + 8px); z-index: 1050; width: min(360px, 90vw); max-height: 420px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--admin-popover-border, rgba(127, 127, 127, 0.3)); border-radius: 12px; background: var(--admin-popover-bg, var(--bs-body-bg, #fff)); color: var(--admin-text, #212529); box-shadow: var(--admin-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.25)); }
+.notification-dropdown-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--admin-border, rgba(127, 127, 127, 0.2)); }
+.notification-dropdown-head strong { color: var(--admin-text, #212529); }
+.notification-dropdown-head .btn-link { color: var(--admin-link, #0d6efd); }
+.notification-dropdown-empty { padding: 20px 14px; color: var(--admin-text-muted, #6c757d); font-size: 0.9rem; text-align: center; }
 .notification-dropdown-list { margin: 0; padding: 4px; overflow-y: auto; list-style: none; }
-.notification-dropdown-list li { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; padding: 10px; border-radius: 8px; }
-.notification-dropdown-list li.is-unread { background: rgba(13, 110, 253, 0.08); }
+.notification-dropdown-list li { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; padding: 10px; border-radius: 8px; color: var(--admin-text, #212529); }
+.notification-dropdown-list li.is-unread { background: var(--admin-surface-sunken, rgba(13, 110, 253, 0.08)); }
+.notification-dropdown-list li:hover { background: var(--admin-surface-sunken, rgba(13, 110, 253, 0.08)); }
 .notification-item-body { min-width: 0; }
-.notification-item-title { font-weight: 600; font-size: 0.9rem; }
-.notification-item-message { color: #6c757d; font-size: 0.82rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.notification-item-time { color: #6c757d; font-size: 0.75rem; }
+.notification-item-title { color: var(--admin-text, #212529); font-weight: 600; font-size: 0.9rem; }
+.notification-item-message { color: var(--admin-text-muted, #6c757d); font-size: 0.82rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.notification-item-time { color: var(--admin-text-muted, #6c757d); font-size: 0.75rem; }
 .notification-item-actions { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-.notification-dropdown-foot { display: block; padding: 10px 14px; border-top: 1px solid rgba(127, 127, 127, 0.2); font-size: 0.88rem; text-align: center; text-decoration: none; }
+.notification-item-actions .btn-link { color: var(--admin-link, #0d6efd); }
+.notification-dropdown-foot { display: block; padding: 10px 14px; border-top: 1px solid var(--admin-border, rgba(127, 127, 127, 0.2)); color: var(--admin-link, #0d6efd); font-size: 0.88rem; text-align: center; text-decoration: none; }
+.notification-dropdown .btn-link:hover, .notification-dropdown .btn-link:focus-visible, .notification-dropdown-foot:hover, .notification-dropdown-foot:focus-visible { color: var(--admin-link-hover, var(--admin-link, #0d6efd)); }
+.notification-dropdown :focus-visible { outline: 2px solid var(--admin-primary, #0d6efd); outline-offset: 2px; }
 </style>

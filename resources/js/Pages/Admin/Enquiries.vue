@@ -14,7 +14,7 @@ function removeEnquiry(e) {
 
 <template>
     <AdminLayout>
-        <h2>Enquiries</h2>
+        <h2>Travel Enquiries</h2>
         <div class="table-responsive mt-3">
             <table class="table align-middle">
                 <thead>

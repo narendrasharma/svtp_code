@@ -1,61 +1,20 @@
 <script setup>
 import { computed } from 'vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { useForm, Link } from '@inertiajs/vue3';
+import { appUrl } from '../../appUrl';
+import PublicAuthShell from '../../Components/Public/Layout/PublicAuthShell.vue';
 
-const props = defineProps({
-    status: {
-        type: String,
-    },
-});
-
+const props = defineProps({ status: { type: String, default: null } });
 const form = useForm({});
-
-const submit = () => {
-    form.post(route('verification.send'));
-};
-
-const verificationLinkSent = computed(
-    () => props.status === 'verification-link-sent',
-);
+const sent = computed(() => props.status === 'verification-link-sent');
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Email Verification" />
-
-        <div class="mb-4 text-sm text-gray-600">
-            Thanks for signing up! Before getting started, could you verify your
-            email address by clicking on the link we just emailed to you? If you
-            didn't receive the email, we will gladly send you another.
-        </div>
-
-        <div
-            class="mb-4 text-sm font-medium text-green-600"
-            v-if="verificationLinkSent"
-        >
-            A new verification link has been sent to the email address you
-            provided during registration.
-        </div>
-
-        <form @submit.prevent="submit">
-            <div class="mt-4 flex items-center justify-between">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Resend Verification Email
-                </PrimaryButton>
-
-                <Link
-                    :href="route('logout')"
-                    method="post"
-                    as="button"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >Log Out</Link
-                >
-            </div>
+    <PublicAuthShell title="Verify your email" intro="Open the link we sent to your email address to finish setting up your account.">
+        <p v-if="sent" class="public-auth-status" role="status">A new verification link has been sent.</p>
+        <form class="public-auth-form" @submit.prevent="form.post(appUrl('/email/verification-notification'))">
+            <button type="submit" class="public-button public-button--primary" :disabled="form.processing">Resend verification email</button>
         </form>
-    </GuestLayout>
+        <p class="public-auth-footer"><Link :href="appUrl('/admin/logout')" method="post" as="button" class="public-button public-button--outline">Sign out</Link></p>
+    </PublicAuthShell>
 </template>

@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { appUrl } from '../../appUrl';
 import CustomFieldInputs from './CustomFieldInputs.vue';
+import RichTextEditor from '../Admin/RichTextEditor.vue';
 
 const props = defineProps({
     property: { type: Object, default: null },
@@ -147,7 +148,7 @@ function submit() {
 <div class="col-md-6"><label class="form-label" for="pf-type">Property type *</label><select id="pf-type" v-model="form.property_type_id" required class="form-select"><option value="">Choose type</option><option v-for="t in types" :key="t.id" :value="t.id">{{ t.name }}</option></select></div>
 <div class="col-md-6"><label class="form-label" for="pf-star">Star classification</label><select id="pf-star" v-model="form.star_rating" class="form-select"><option value="">Unrated</option><option v-for="n in [1,2,3,4,5]" :key="n" :value="n">{{ n }} star{{ n > 1 ? 's' : '' }}</option></select></div>
 <div class="col-12"><label class="form-label" for="pf-short">Short description</label><input id="pf-short" v-model="form.short_description" maxlength="500" class="form-control" /></div>
-<div class="col-12"><label class="form-label" for="pf-desc">Full description (basic formatting allowed)</label><textarea id="pf-desc" v-model="form.description" rows="5" maxlength="10000" class="form-control" /></div>
+<div class="col-12"><label class="form-label">Full description</label><RichTextEditor v-model="form.description" /><div class="form-text">Use headings, lists, links and images. Unsafe HTML is cleaned on the server.</div></div>
 <div v-if="showVendor" class="col-md-6"><label class="form-label" for="pf-vendor">Owning vendor (blank = platform)</label><select id="pf-vendor" v-model="form.vendor_profile_id" class="form-select"><option value="">Platform-managed</option><option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.business_name }}</option></select></div>
 <div v-if="showStatus" class="col-md-6"><label class="form-label" for="pf-status">Status</label><select id="pf-status" v-model="form.status" class="form-select" disabled><option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option></select><div class="form-text">Status changes via publish / submit actions.</div></div>
 <div v-if="showFeatured" class="col-md-6"><label class="form-check"><input v-model="form.is_featured" type="checkbox" class="form-check-input" /> Featured property</label></div>

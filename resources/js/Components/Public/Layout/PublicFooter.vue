@@ -84,7 +84,7 @@ const socialLinks = computed(() => [
         </div>
         <div class="public-footer__bottom">
             <div class="public-container d-flex flex-wrap justify-content-between gap-2">
-                <span>© {{ year }} {{ settings.site_name || 'Travel marketplace' }}</span>
+                <span>© {{ year }} Triparo</span>
                 <span>{{ settings.copyright_text || 'All rights reserved.' }}</span>
             </div>
         </div>

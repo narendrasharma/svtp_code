@@ -132,8 +132,8 @@ function scrollToTop() {
                 <p class="text-muted mb-0">Taxi booking details and status timeline.</p>
             </div>
             <div class="d-flex gap-2">
-                <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-outline-light"><i class="bi bi-arrow-left me-2"></i>Back to list</Link>
-                <button type="button" class="btn btn-outline-light" @click="scrollToTop"><i class="bi bi-arrow-repeat me-2"></i>Refresh data</button>
+                <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-admin-outline"><i class="bi bi-arrow-left me-2"></i>Back to list</Link>
+                <button type="button" class="btn btn-admin-outline" @click="scrollToTop"><i class="bi bi-arrow-repeat me-2"></i>Refresh data</button>
             </div>
         </div>
 
@@ -271,7 +271,7 @@ function scrollToTop() {
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-svtp flex-fill" :disabled="assignForm.processing" @click.prevent="assign">Assign</button>
-                            <button v-if="booking.assigned_driver" type="button" class="btn btn-outline-light" :disabled="unassignForm.processing" @click="unassign">Unassign</button>
+                            <button v-if="booking.assigned_driver" type="button" class="btn btn-admin-outline" :disabled="unassignForm.processing" @click="unassign">Unassign</button>
                         </div>
                     </div>
                 </div>
@@ -290,7 +290,7 @@ function scrollToTop() {
                             <label class="form-label small">Note</label>
                             <textarea v-model="statusForm.note" class="form-control" rows="2" maxlength="500"></textarea>
                         </div>
-                        <button class="btn btn-outline-light w-100" :disabled="statusForm.processing" @click.prevent="updateStatus">Update status</button>
+                        <button class="btn btn-admin-outline w-100" :disabled="statusForm.processing" @click.prevent="updateStatus">Update status</button>
                     </div>
                 </div>
 
@@ -315,7 +315,7 @@ function scrollToTop() {
                             <label class="form-label small">External reference</label>
                             <input v-model="paymentForm.external_reference" type="text" class="form-control" maxlength="100" />
                         </div>
-                        <button class="btn btn-outline-light w-100" :disabled="paymentForm.processing" @click.prevent="recordPayment">Save payment</button>
+                        <button class="btn btn-admin-outline w-100" :disabled="paymentForm.processing" @click.prevent="recordPayment">Save payment</button>
                     </div>
                 </div>
             </div>
@@ -359,7 +359,7 @@ function scrollToTop() {
                 <div v-else class="text-muted mb-2">No active offer. Attempts: {{ autoDispatch.attempts }} / {{ autoDispatch.max_attempts }}.</div>
                 <div class="d-flex gap-2">
                     <button v-if="canAssign && booking.status === 'confirmed'" class="btn btn-sm btn-svtp" @click="startAutoDispatch">Start auto-dispatch</button>
-                    <button v-if="canAssign && autoDispatch.pending" class="btn btn-sm btn-outline-light" @click="stopAutoDispatch">Stop</button>
+                    <button v-if="canAssign && autoDispatch.pending" class="btn btn-sm btn-admin-outline" @click="stopAutoDispatch">Stop</button>
                 </div>
                 <div v-if="(autoDispatch.history || []).length" class="mt-3">
                     <div class="text-uppercase text-muted mb-1" style="font-size:.72rem">Offer history</div>
@@ -390,7 +390,7 @@ function scrollToTop() {
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-svtp" @click="generateTrackingLink">{{ trackingLink.active ? 'Regenerate link' : 'Generate link' }}</button>
-                    <button v-if="trackingLink.active" class="btn btn-sm btn-outline-light" @click="revokeTrackingLink">Revoke</button>
+                    <button v-if="trackingLink.active" class="btn btn-sm btn-admin-outline" @click="revokeTrackingLink">Revoke</button>
                 </div>
             </div>
         </div>
@@ -407,5 +407,4 @@ function scrollToTop() {
 .table { --bs-table-bg: transparent; color: inherit; }
 .form-control, .form-select, textarea { background: rgba(15, 23, 42, .65); border-color: rgba(148, 163, 184, .25); color: #f8fafc; }
 .form-control:focus, .form-select:focus, textarea:focus { border-color: #f59e0b; box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .18); }
-.btn.btn-outline-light { color: #f8fafc; border-color: rgba(148, 163, 184, .35); }
 </style>

@@ -17,6 +17,8 @@ const createForm = useForm({
     luggage_capacity: '',
     is_active: true,
     sort_order: 0,
+    image_upload: null,
+    remove_image: false,
 });
 
 const editForm = useForm({
@@ -27,14 +29,23 @@ const editForm = useForm({
     luggage_capacity: '',
     is_active: true,
     sort_order: 0,
+    image_path: null,
+    image_upload: null,
+    remove_image: false,
 });
 
 const editingId = ref(null);
+const createImagePreview = ref(null);
+const editImagePreview = ref(null);
 
 function store() {
     createForm.post(appUrl('/admin/taxi/vehicle-types'), {
         preserveScroll: true,
-        onSuccess: () => createForm.reset('name', 'slug', 'description', 'passenger_capacity', 'luggage_capacity', 'sort_order'),
+        forceFormData: true,
+        onSuccess: () => {
+            createForm.reset('name', 'slug', 'description', 'passenger_capacity', 'luggage_capacity', 'sort_order', 'image_upload', 'remove_image');
+            clearPreview(createImagePreview);
+        },
     });
 }
 
@@ -48,17 +59,23 @@ function startEdit(type) {
     editForm.luggage_capacity = type.luggage_capacity;
     editForm.is_active = Boolean(type.is_active);
     editForm.sort_order = type.sort_order ?? 0;
+    editForm.image_path = type.image_path ?? null;
+    editForm.image_upload = null;
+    editForm.remove_image = false;
+    clearPreview(editImagePreview);
 }
 
 function cancelEdit() {
     editingId.value = null;
     editForm.reset();
+    clearPreview(editImagePreview);
 }
 
 function update() {
     if (!editingId.value) return;
     editForm.put(appUrl(`/admin/taxi/vehicle-types/${editingId.value}`), {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             cancelEdit();
         },
@@ -68,6 +85,29 @@ function update() {
 function remove(id) {
     if (!window.confirm('Delete this vehicle type? This cannot be undone.')) return;
     router.delete(appUrl(`/admin/taxi/vehicle-types/${id}`), { preserveScroll: true });
+}
+
+function selectImage(form, event, preview) {
+    clearPreview(preview);
+    form.image_upload = event.target.files?.[0] ?? null;
+    form.remove_image = false;
+
+    if (form.image_upload) {
+        preview.value = URL.createObjectURL(form.image_upload);
+    }
+}
+
+function removeImage(form, preview) {
+    clearPreview(preview);
+    form.image_upload = null;
+    form.remove_image = true;
+}
+
+function clearPreview(preview) {
+    if (preview.value) {
+        URL.revokeObjectURL(preview.value);
+        preview.value = null;
+    }
 }
 </script>
 
@@ -97,6 +137,16 @@ function remove(id) {
                         <div class="mb-3">
                             <label class="form-label small">Description</label>
                             <textarea v-model="createForm.description" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Representative image</label>
+                            <div v-if="createImagePreview" class="d-flex align-items-start gap-2 mb-2">
+                                <img :src="createImagePreview" alt="Selected vehicle type preview" class="vehicle-type-image-preview" />
+                                <button type="button" class="btn btn-sm btn-outline-danger" @click="removeImage(createForm, createImagePreview)">Remove</button>
+                            </div>
+                            <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" @change="selectImage(createForm, $event, createImagePreview)" />
+                            <small class="d-block text-muted mt-1">Shown to customers when selecting this vehicle type. Use a clean landscape photo without promotional text. JPG, PNG, or WebP; up to 5 MB.</small>
+                            <small class="text-danger">{{ createForm.errors.image_upload }}</small>
                         </div>
                         <div class="row g-2 mb-3">
                             <div class="col-md-6">
@@ -182,6 +232,18 @@ function remove(id) {
                                 <textarea v-model="editForm.description" class="form-control" rows="2" maxlength="500"></textarea>
                             </div>
                             <div class="col-12">
+                                <label class="form-label small">Representative image</label>
+                                <img v-if="editImagePreview" :src="editImagePreview" alt="Selected vehicle type preview" class="vehicle-type-image-preview mb-2" />
+                                <img v-else-if="editForm.image_path && !editForm.remove_image" :src="appUrl(`/storage/${editForm.image_path}`)" alt="Current vehicle type image" class="vehicle-type-image-preview mb-2" />
+                                <p v-if="editForm.image_path && editForm.remove_image" class="small text-muted">The current image will be removed when you save.</p>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input type="file" class="form-control" accept="image/jpeg,image/png,image/webp" @change="selectImage(editForm, $event, editImagePreview)" />
+                                    <button v-if="editImagePreview || (editForm.image_path && !editForm.remove_image)" type="button" class="btn btn-outline-danger text-nowrap" @click="removeImage(editForm, editImagePreview)">Remove</button>
+                                </div>
+                                <small class="d-block text-muted mt-1">Representative image shown to customers; use a clean landscape photo without promotional text.</small>
+                                <small class="text-danger">{{ editForm.errors.image_upload }}</small>
+                            </div>
+                            <div class="col-12">
                                 <div class="form-check">
                                     <input id="edit-active" v-model="editForm.is_active" type="checkbox" class="form-check-input" />
                                     <label for="edit-active" class="form-check-label small">Vehicle type is active</label>
@@ -206,4 +268,5 @@ function remove(id) {
 .form-control:focus, .form-select:focus, textarea:focus { border-color: #f59e0b; box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .18); }
 .table { --bs-table-bg: transparent; color: inherit; }
 .btn.btn-outline-light { color: #f8fafc; border-color: rgba(148, 163, 184, .35); }
+.vehicle-type-image-preview { display: block; width: 100%; max-width: 260px; aspect-ratio: 3 / 2; object-fit: cover; border-radius: .75rem; border: 1px solid rgba(148, 163, 184, .25); }
 </style>

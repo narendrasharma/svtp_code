@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingPayment;
 use App\Models\BookingRefund;
+use App\Models\HotelBooking;
 use App\Models\Lead;
+use App\Models\TaxiBooking;
+use App\Models\User;
 use App\Models\VendorProfile;
 use App\Services\MarketplaceAnalyticsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -27,16 +31,28 @@ class ReportController extends Controller
     public function index(Request $request, MarketplaceAnalyticsService $analytics): Response
     {
         $range = $analytics->resolveRange($request->only(['preset', 'from', 'to']));
-        $tab = in_array($request->string('tab')->toString(), ['bookings', 'payments', 'leads', 'vendors', 'commission'], true)
+        $tab = in_array($request->string('tab')->toString(), ['overview', 'bookings', 'hotels', 'tours', 'taxi', 'customers', 'payments', 'leads', 'vendors', 'commission'], true)
             ? $request->string('tab')->toString()
-            : 'bookings';
+            : 'overview';
+
+        $pagination = null;
+        if (in_array($tab, ['bookings', 'hotels', 'tours', 'taxi', 'customers'], true)) {
+            $page = $tab === 'customers'
+                ? $this->customerRows($request, $range)
+                : $this->systemBookingRows($request, $range, $tab === 'bookings' ? null : $tab);
+            $rows = $page['rows'];
+            $pagination = $page['pagination'];
+        } else {
+            $rows = $tab === 'overview' ? [] : $this->rows($tab, $request, $range);
+        }
 
         return Inertia::render('Admin/Reports/Index', [
             'tab' => $tab,
             'range' => $range,
-            'filters' => $request->only(['tab', 'preset', 'from', 'to', 'status', 'source', 'vendor_id']),
+            'filters' => $request->only(['tab', 'preset', 'from', 'to', 'module', 'status', 'payment_status', 'source', 'search', 'vendor_id']),
             'summary' => $analytics->adminSummary($range['from'], $range['to']),
-            'rows' => $this->rows($tab, $request, $range),
+            'rows' => $rows,
+            'pagination' => $pagination,
             'vendors' => VendorProfile::orderBy('business_name')->get(['id', 'business_name']),
         ]);
     }
@@ -44,11 +60,14 @@ class ReportController extends Controller
     public function export(Request $request, MarketplaceAnalyticsService $analytics): StreamedResponse
     {
         $range = $analytics->resolveRange($request->only(['preset', 'from', 'to']));
-        $tab = in_array($request->string('tab')->toString(), ['bookings', 'payments', 'leads', 'vendors', 'commission'], true)
+        $tab = in_array($request->string('tab')->toString(), ['bookings', 'hotels', 'tours', 'taxi', 'customers', 'payments', 'leads', 'vendors', 'commission'], true)
             ? $request->string('tab')->toString()
             : 'bookings';
 
-        $rows = $this->rows($tab, $request, $range, true);
+        $systemTabs = ['bookings', 'hotels', 'tours', 'taxi'];
+        $rows = in_array($tab, $systemTabs, true)
+            ? $this->systemBookingRows($request, $range, $tab === 'bookings' ? null : $tab, 2000)['rows']
+            : $this->rows($tab, $request, $range, true);
 
         return response()->streamDownload(function () use ($tab, $rows): void {
             $out = fopen('php://output', 'w');
@@ -70,6 +89,8 @@ class ReportController extends Controller
             'leads' => ['reference', 'name', 'phone', 'status', 'priority', 'service', 'created_at'],
             'vendors' => ['vendor', 'bookings_paid', 'paid_booking_value', 'recorded_earnings'],
             'commission' => ['booking', 'travel_date', 'gross_value', 'platform_commission', 'vendor_earning'],
+            'bookings', 'hotels', 'tours', 'taxi' => ['module', 'booking', 'customer', 'status', 'payment_status', 'amount', 'currency', 'created_at'],
+            'customers' => ['customer', 'email', 'created_at'],
             default => ['booking', 'customer', 'tour', 'travel_date', 'status', 'payment_status', 'total'],
         };
     }
@@ -111,6 +132,81 @@ class ReportController extends Controller
                 'payment_status' => $b->payment_status->value,
                 'total' => (string) $b->total_amount,
             ])->all();
+    }
+
+    /**
+     * Cross-module booking table. Each source keeps its own status and
+     * currency; the normalized columns only make the report filterable.
+     *
+     * @return array{rows:array<int,array<string,mixed>>,pagination:array<string,mixed>}
+     */
+    protected function systemBookingRows(Request $request, array $range, ?string $module = null, int $perPage = 20): array
+    {
+        $tour = Booking::query()->selectRaw("'tours' as module, booking_reference_id as reference, customer_name as customer, booking_status as status, payment_status, total_amount as amount, currency, vendor_profile_id, created_at");
+        $hotel = HotelBooking::query()->selectRaw("'hotels' as module, booking_number as reference, guest_name as customer, status, payment_status, total as amount, currency, vendor_profile_id, created_at");
+        $taxi = TaxiBooking::query()->selectRaw("'taxi' as module, reference, customer_name as customer, status, payment_status, total_amount as amount, currency, vendor_profile_id, created_at");
+
+        foreach ([$tour, $hotel, $taxi] as $query) {
+            $query
+                ->when($range['from'], fn ($q) => $q->where('created_at', '>=', $range['from']))
+                ->when($range['to'], fn ($q) => $q->where('created_at', '<=', $range['to']));
+        }
+
+        $union = $tour->unionAll($hotel)->unionAll($taxi);
+        $query = DB::query()->fromSub($union, 'reporting_bookings')
+            ->when($module, fn ($q) => $q->where('module', $module))
+            ->when($request->filled('module'), fn ($q) => $q->where('module', $request->string('module')->toString()))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->toString()))
+            ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $request->string('payment_status')->toString()))
+            ->when($request->filled('vendor_id'), fn ($q) => $q->where('vendor_profile_id', $request->integer('vendor_id')))
+            ->when($request->filled('search'), function ($q) use ($request): void {
+                $term = '%'.$request->string('search')->toString().'%';
+                $q->where(fn ($inner) => $inner->where('reference', 'like', $term)->orWhere('customer', 'like', $term));
+            })
+            ->orderByDesc('created_at');
+
+        $page = $query->paginate($perPage)->withQueryString();
+        $pagination = $page->toArray();
+        unset($pagination['data']);
+
+        return [
+            'rows' => collect($page->items())->map(fn (object $row): array => [
+                'module' => ucfirst((string) $row->module),
+                'booking' => $row->reference,
+                'reference' => $row->reference,
+                'customer' => $row->customer,
+                'status' => $row->status,
+                'payment_status' => $row->payment_status,
+                'amount' => (string) $row->amount,
+                'currency' => strtoupper((string) $row->currency),
+                'created_at' => $row->created_at,
+            ])->all(),
+            'pagination' => $pagination,
+        ];
+    }
+
+    /** @return array{rows:array<int,array<string,mixed>>,pagination:array<string,mixed>} */
+    protected function customerRows(Request $request, array $range): array
+    {
+        $page = User::query()->where('role', 'customer')
+            ->when($range['from'], fn ($q) => $q->where('created_at', '>=', $range['from']))
+            ->when($range['to'], fn ($q) => $q->where('created_at', '<=', $range['to']))
+            ->when($request->filled('search'), function ($q) use ($request): void {
+                $term = '%'.$request->string('search')->toString().'%';
+                $q->where(fn ($inner) => $inner->where('name', 'like', $term)->orWhere('email', 'like', $term));
+            })
+            ->latest()->paginate(20)->withQueryString();
+        $pagination = $page->toArray();
+        unset($pagination['data']);
+
+        return [
+            'rows' => collect($page->items())->map(fn (User $user): array => [
+                'customer' => $user->name,
+                'email' => $user->email,
+                'created_at' => $user->created_at?->toDateString(),
+            ])->all(),
+            'pagination' => $pagination,
+        ];
     }
 
     /** @return array<int, array<string, mixed>> */

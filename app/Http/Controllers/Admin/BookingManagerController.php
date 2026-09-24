@@ -54,6 +54,7 @@ class BookingManagerController extends Controller
             ->withQueryString();
 
         return Inertia::render('Admin/Bookings/Index', [
+            'adminBreadcrumbs' => $this->tourBreadcrumbs('Tour Bookings'),
             'bookings' => $bookings,
             'filters' => $request->only(['search', 'status', 'payment_status', 'package_id', 'vendor', 'date_from', 'date_to']),
             'packages' => TourPackage::orderBy('title')->get(['id', 'title']),
@@ -68,6 +69,7 @@ class BookingManagerController extends Controller
         $booking->load('package', 'user:id,name,email,phone', 'vendorProfile:id,business_name,email,phone', 'statusHistories.changer:id,name', 'cancellationRequests.requester:id,name', 'cancellationRequests.reviewer:id,name', 'refunds', 'bookingAddons', 'payments.receiver:id,name', 'payments.creator:id,name', 'reschedules.requester:id,name', 'reschedules.approver:id,name', 'notes.author:id,name', 'quotation:id,reference,revision_number,total_amount');
 
         return Inertia::render('Admin/Bookings/Show', [
+            'adminBreadcrumbs' => $this->tourBreadcrumbs('Tour Booking #'.($booking->booking_reference_id ?? $booking->id)),
             'booking' => $booking,
             // Phase 7: ledger state only (Credited / Reversed / Pending
             // payment / Not eligible) — the full ledger lives in Finance.
@@ -97,6 +99,7 @@ class BookingManagerController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Bookings/Form', [
+            'adminBreadcrumbs' => $this->tourBreadcrumbs('New Tour Booking'),
             'packages' => TourPackage::active()->orderBy('title')->get(['id', 'title', 'price', 'discounted_price']),
             'statuses' => collect(BookingStatus::cases())->map(fn (BookingStatus $status): array => ['value' => $status->value, 'label' => $status->label()]),
             'paymentStatuses' => collect(PaymentStatus::cases())->map(fn (PaymentStatus $status): array => ['value' => $status->value, 'label' => $status->label()]),
@@ -111,6 +114,7 @@ class BookingManagerController extends Controller
     public function desk(): Response
     {
         return Inertia::render('Admin/Bookings/Desk', [
+            'adminBreadcrumbs' => $this->tourBreadcrumbs('New Tour Booking'),
             'packages' => TourPackage::active()->orderBy('title')->get(['id', 'title', 'price', 'discounted_price']),
             'sources' => collect(BookingSource::staffCreatable())->map(fn (string $value): array => [
                 'value' => $value, 'label' => BookingSource::from($value)->label(),
@@ -222,5 +226,17 @@ class BookingManagerController extends Controller
     protected function canRecordPayment(): bool
     {
         return (bool) request()->user()?->can('payments.record');
+    }
+
+    /**
+     * @return array<int, array{label: string, href?: string}>
+     */
+    protected function tourBreadcrumbs(string $currentLabel): array
+    {
+        return [
+            ['label' => 'Dashboard', 'href' => '/admin/dashboard'],
+            ['label' => 'Tour Bookings', 'href' => '/admin/tour/bookings'],
+            ['label' => $currentLabel],
+        ];
     }
 }

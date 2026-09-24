@@ -318,7 +318,7 @@ class HandleInertiaRequests extends Middleware
 
         $candidates = [
             ['id' => 'tour', 'label' => 'New Tour', 'route' => 'admin.packages.create', 'permission' => 'tours.create', 'module' => ModuleManager::TOURS, 'icon' => 'bi-map'],
-            ['id' => 'booking', 'label' => 'New Booking', 'route' => 'admin.bookings.desk', 'permission' => 'bookings.create', 'module' => null, 'icon' => 'bi-calendar-check'],
+            ['id' => 'booking', 'label' => 'New Tour Booking', 'route' => 'admin.bookings.desk', 'permission' => 'bookings.create', 'module' => null, 'icon' => 'bi-calendar-check'],
             ['id' => 'taxi-booking', 'label' => 'New Taxi Booking', 'route' => 'admin.taxi.bookings.create', 'permission' => 'taxi.bookings.create', 'module' => ModuleManager::TAXI, 'icon' => 'bi-taxi-front'],
             ['id' => 'lead', 'label' => 'New Lead', 'route' => 'admin.leads.create', 'permission' => 'leads.create', 'module' => null, 'icon' => 'bi-person-lines-fill'],
             ['id' => 'quotation', 'label' => 'New Quotation', 'route' => 'admin.quotations.create', 'permission' => 'quotations.create', 'module' => null, 'icon' => 'bi-file-earmark-text'],

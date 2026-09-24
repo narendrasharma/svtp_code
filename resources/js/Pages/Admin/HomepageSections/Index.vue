@@ -251,7 +251,8 @@ onBeforeUnmount(() => {
                                 </template>
                                 <template v-if="isMerchandising && section.schema.cta_url">
                                     <label :for="`cta-url-${section.id}`" class="form-label mt-3">Button URL</label>
-                                    <input :id="`cta-url-${section.id}`" v-model="drafts[section.id].settings.cta_url" class="form-control" maxlength="500" placeholder="/discover/locations or https://…" />
+                                    <input :id="`cta-url-${section.id}`" v-model="drafts[section.id].settings.cta_url" class="form-control" maxlength="500" placeholder="/destinations or https://…" />
+                                    <small class="form-text text-muted">Use a public page URL such as /destinations. API/autocomplete endpoints are not navigation targets.</small>
                                 </template>
                                 <template v-if="isMerchandising && section.schema.default_tab">
                                     <label :for="`default-tab-${section.id}`" class="form-label mt-3">Default search tab</label>

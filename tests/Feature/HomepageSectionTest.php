@@ -219,6 +219,30 @@ class HomepageSectionTest extends TestCase
         $this->assertArrayNotHasKey('description', $destinationSection['items'][0]);
     }
 
+    public function test_homepage_discovery_cards_and_default_cta_link_to_public_pages(): void
+    {
+        $city = City::factory()->featured()->create(['name' => 'Featured City', 'slug' => 'featured-city']);
+        $destination = Destination::factory()->featured()->create(['city_id' => $city->id, 'name' => 'Featured Destination', 'slug' => 'featured-destination']);
+        $place = Place::factory()->create(['destination_id' => $destination->id, 'name' => 'Featured Place', 'slug' => 'featured-place']);
+        $this->section('custom_cta')->update(['settings' => null]);
+
+        $sections = collect(app(HomepageService::class)->compose()['sections']);
+        $cityUrl = collect($sections->firstWhere('type', 'featured_cities')['items'])->firstWhere('id', $city->id)['url'];
+
+        $this->assertSame('/cities/featured-city', $cityUrl);
+        $this->assertSame('/destinations/featured-destination', collect($sections->firstWhere('type', 'featured_destinations')['items'])->firstWhere('id', $destination->id)['url']);
+        $this->assertSame('/places/featured-place', collect($sections->firstWhere('type', 'featured_places')['items'])->firstWhere('id', $place->id)['url']);
+        $this->assertSame('/destinations', $sections->firstWhere('type', 'custom_cta')['configuration']['cta_url']);
+        $this->get($cityUrl)->assertInertia(fn (Assert $page) => $page->component('Static/City'));
+
+        $citySection = $this->section('featured_cities');
+        $citySection->update(['source_mode' => 'manual']);
+        HomepageSectionItem::factory()->create(['homepage_section_id' => $citySection->id, 'entity_type' => 'city', 'entity_id' => $city->id]);
+
+        $manualCities = collect(app(HomepageService::class)->compose()['sections'])->firstWhere('type', 'featured_cities')['items'];
+        $this->assertSame('/cities/featured-city', $manualCities[0]['url']);
+    }
+
     public function test_manual_destination_items_keep_configuration_but_omit_inactive_entities_publicly(): void
     {
         $section = $this->section('featured_destinations');

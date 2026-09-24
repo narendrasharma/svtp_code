@@ -1,5 +1,4 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
 import Container from '../Layout/Container.vue';
 import { safeHref } from '../homepage';
 import { useLocalization } from '../../../i18n';
@@ -17,10 +16,10 @@ const { t } = useLocalization();
                     <h2>{{ section.title || t('common.plan_your_next_escape', 'Plan your next escape') }}</h2>
                     <p v-if="section.subtitle">{{ section.subtitle }}</p>
                 </div>
-                <Link v-if="safeHref(section.configuration?.cta_url)" :href="safeHref(section.configuration.cta_url)" class="public-button public-button--secondary public-button--lg">
+                <a v-if="safeHref(section.configuration?.cta_url)" :href="safeHref(section.configuration.cta_url)" class="public-button public-button--secondary public-button--lg">
                     {{ section.configuration.cta_label || t('common.explore_trips', 'Explore trips') }}
                     <i class="bi bi-arrow-up-right" data-dir-icon="arrow" aria-hidden="true"></i>
-                </Link>
+                </a>
             </div>
         </Container>
     </section>

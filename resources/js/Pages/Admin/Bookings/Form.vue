@@ -17,7 +17,7 @@ const packageOptions = computed(() => props.packages.map((pkg) => ({
     meta: pkg.discounted_price > 0 ? `₹${pkg.discounted_price} (was ₹${pkg.price})` : `₹${pkg.price}`,
 })));
 
-const endpoint = appUrl('/admin/bookings');
+const endpoint = appUrl('/admin/tour/bookings');
 const form = useForm({
     package_id: '', customer_name: '', customer_phone: '', customer_email: '',
     country: '', pickup_address: '', special_requests: '',
@@ -44,7 +44,7 @@ function submit() {
 <template>
     <AdminLayout>
         <div class="mb-4">
-            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Bookings</Link>
+            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Tour Bookings</Link>
             <h2 class="mt-2 mb-1">New Manual Booking</h2>
             <p class="text-muted mb-0">For phone, WhatsApp and walk-in tour bookings. The total is always recalculated server-side.</p>
         </div>

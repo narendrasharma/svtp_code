@@ -7,6 +7,8 @@ use App\Enums\PaymentStatus;
 use App\Models\Booking;
 use App\Models\BookingRefund;
 use App\Models\CouponRedemption;
+use App\Models\HotelBooking;
+use App\Models\TaxiBooking;
 use App\Models\TourPackage;
 use App\Models\User;
 use App\Models\VendorApplication;
@@ -81,6 +83,8 @@ class MarketplaceAnalyticsService
         $allBookings = $this->rangeQuery(Booking::query(), 'created_at', $from, $to);
 
         $refunds = $this->rangeQuery(BookingRefund::where('status', 'processed'), 'processed_at', $from, $to);
+        $tourMoneyByCurrency = $this->currencyTotals(clone $bookings, 'COALESCE(gross_amount, total_amount)');
+        $singleTourCurrency = count($tourMoneyByCurrency) === 1;
 
         return [
             'customers' => $this->rangeQuery(User::where('role', 'customer'), 'created_at', $from, $to)->count(),
@@ -90,15 +94,60 @@ class MarketplaceAnalyticsService
             'active_tours' => TourPackage::where('is_active', true)->where('moderation_status', 'approved')->count(),
             'bookings_total' => (clone $allBookings)->count(),
             'bookings_paid' => (clone $bookings)->count(),
-            'gross_booking_value' => $this->decimal((clone $bookings)->sum(DB::raw('COALESCE(gross_amount, total_amount)'))),
-            'platform_commission' => $this->decimal((clone $bookings)->sum('platform_commission_amount')),
-            'vendor_earnings' => $this->decimal((clone $bookings)->sum('vendor_earning_amount')),
+            'gross_booking_value' => $singleTourCurrency ? $this->decimal((clone $bookings)->sum(DB::raw('COALESCE(gross_amount, total_amount)'))) : null,
+            'platform_commission' => $singleTourCurrency ? $this->decimal((clone $bookings)->sum('platform_commission_amount')) : null,
+            'vendor_earnings' => $singleTourCurrency ? $this->decimal((clone $bookings)->sum('vendor_earning_amount')) : null,
             'refunded_amount' => $this->decimal((clone $refunds)->sum('amount')),
+            'gross_booking_value_by_currency' => $tourMoneyByCurrency,
             'pending_withdrawals' => VendorWithdrawalRequest::where('status', 'pending')->count(),
             'pending_withdrawal_amount' => $this->decimal(VendorWithdrawalRequest::where('status', 'pending')->sum('amount')),
             'top_tours' => $this->topTours($from, $to, null),
             'top_vendors' => $this->topVendors($from, $to),
             'coupons' => $this->couponMetrics($from, $to, null),
+            'system' => $this->systemSummary($from, $to),
+        ];
+    }
+
+    /**
+     * System-wide booking visibility. Money remains grouped by its stored
+     * transaction currency; no visitor display conversion is used here.
+     *
+     * @return array<string, mixed>
+     */
+    public function systemSummary(?string $from, ?string $to): array
+    {
+        $tour = $this->rangeQuery(Booking::query(), 'created_at', $from, $to);
+        $hotel = $this->rangeQuery(HotelBooking::query(), 'created_at', $from, $to);
+        $taxi = $this->rangeQuery(TaxiBooking::query(), 'created_at', $from, $to);
+        $tourValue = (clone $tour)->where('booking_status', '!=', BookingStatus::Cancelled->value);
+        $hotelValue = (clone $hotel)->whereNotIn('status', ['cancelled', 'no_show']);
+        $taxiValue = (clone $taxi)->whereNotIn('status', ['cancelled', 'no_show']);
+
+        $modules = [
+            'tours' => [
+                'label' => 'Tours',
+                'bookings' => (clone $tour)->count(),
+                'value_by_currency' => $this->currencyTotals($tourValue, 'total_amount'),
+            ],
+            'hotels' => [
+                'label' => 'Hotels',
+                'bookings' => (clone $hotel)->count(),
+                'value_by_currency' => $this->currencyTotals($hotelValue, 'total'),
+            ],
+            'taxi' => [
+                'label' => 'Taxi',
+                'bookings' => (clone $taxi)->count(),
+                'value_by_currency' => $this->currencyTotals($taxiValue, 'total_amount'),
+            ],
+        ];
+
+        return [
+            'bookings' => array_sum(array_column($modules, 'bookings')),
+            'new_customers' => $this->rangeQuery(User::where('role', 'customer'), 'created_at', $from, $to)->count(),
+            'modules' => $modules,
+            'status_mix' => $this->systemStatusMix($from, $to),
+            'trend' => $this->systemTrend($from, $to),
+            'recent_activity' => $this->recentSystemBookings($from, $to),
         ];
     }
 
@@ -265,6 +314,98 @@ class MarketplaceAnalyticsService
         return $query
             ->when($from, fn ($q) => $q->where($column, '>=', $from))
             ->when($to, fn ($q) => $q->where($column, '<=', $to));
+    }
+
+    /** @return array<string, array{bookings:int, amount:string}> */
+    protected function currencyTotals(mixed $query, string $amountExpression): array
+    {
+        return $query
+            ->selectRaw("currency, COUNT(*) as bookings, SUM({$amountExpression}) as amount")
+            ->whereNotNull('currency')
+            ->groupBy('currency')
+            ->orderBy('currency')
+            ->get()
+            ->mapWithKeys(fn ($row): array => [strtoupper((string) $row->currency) => [
+                'bookings' => (int) $row->bookings,
+                'amount' => $this->decimal($row->amount),
+            ]])->all();
+    }
+
+    /** @return array<string, int> */
+    protected function systemStatusMix(?string $from, ?string $to): array
+    {
+        $mix = ['pending' => 0, 'active' => 0, 'completed' => 0, 'cancelled' => 0];
+        $groups = [
+            [Booking::query(), 'booking_status', ['pending' => 'pending', 'confirmed' => 'active', 'completed' => 'completed', 'cancelled' => 'cancelled']],
+            [HotelBooking::query(), 'status', ['pending' => 'pending', 'confirmed' => 'active', 'checked_in' => 'active', 'checked_out' => 'active', 'completed' => 'completed', 'cancelled' => 'cancelled', 'no_show' => 'cancelled']],
+            [TaxiBooking::query(), 'status', ['draft' => 'pending', 'quoted' => 'pending', 'confirmed' => 'active', 'driver_assigned' => 'active', 'en_route' => 'active', 'arrived' => 'active', 'passenger_on_board' => 'active', 'completed' => 'completed', 'cancelled' => 'cancelled', 'no_show' => 'cancelled']],
+        ];
+
+        foreach ($groups as [$query, $column, $mapping]) {
+            $rows = $this->rangeQuery($query, 'created_at', $from, $to)
+                ->select($column)
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy($column)
+                ->get();
+
+            foreach ($rows as $row) {
+                $status = method_exists($row, 'getRawOriginal')
+                    ? $row->getRawOriginal($column)
+                    : $row->{$column};
+                $key = $mapping[(string) $status] ?? null;
+                if ($key !== null) {
+                    $mix[$key] += (int) $row->count;
+                }
+            }
+        }
+
+        return $mix;
+    }
+
+    /** @return array<int, array{date:string, bookings:int}> */
+    protected function systemTrend(?string $from, ?string $to): array
+    {
+        $end = $to ? Carbon::parse($to)->endOfDay() : Carbon::today()->endOfDay();
+        $start = $from ? Carbon::parse($from)->startOfDay() : $end->copy()->subDays(29)->startOfDay();
+
+        if ($end->diffInDays($start) > 90) {
+            $start = $end->copy()->subDays(89)->startOfDay();
+        }
+
+        $counts = collect();
+        foreach ([Booking::query(), HotelBooking::query(), TaxiBooking::query()] as $query) {
+            $rows = $this->rangeQuery($query, 'created_at', $start->toDateTimeString(), $end->toDateTimeString())
+                ->selectRaw('DATE(created_at) as day, COUNT(*) as count')
+                ->groupBy('day')
+                ->get();
+
+            foreach ($rows as $row) {
+                $counts[$row->day] = (int) ($counts[$row->day] ?? 0) + (int) $row->count;
+            }
+        }
+
+        $trend = [];
+        for ($cursor = $start->copy(); $cursor->lte($end); $cursor->addDay()) {
+            $date = $cursor->toDateString();
+            $trend[] = ['date' => $date, 'bookings' => $counts[$date] ?? 0];
+        }
+
+        return $trend;
+    }
+
+    /** @return array<int, array{module:string, reference:string, customer:?string, status:string, created_at:string}> */
+    protected function recentSystemBookings(?string $from, ?string $to): array
+    {
+        $items = collect();
+        $tour = $this->rangeQuery(Booking::query(), 'created_at', $from, $to)->latest()->limit(5)->get(['booking_reference_id', 'customer_name', 'booking_status', 'created_at']);
+        $hotel = $this->rangeQuery(HotelBooking::query(), 'created_at', $from, $to)->latest()->limit(5)->get(['booking_number', 'guest_name', 'status', 'created_at']);
+        $taxi = $this->rangeQuery(TaxiBooking::query(), 'created_at', $from, $to)->latest()->limit(5)->get(['reference', 'customer_name', 'status', 'created_at']);
+
+        $tour->each(fn (Booking $booking) => $items->push(['module' => 'Tours', 'reference' => $booking->booking_reference_id, 'customer' => $booking->customer_name, 'status' => $booking->booking_status->value, 'created_at' => $booking->created_at?->toISOString()]));
+        $hotel->each(fn (HotelBooking $booking) => $items->push(['module' => 'Hotels', 'reference' => $booking->booking_number, 'customer' => $booking->guest_name, 'status' => $booking->status->value, 'created_at' => $booking->created_at?->toISOString()]));
+        $taxi->each(fn (TaxiBooking $booking) => $items->push(['module' => 'Taxi', 'reference' => $booking->reference, 'customer' => $booking->customer_name, 'status' => $booking->status, 'created_at' => $booking->created_at?->toISOString()]));
+
+        return $items->sortByDesc('created_at')->take(10)->values()->all();
     }
 
     protected function parseDate(?string $value, bool $startOfDay): ?Carbon

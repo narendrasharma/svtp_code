@@ -45,7 +45,7 @@ function load(propertyId) { router.get(appUrl('/admin/hotel/charges'), { propert
 <tr v-if="!rules.length"><td colspan="8" class="text-muted">No charge rules yet.</td></tr>
 </tbody></table></div>
 
-<div v-if="propertyId" class="card p-3"><h5>{{ editing ? 'Edit' : 'New' }} charge rule ({{ propertyCurrency }})</h5>
+<div v-if="propertyId" class="card p-3"><h5>{{ editing ? 'Edit' : 'New' }} charge rule ({{ propertyCurrency }})</h5><p class="form-text">Currency is inherited from this property’s hotel pricing currency.</p>
 <div v-for="(error, key) in form.errors" :key="key" class="text-danger small">{{ key }}: {{ error }}</div>
 <div class="row g-2">
 <div class="col-md-3"><label class="form-label small">Name *</label><input v-model="form.name" required maxlength="100" placeholder="VAT" class="form-control" /></div>

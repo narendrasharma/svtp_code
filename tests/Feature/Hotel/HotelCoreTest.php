@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -112,6 +113,36 @@ class HotelCoreTest extends TestCase
         $this->actingAs($this->makeAdmin())->get(route('admin.hotel.properties.index', absolute: false))->assertOk();
         $this->actingAs($this->makeAdmin())->get(route('admin.hotel.property-types.index', absolute: false))->assertOk();
         $this->actingAs($this->makeAdmin())->get(route('admin.hotel.amenities.index', absolute: false))->assertOk();
+    }
+
+    public function test_admin_hotel_bookings_index_renders_vendor_filter(): void
+    {
+        $vendor = $this->makeVendor();
+        $this->propertyFor($vendor->vendorProfile);
+
+        $this->actingAs($this->makeAdmin())
+            ->get(route('admin.hotel.bookings.index', absolute: false))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Hotel/Bookings/Index')
+                ->has('vendors', 1)
+                ->where('vendors.0.id', $vendor->vendorProfile->id));
+    }
+
+    public function test_property_form_breadcrumbs_distinguish_create_and_edit(): void
+    {
+        $admin = $this->makeAdmin();
+        $property = $this->propertyFor();
+
+        $this->actingAs($admin)
+            ->get(route('admin.hotel.properties.create', absolute: false))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('adminBreadcrumbs.3.label', 'New Property'));
+
+        $this->actingAs($admin)
+            ->get(route('admin.hotel.properties.edit', $property, absolute: false))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('adminBreadcrumbs.3.label', 'Edit Property'));
     }
 
     // ---- 5 vendor can access own -----------------------------------------------

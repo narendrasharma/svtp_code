@@ -4,6 +4,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import Pagination from '../../../../Components/Pagination.vue';
 import { appUrl } from '../../../../appUrl';
+import IconPicker from '../../../../Components/Admin/IconPicker.vue';
 defineProps({ amenities: Object, categories: Array });
 const editing = ref(null);
 const form = useForm({ name: '', slug: '', icon: '', category: '', is_active: true, sort_order: 0 });
@@ -26,7 +27,7 @@ function save() {
 <div class="col-md-4"><label class="form-label" for="am-name">Name *</label><input id="am-name" v-model="form.name" required maxlength="80" class="form-control" /></div>
 <div class="col-md-4"><label class="form-label" for="am-slug">Slug (auto if blank)</label><input id="am-slug" v-model="form.slug" maxlength="100" class="form-control" /></div>
 <div class="col-md-4"><label class="form-label" for="am-cat">Category</label><input id="am-cat" v-model="form.category" maxlength="40" list="amenity-categories" class="form-control" /><datalist id="amenity-categories"><option v-for="c in categories" :key="c" :value="c" /></datalist></div>
-<div class="col-md-4"><label class="form-label" for="am-icon">Icon</label><input id="am-icon" v-model="form.icon" maxlength="60" class="form-control" /></div>
+<div class="col-md-4"><IconPicker v-model="form.icon" /></div>
 <div class="col-md-4"><label class="form-label" for="am-order">Order</label><input id="am-order" v-model="form.sort_order" type="number" min="0" class="form-control" /></div>
 <div class="col-md-4"><label class="form-check mt-4"><input v-model="form.is_active" type="checkbox" class="form-check-input" /> Active</label></div>
 </div>

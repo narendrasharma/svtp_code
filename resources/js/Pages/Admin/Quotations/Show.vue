@@ -87,7 +87,7 @@ function statusBadge(status) {
                         <dt class="col-5 text-muted">Customer</dt><dd class="col-7">{{ quotation.customer?.name ?? '—' }}</dd>
                         <dt class="col-5 text-muted">Service</dt><dd class="col-7">{{ quotation.service_type }}</dd>
                         <dt class="col-5 text-muted">Created by</dt><dd class="col-7">{{ quotation.creator?.name ?? '—' }}</dd>
-                        <dt v-if="quotation.converted_booking" class="col-5 text-muted">Booking</dt><dd v-if="quotation.converted_booking" class="col-7"><Link :href="appUrl(`/admin/bookings/${quotation.converted_booking.id}`)">{{ quotation.converted_booking.booking_reference_id }}</Link></dd>
+                        <dt v-if="quotation.converted_booking" class="col-5 text-muted">Tour Booking</dt><dd v-if="quotation.converted_booking" class="col-7"><Link :href="appUrl(`/admin/tour/bookings/${quotation.converted_booking.id}`)">{{ quotation.converted_booking.booking_reference_id }}</Link></dd>
                     </dl>
                     <div v-if="quotation.internal_note" class="alert alert-secondary small mt-3 mb-0"><strong>Internal:</strong> {{ quotation.internal_note }}</div>
                 </section>

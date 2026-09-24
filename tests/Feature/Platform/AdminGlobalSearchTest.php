@@ -56,7 +56,7 @@ class AdminGlobalSearchTest extends TestCase
 
         $navigation = collect($response->json('groups'))->firstWhere('key', 'navigation');
         $this->assertNotNull($navigation);
-        $this->assertContains('SEO Settings', collect($navigation['items'])->pluck('label')->all());
+        $this->assertContains('Settings', collect($navigation['items'])->pluck('label')->all());
     }
 
     public function test_booking_reference_search(): void

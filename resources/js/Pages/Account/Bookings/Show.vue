@@ -1,11 +1,11 @@
 <script setup>
 import { ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
 import ImageWithFallback from '../../../Components/Public/Media/ImageWithFallback.vue';
 import MoneyDisplay from '../../../Components/Public/UI/MoneyDisplay.vue';
+import BookingStatus from '../../../Components/Public/UI/BookingStatus.vue';
 import Badge from '../../../Components/Public/UI/Badge.vue';
 import { appUrl } from '../../../appUrl';
 import { useLocalization } from '../../../i18n';
@@ -45,10 +45,6 @@ function durationLabel(packageData) {
     if (days === 1) return t('common.same_day', 'Same day');
 
     return `${days} ${days === 1 ? t('common.day', 'day') : t('common.days', 'days')}${nights > 0 ? ` · ${nights} ${nights === 1 ? t('common.night', 'night') : t('common.nights', 'nights')}` : ''}`;
-}
-
-function statusVariant(status) {
-    return status === 'cancelled' ? 'neutral' : status === 'confirmed' || status === 'completed' ? 'brand' : 'accent';
 }
 
 function statusLabel(status) {
@@ -100,10 +96,10 @@ function timelineLabel(entry) {
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <SeoHead :title="`${t('common.booking_details', 'Booking details')} · ${booking.booking_reference_id}`" noindex private-page />
 
-        <main class="tour-customer-page">
+        <div class="tour-customer-page">
             <div class="container tour-customer-container tour-customer-detail">
                 <Link :href="appUrl('/account/bookings')" class="tour-customer-back"><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ t('common.my_tour_bookings', 'My Tour Bookings') }}</Link>
 
@@ -114,12 +110,12 @@ function timelineLabel(entry) {
                         <p>{{ t('common.tour_booking_record_intro', 'Your private record for this tour booking.') }}</p>
                     </div>
                     <div class="tour-customer-status-stack">
-                        <Badge :variant="statusVariant(booking.booking_status)">{{ t('common.booking_status', 'Booking status') }} · {{ statusLabel(booking.booking_status) }}</Badge>
-                        <Badge variant="neutral">{{ t('common.payment_status', 'Payment status') }} · {{ statusLabel(booking.payment_status) }}</Badge>
+                        <BookingStatus :status="booking.booking_status" />
+                        <BookingStatus :status="booking.payment_status" kind="payment" />
                     </div>
                 </header>
 
-                <AccountNav active="bookings" />
+
 
                 <div class="tour-customer-detail__grid">
                     <div class="tour-customer-detail__main">
@@ -264,6 +260,6 @@ function timelineLabel(entry) {
                     </section>
                 </div>
             </div>
-        </main>
-    </AppLayout>
+        </div>
+    </AccountLayout>
 </template>

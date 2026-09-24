@@ -3,8 +3,7 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import VendorLayout from '../../../Layouts/VendorLayout.vue';
-import AppLayout from '../../../Layouts/AppLayout.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import Pagination from '../../../Components/Pagination.vue';
 import { appUrl } from '../../../appUrl';
 
@@ -19,7 +18,7 @@ const props = defineProps({
     lowRatingThreshold: { type: Number, default: 2 },
 });
 
-const layout = computed(() => ({ admin: AdminLayout, vendor: VendorLayout, account: AppLayout })[props.portal]);
+const layout = computed(() => ({ admin: AdminLayout, vendor: VendorLayout, account: AccountLayout })[props.portal]);
 const base = computed(() => (props.portal === 'account' ? '/account/taxi/reviews' : `/${props.portal}/taxi/reviews`));
 
 function filterHref(patch) {
@@ -35,8 +34,8 @@ function stars(n) {
 <template>
 <component :is="layout">
 <div v-if="portal === 'account'" class="container py-4">
-<AccountNav active="taxi" />
-<h2>My trip reviews</h2>
+
+<h1>My taxi reviews</h1>
 <div class="card table-responsive"><table class="table mb-0"><thead><tr><th>Trip</th><th>Rating</th><th>Status</th><th>Submitted</th></tr></thead><tbody>
 <tr v-for="row in reviews.data" :key="row.id"><td><Link :href="appUrl(`${base}/${row.id}`)">{{ row.booking_reference }}</Link></td><td :title="`${row.overall_rating}/5`">{{ stars(row.overall_rating) }}</td><td>{{ row.status }}</td><td>{{ row.submitted_at?.slice(0, 10) }}</td></tr>
 <tr v-if="!reviews.data.length"><td colspan="4">No reviews yet. Completed trips can be rated from your bookings.</td></tr>

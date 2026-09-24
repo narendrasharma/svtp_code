@@ -26,7 +26,7 @@ class TaxiPublicBookingTest extends TestCase
 
     public function test_public_quote_returns_server_priced_vehicle_option(): void
     {
-        $vehicleType = $this->vehicleTypeWithPricing();
+        $vehicleType = $this->vehicleTypeWithPricing(['image_path' => 'taxi/vehicle-types/sedan.jpg']);
 
         $response = $this->postJson(route('taxi.quote', absolute: false), [
             ...$this->tripPayload(),
@@ -34,6 +34,7 @@ class TaxiPublicBookingTest extends TestCase
         ]);
 
         $response->assertOk()->assertJsonPath('options.0.vehicle.id', $vehicleType->id)->assertJsonPath('options.0.total.amount', '100.00');
+        $this->assertStringEndsWith('/storage/taxi/vehicle-types/sedan.jpg', (string) $response->json('options.0.vehicle.image'));
     }
 
     public function test_public_guest_booking_uses_server_quote_and_signed_confirmation(): void
@@ -85,9 +86,9 @@ class TaxiPublicBookingTest extends TestCase
         ];
     }
 
-    private function vehicleTypeWithPricing(): VehicleType
+    private function vehicleTypeWithPricing(array $overrides = []): VehicleType
     {
-        $vehicleType = VehicleType::factory()->create(['passenger_capacity' => 4]);
+        $vehicleType = VehicleType::factory()->create(['passenger_capacity' => 4, ...$overrides]);
         $card = TaxiRateCard::create([
             'vehicle_type_id' => $vehicleType->id,
             'name' => 'Public sedan',

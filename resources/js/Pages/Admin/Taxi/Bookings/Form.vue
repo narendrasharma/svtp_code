@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../../appUrl';
+import SmartSelect from '../../../../Components/SmartSelect.vue';
 
 const props = defineProps({
     vehicleTypes: { type: Array, default: () => [] },
@@ -67,6 +68,16 @@ const quote = ref(null);
 const quoteError = ref('');
 const quoteLoading = ref(false);
 
+async function fetchCustomers(query) {
+    const response = await axios.get(appUrl('/admin/customers/search'), { params: { q: query } });
+    return response.data;
+}
+
+async function fetchLeads(query) {
+    const response = await axios.get(appUrl('/admin/select-options'), { params: { type: 'leads', search: query } });
+    return response.data.options ?? [];
+}
+
 async function previewPrice() {
     quoteLoading.value = true;
     quoteError.value = '';
@@ -122,7 +133,7 @@ function setTripType(value) {
                 <h2 class="mt-2 mb-1">Manual Taxi Booking</h2>
                 <p class="text-muted mb-0">Confirm a guest ride or convert an accepted quotation.</p>
             </div>
-            <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-outline-light"><i class="bi bi-arrow-left me-2"></i>Back to bookings</Link>
+            <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-admin-outline"><i class="bi bi-arrow-left me-2"></i>Back to bookings</Link>
         </div>
 
         <div class="row g-3">
@@ -223,14 +234,8 @@ function setTripType(value) {
 
                         <h5 class="card-title mt-4 mb-3">Customer information</h5>
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label small">Link customer (optional)</label>
-                                <input v-model="form.customer_user_id" type="number" min="1" class="form-control" placeholder="Customer user ID" />
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small">Link lead (optional)</label>
-                                <input v-model="form.lead_id" type="number" min="1" class="form-control" placeholder="Lead ID" />
-                            </div>
+                            <div class="col-md-4"><SmartSelect v-model="form.customer_user_id" label="Link customer (optional)" placeholder="Search name, phone or email…" search-placeholder="Search customers…" :fetch-options="fetchCustomers" /></div>
+                            <div class="col-md-4"><SmartSelect v-model="form.lead_id" label="Link lead (optional)" placeholder="Search reference, name or phone…" search-placeholder="Search leads…" :fetch-options="fetchLeads" /></div>
                             <div class="col-md-4">
                                 <label class="form-label small">Customer name</label>
                                 <input v-model="form.customer_name" type="text" class="form-control" maxlength="150" required />
@@ -264,7 +269,7 @@ function setTripType(value) {
                                 <input v-model="form.parking_amount" type="number" step="0.01" min="0" class="form-control" />
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button type="button" class="btn btn-outline-light w-100" :disabled="quoteLoading" @click="previewPrice">{{ quoteLoading ? 'Calculating…' : 'Preview price' }}</button>
+                                <button type="button" class="btn btn-admin-outline w-100" :disabled="quoteLoading" @click="previewPrice">{{ quoteLoading ? 'Calculating…' : 'Preview price' }}</button>
                             </div>
                         </div>
                         <div v-if="quoteError" class="alert alert-danger mt-3 mb-0">{{ quoteError }}</div>
@@ -289,7 +294,7 @@ function setTripType(value) {
                             <label class="form-label small">Quotation ID</label>
                             <input v-model="convertId" type="number" min="1" class="form-control" placeholder="e.g. 152" />
                         </div>
-                        <button type="button" class="btn btn-outline-light w-100" :disabled="form.processing" @click="submitConvert">Convert quotation</button>
+                        <button type="button" class="btn btn-admin-outline w-100" :disabled="form.processing" @click="submitConvert">Convert quotation</button>
                     </div>
                 </div>
 
@@ -309,10 +314,10 @@ function setTripType(value) {
 </template>
 
 <style scoped>
-.card { border-radius: 1rem; border: 1px solid rgba(148, 163, 184, .12); background: #101827; color: #e2e8f0; }
-.card .form-label { color: #cbd5f5; }
-.form-control, .form-select, textarea { background: rgba(15, 23, 42, .65); border-color: rgba(148, 163, 184, .25); color: #f8fafc; }
-.form-control:focus, .form-select:focus, textarea:focus { border-color: #f59e0b; box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .18); }
-.airport-fields { border-color: rgba(148, 163, 184, .15) !important; }
-.btn.btn-outline-light { color: #f8fafc; border-color: rgba(148, 163, 184, .35); }
+.card { border-radius: 1rem; border: 1px solid var(--admin-border); background: var(--admin-surface); color: var(--admin-text); }
+.card .form-label { color: var(--admin-text); }
+.form-control, .form-select, textarea { background: var(--admin-input-bg); border-color: var(--admin-input-border); color: var(--admin-text); }
+.form-control::placeholder, textarea::placeholder { color: var(--admin-input-placeholder); }
+.form-control:focus, .form-select:focus, textarea:focus { border-color: var(--admin-primary); box-shadow: 0 0 0 .2rem var(--admin-focus-ring); }
+.airport-fields { border-color: var(--admin-border) !important; }
 </style>

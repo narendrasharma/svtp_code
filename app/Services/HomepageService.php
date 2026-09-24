@@ -209,7 +209,7 @@ final class HomepageService
                 'slug' => $city->slug,
                 'image' => $city->image,
                 'subtitle' => null,
-                'url' => route('discover.locations', ['type' => 'city', 'id' => $city->id], false),
+                'url' => route('cities.show', $city, false),
             ])->values()->all();
     }
 

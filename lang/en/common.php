@@ -30,6 +30,7 @@ return [
     'drop' => 'Drop',
     'date' => 'Date',
     'time' => 'Time',
+    'pickup_time_field' => 'Pickup time',
     'passengers' => 'Passengers',
     'travel_marketplace' => 'Travel marketplace',
     'find_your_journey' => 'Find your next journey',

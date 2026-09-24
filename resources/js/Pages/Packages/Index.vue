@@ -5,6 +5,7 @@ import PackageCard from '../../Components/PackageCard.vue';
 import { router } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import SeoHead from "@/Components/SeoHead.vue";
+import DateField from '../../Components/Public/Search/DateField.vue';
 
 const props = defineProps({
     packages: Object,
@@ -90,14 +91,14 @@ function resetFilters() {
             description="Browse our available tour packages, itineraries, destinations and travel experiences."
         />
         <section class="trust-strip py-5 mb-4">
-            <div class="container text-center">
+            <div class="public-container text-center">
                 <p class="section-eyebrow text-white opacity-75">दर्शन यात्रा निर्देशिका</p>
                 <h1 class="text-white" style="font-family: var(--font-display);">Destinations &amp; Tour Packages</h1>
                 <p class="opacity-75 mb-0">Browse published journeys, destinations, and travel experiences in one place.</p>
             </div>
         </section>
 
-        <div class="container py-2">
+        <div class="public-container py-2">
             <!-- Category chips -->
             <div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
                 <button
@@ -177,8 +178,7 @@ function resetFilters() {
                         <input v-model="filters.max_price" type="number" placeholder="e.g. 15000" class="form-control" @change="applyFilters" />
                     </div>
                     <div class="col-6 col-md-2">
-                        <label class="form-label small fw-semibold text-svtp">Travel Date</label>
-                        <input v-model="filters.date" type="date" class="form-control" />
+                        <DateField v-model="filters.date" label="Travel date" id="package-filter-date" />
                     </div>
                     <div class="col-12 col-md-2 d-flex gap-2">
                         <button class="btn btn-svtp flex-grow-1" @click="applyFilters">Apply</button>

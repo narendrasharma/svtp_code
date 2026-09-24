@@ -712,15 +712,15 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::get('/promotional-popup', [PromotionalPopupController::class, 'index'])->name('promotional-popup.index');
     Route::post('/promotional-popup', [PromotionalPopupController::class, 'store'])->name('promotional-popup.store');
 
-    Route::get('/bookings', [BookingManagerController::class, 'index'])->name('bookings.index');
-    Route::get('/bookings/create', [BookingManagerController::class, 'create'])->name('bookings.create');
+    Route::get('/tour/bookings', [BookingManagerController::class, 'index'])->name('bookings.index');
+    Route::get('/tour/bookings/create', [BookingManagerController::class, 'create'])->name('bookings.create');
     // Reservation Desk (structured offline flow) — before {booking}.
-    Route::get('/bookings/desk', [BookingManagerController::class, 'desk'])->name('bookings.desk');
-    Route::post('/bookings', [BookingManagerController::class, 'store'])->name('bookings.store');
-    Route::get('/bookings/{booking}', [BookingManagerController::class, 'show'])->name('bookings.show');
-    Route::patch('/bookings/{booking}/status', [BookingManagerController::class, 'updateStatus'])->name('bookings.status');
-    Route::patch('/bookings/{booking}/cancellation-requests/{cancellation}/approve', [BookingManagerController::class, 'approveCancellation'])->name('bookings.cancellation.approve');
-    Route::patch('/bookings/{booking}/cancellation-requests/{cancellation}/reject', [BookingManagerController::class, 'rejectCancellation'])->name('bookings.cancellation.reject');
+    Route::get('/tour/bookings/desk', [BookingManagerController::class, 'desk'])->name('bookings.desk');
+    Route::post('/tour/bookings', [BookingManagerController::class, 'store'])->name('bookings.store');
+    Route::get('/tour/bookings/{booking}', [BookingManagerController::class, 'show'])->name('bookings.show');
+    Route::patch('/tour/bookings/{booking}/status', [BookingManagerController::class, 'updateStatus'])->name('bookings.status');
+    Route::patch('/tour/bookings/{booking}/cancellation-requests/{cancellation}/approve', [BookingManagerController::class, 'approveCancellation'])->name('bookings.cancellation.approve');
+    Route::patch('/tour/bookings/{booking}/cancellation-requests/{cancellation}/reject', [BookingManagerController::class, 'rejectCancellation'])->name('bookings.cancellation.reject');
 
     // Marketplace withdrawals (manual settlement, no gateway). No GET
     // route mutates state; review transitions are guarded by
@@ -738,16 +738,16 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::patch('/payout-accounts/{payoutAccount}/reject', [AdminPayoutAccountController::class, 'reject'])->name('payout-accounts.reject');
 
     // Manual accounting refunds (no money moves electronically).
-    Route::post('/bookings/{booking}/refunds', [AdminRefundController::class, 'store'])->name('bookings.refunds.store');
+    Route::post('/tour/bookings/{booking}/refunds', [AdminRefundController::class, 'store'])->name('bookings.refunds.store');
 
     // Phase 11.5B: manual payment collection (append-only), reschedules
     // (history-preserving date changes) and operational notes.
-    Route::post('/bookings/{booking}/payments', [AdminBookingPaymentController::class, 'store'])->name('bookings.payments.store');
-    Route::patch('/bookings/{booking}/payment-due-date', [AdminBookingPaymentController::class, 'updateDueDate'])->name('bookings.payments.due-date');
-    Route::post('/bookings/{booking}/payment-reminder', [AdminBookingPaymentController::class, 'remind'])->name('bookings.payments.remind');
-    Route::get('/bookings/{booking}/payments/{payment}/receipt', [AdminBookingPaymentController::class, 'receipt'])->name('bookings.payments.receipt');
-    Route::post('/bookings/{booking}/reschedule', [AdminBookingRescheduleController::class, 'store'])->name('bookings.reschedule.store');
-    Route::post('/bookings/{booking}/notes', [AdminBookingNoteController::class, 'store'])->name('bookings.notes.store');
+    Route::post('/tour/bookings/{booking}/payments', [AdminBookingPaymentController::class, 'store'])->name('bookings.payments.store');
+    Route::patch('/tour/bookings/{booking}/payment-due-date', [AdminBookingPaymentController::class, 'updateDueDate'])->name('bookings.payments.due-date');
+    Route::post('/tour/bookings/{booking}/payment-reminder', [AdminBookingPaymentController::class, 'remind'])->name('bookings.payments.remind');
+    Route::get('/tour/bookings/{booking}/payments/{payment}/receipt', [AdminBookingPaymentController::class, 'receipt'])->name('bookings.payments.receipt');
+    Route::post('/tour/bookings/{booking}/reschedule', [AdminBookingRescheduleController::class, 'store'])->name('bookings.reschedule.store');
+    Route::post('/tour/bookings/{booking}/notes', [AdminBookingNoteController::class, 'store'])->name('bookings.notes.store');
 
     // Per-vendor finance detail + manual adjustments (append-only).
     Route::get('/vendor-finances/{vendorProfile}', [AdminVendorFinanceController::class, 'show'])->name('vendor-finances.show');
@@ -940,8 +940,31 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
     Route::post('/users/{user}/invite', [AdminInvitationController::class, 'store'])->name('users.invite');
 
     Route::post('/quotations/{quotation}/share', [AdminShareController::class, 'quotation'])->name('quotations.share');
-    Route::post('/bookings/{booking}/share-invoice', [AdminShareController::class, 'invoice'])->name('bookings.share-invoice');
-    Route::post('/bookings/{booking}/payments/{payment}/share-receipt', [AdminShareController::class, 'receipt'])->name('bookings.share-receipt');
+    Route::post('/tour/bookings/{booking}/share-invoice', [AdminShareController::class, 'invoice'])->name('bookings.share-invoice');
+    Route::post('/tour/bookings/{booking}/payments/{payment}/share-receipt', [AdminShareController::class, 'receipt'])->name('bookings.share-receipt');
+
+    // Legacy Tour Booking URLs remain routable for saved links and external
+    // integrations. Named application routes above generate the canonical
+    // /admin/tour/bookings paths.
+    Route::prefix('bookings')->name('legacy.bookings.')->group(function () {
+        Route::get('/', [BookingManagerController::class, 'index'])->name('index');
+        Route::get('/create', [BookingManagerController::class, 'create'])->name('create');
+        Route::get('/desk', [BookingManagerController::class, 'desk'])->name('desk');
+        Route::post('/', [BookingManagerController::class, 'store'])->name('store');
+        Route::get('/{booking}', [BookingManagerController::class, 'show'])->name('show');
+        Route::patch('/{booking}/status', [BookingManagerController::class, 'updateStatus'])->name('status');
+        Route::patch('/{booking}/cancellation-requests/{cancellation}/approve', [BookingManagerController::class, 'approveCancellation'])->name('cancellation.approve');
+        Route::patch('/{booking}/cancellation-requests/{cancellation}/reject', [BookingManagerController::class, 'rejectCancellation'])->name('cancellation.reject');
+        Route::post('/{booking}/refunds', [AdminRefundController::class, 'store'])->name('refunds.store');
+        Route::post('/{booking}/payments', [AdminBookingPaymentController::class, 'store'])->name('payments.store');
+        Route::patch('/{booking}/payment-due-date', [AdminBookingPaymentController::class, 'updateDueDate'])->name('payments.due-date');
+        Route::post('/{booking}/payment-reminder', [AdminBookingPaymentController::class, 'remind'])->name('payments.remind');
+        Route::get('/{booking}/payments/{payment}/receipt', [AdminBookingPaymentController::class, 'receipt'])->name('payments.receipt');
+        Route::post('/{booking}/reschedule', [AdminBookingRescheduleController::class, 'store'])->name('reschedule.store');
+        Route::post('/{booking}/notes', [AdminBookingNoteController::class, 'store'])->name('notes.store');
+        Route::post('/{booking}/share-invoice', [AdminShareController::class, 'invoice'])->name('share-invoice');
+        Route::post('/{booking}/payments/{payment}/share-receipt', [AdminShareController::class, 'receipt'])->name('share-receipt');
+    });
 
     // Phase 11.5B CRM: leads, follow-ups, quotations, customers.
     Route::get('/crm', [AdminCrmDashboardController::class, 'index'])->name('crm.index');

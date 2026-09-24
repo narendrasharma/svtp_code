@@ -155,7 +155,7 @@ class AdminSearchController extends Controller
             ->map(fn (Lead $lead): array => [
                 'value' => $lead->id,
                 'label' => $lead->reference.' · '.$lead->name,
-                'meta' => $lead->phone,
+                'meta' => trim('ID #'.$lead->id.' · '.($lead->phone ?? '')),
             ])
             ->all();
     }

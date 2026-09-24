@@ -135,6 +135,7 @@ class DiscoveryTest extends TestCase
         $row = collect($response->json('suggestions'))->firstWhere('id', $city->id);
         $this->assertNotNull($row);
         $this->assertSame('city', $row['type']);
+        $this->assertSame('/cities/jaipur-discovery-1', $row['url']);
     }
 
     public function test_destination_found_distinct_from_city(): void

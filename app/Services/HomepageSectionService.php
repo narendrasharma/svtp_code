@@ -139,7 +139,7 @@ class HomepageSectionService
                     'title' => 'Plan your next escape',
                     'subtitle' => 'Start with a destination and make the rest simple.',
                     'cta_label' => 'Explore trips',
-                    'cta_url' => '/discover/locations',
+                    'cta_url' => '/destinations',
                 ],
                 'rules' => [
                     'title' => ['nullable', 'string', 'max:120'],

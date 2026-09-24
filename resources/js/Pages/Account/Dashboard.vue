@@ -1,8 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '../../Layouts/AppLayout.vue';
+import AccountLayout from '../../Layouts/AccountLayout.vue';
 import SeoHead from '../../Components/SeoHead.vue';
-import AccountNav from '../../Components/AccountNav.vue';
 import { appUrl } from '../../appUrl';
 
 defineProps({
@@ -16,15 +15,14 @@ function formatDate(value) {
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <SeoHead title="My Account" noindex />
         <div class="container py-5">
-            <p class="section-eyebrow">My account</p>
             <h1 class="section-title mb-4">Dashboard</h1>
-            <AccountNav active="dashboard" />
+
 
             <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3"><div class="glass-card p-3 text-center h-100"><h3 class="text-svtp mb-0">{{ stats.total }}</h3><small class="text-muted">Total bookings</small></div></div>
+                <div class="col-6 col-md-3"><div class="glass-card p-3 text-center h-100"><h3 class="text-svtp mb-0">{{ stats.total }}</h3><small class="text-muted">Tour bookings</small></div></div>
                 <div class="col-6 col-md-3"><div class="glass-card p-3 text-center h-100"><h3 class="text-svtp mb-0">{{ stats.upcoming }}</h3><small class="text-muted">Upcoming trips</small></div></div>
                 <div class="col-6 col-md-3"><div class="glass-card p-3 text-center h-100"><h3 class="text-svtp mb-0">{{ stats.pending }}</h3><small class="text-muted">Pending confirmation</small></div></div>
                 <div class="col-6 col-md-3"><div class="glass-card p-3 text-center h-100"><h3 class="text-svtp mb-0">{{ stats.completed }}</h3><small class="text-muted">Completed trips</small></div></div>
@@ -32,8 +30,8 @@ function formatDate(value) {
 
             <div class="glass-card p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="text-svtp mb-0">Recent Bookings</h5>
-                    <Link :href="appUrl('/account/bookings')" class="btn btn-sm btn-outline-svtp">View All</Link>
+                    <h5 class="text-svtp mb-0">Recent Tour Bookings</h5>
+                    <Link :href="appUrl('/account/bookings')" class="btn btn-sm btn-outline-svtp">View Tour Bookings</Link>
                 </div>
                 <div v-if="recentBookings.length" class="table-responsive"><table class="table align-middle mb-0">
                     <thead><tr><th>Reference</th><th>Tour</th><th>Travel Date</th><th>Status</th><th></th></tr></thead>
@@ -53,5 +51,5 @@ function formatDate(value) {
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </AccountLayout>
 </template>

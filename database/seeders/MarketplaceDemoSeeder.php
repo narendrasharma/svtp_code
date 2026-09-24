@@ -134,6 +134,9 @@ class MarketplaceDemoSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            if ($destination->excerpt === null) {
+                $destination->update(['excerpt' => $row['description']]);
+            }
             $destinations[$row['slug']] = $destination;
 
             [$placeSlug, $placeName] = $row['place'];
@@ -146,6 +149,9 @@ class MarketplaceDemoSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            if ($places[$placeSlug]->excerpt === null) {
+                $places[$placeSlug]->update(['excerpt' => 'A concise guide to '.$placeName.' and what to notice while visiting '.$row['name'].'.']);
+            }
         }
 
         return ['cities' => $cities, 'destinations' => $destinations, 'places' => $places];

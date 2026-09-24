@@ -92,7 +92,7 @@ const settings = computed(() => {
 });
 
 const finalTitle = computed(() => {
-    const siteName = settings.value.site_name ?? '';
+    const siteName = props.privatePage ? 'Triparo' : (settings.value.site_name ?? '');
 
     if (props.title) {
         return siteName

@@ -15,7 +15,7 @@ const props = defineProps({
     permissions: { type: Object, default: () => ({ record_payment: false, reschedule: false }) },
 });
 
-const endpoint = appUrl('/admin/bookings');
+const endpoint = appUrl('/admin/tour/bookings');
 const statusForm = useForm({
     booking_status: props.booking.booking_status,
     payment_status: props.booking.payment_status,
@@ -101,7 +101,7 @@ function money(value) {
 <template>
     <AdminLayout>
         <div class="mb-4">
-            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Bookings</Link>
+            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Tour Bookings</Link>
             <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
                 <h2 class="mb-0">{{ booking.booking_reference_id }}</h2>
                 <span class="badge bg-info text-dark">{{ booking.booking_status }}</span>
@@ -161,7 +161,7 @@ function money(value) {
 
                 <section class="card p-3 p-md-4 mb-3">
                     <ShareMenu
-                        :endpoint="`/admin/bookings/${booking.id}/share-invoice`"
+                        :endpoint="`/admin/tour/bookings/${booking.id}/share-invoice`"
                         :default-email="booking.customer_email || booking.user?.email || ''"
                         :default-phone="booking.customer_phone || booking.user?.phone || ''"
                         label="Share invoice"
@@ -200,7 +200,7 @@ function money(value) {
                                     <td class="text-end text-nowrap">{{ money(payment.amount) }}</td>
                                     <td>{{ payment.payment_method }}</td>
                                     <td class="text-muted text-nowrap">{{ formatDateTime(payment.paid_at) }} · {{ payment.receiver?.name ?? payment.creator?.name ?? '—' }}</td>
-                                    <td class="text-end"><a :href="appUrl(`/admin/bookings/${booking.id}/payments/${payment.id}/receipt`)" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Receipt</a></td>
+                                    <td class="text-end"><a :href="appUrl(`/admin/tour/bookings/${booking.id}/payments/${payment.id}/receipt`)" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Receipt</a></td>
                                 </tr>
                             </tbody>
                         </table>

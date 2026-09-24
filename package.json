@@ -26,6 +26,7 @@
         "@ckeditor/ckeditor5-vue": "^8.2.0",
         "@inertiajs/vue3": "^3.7.0",
         "@popperjs/core": "^2.11.8",
+        "@vuepic/vue-datepicker": "^14.0.0",
         "axios": "^1.20.0",
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.1",

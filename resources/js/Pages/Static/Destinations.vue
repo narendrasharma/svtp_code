@@ -34,7 +34,7 @@ function context(destination) {
 
         <main class="geo-page">
             <section class="geo-index-hero">
-                <div class="container geo-index-hero__inner">
+                <div class="public-container geo-index-hero__inner">
                     <nav class="geo-breadcrumbs" aria-label="Breadcrumb">
                         <Link :href="appUrl('/')">{{ t('common.home', 'Home') }}</Link>
                         <span aria-hidden="true">/</span>
@@ -46,7 +46,7 @@ function context(destination) {
                 </div>
             </section>
 
-            <section class="container geo-section">
+            <section class="public-container geo-section">
                 <SectionHeading
                     :eyebrow="t('common.destinations', 'Destinations')"
                     :title="t('common.destinations_index_title', 'Start with a place that feels like yours')"

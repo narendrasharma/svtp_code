@@ -10,6 +10,7 @@ import DashboardUserMenu from '../Components/Dashboard/DashboardUserMenu.vue';
 import DashboardFooter from '../Components/Dashboard/DashboardFooter.vue';
 import AdminSidebar from '../Components/Admin/AdminSidebar.vue';
 import AdminCommandPalette from '../Components/Admin/AdminCommandPalette.vue';
+import AdminBreadcrumbs from '../Components/Admin/AdminBreadcrumbs.vue';
 
 const page = usePage();
 const isSidebarOpen = ref(false);
@@ -67,6 +68,59 @@ let systemMedia = null;
 
 const navigation = computed(() => page.props.adminNavigation ?? []);
 const quickActions = computed(() => page.props.quickActions ?? []);
+const breadcrumbs = computed(() => {
+    if (Array.isArray(page.props.adminBreadcrumbs)) return page.props.adminBreadcrumbs;
+
+    const component = page.component;
+    const dashboard = { label: 'Dashboard', href: '/admin/dashboard' };
+
+    if (component === 'Admin/Dashboard') return [{ label: 'Dashboard' }];
+    if (component.startsWith('Admin/Hotel/')) {
+        const items = [dashboard, { label: 'Hotels', href: '/admin/hotel/properties' }];
+        if (component.includes('/Bookings/')) items.push({ label: 'Hotel Bookings', href: '/admin/hotel/bookings' });
+        else if (component.includes('/Properties/')) items.push({ label: 'Properties', href: '/admin/hotel/properties' });
+        else if (component.includes('/RoomTypes/')) items.push({ label: 'Room Types', href: '/admin/hotel/room-types' });
+        else if (component.includes('/RatePlans/')) items.push({ label: 'Rate Plans', href: '/admin/hotel/rate-plans' });
+        else if (component.includes('/Inventory')) items.push({ label: 'Inventory', href: '/admin/hotel/inventory' });
+        else if (component.includes('/Charges')) items.push({ label: 'Charges', href: '/admin/hotel/charges' });
+        else if (component.includes('/Amenities')) items.push({ label: 'Amenities', href: '/admin/hotel/amenities' });
+        else if (component.includes('/Types')) items.push({ label: 'Property Types', href: '/admin/hotel/types' });
+        else items.push({ label: 'Hotel Administration' });
+        if (/\/(Form|Show|Calendar)$/.test(component)) items.push({ label: component.endsWith('Form') ? 'Edit' : 'Details' });
+        return items;
+    }
+    if (component.startsWith('Admin/Taxi/')) {
+        const items = [dashboard, { label: 'Taxi', href: '/admin/taxi/dashboard' }];
+        if (component.includes('/Bookings/')) items.push({ label: 'Bookings', href: '/admin/taxi/bookings' });
+        else if (component.includes('/Vehicles/')) items.push({ label: 'Vehicles', href: '/admin/taxi/vehicles' });
+        else if (component.includes('/VehicleTypes')) items.push({ label: 'Vehicle Types', href: '/admin/taxi/vehicle-types' });
+        else if (component.includes('/Pricing/')) items.push({ label: 'Pricing', href: '/admin/taxi/pricing' });
+        else if (component.includes('/Drivers/')) items.push({ label: 'Drivers', href: '/admin/taxi/drivers' });
+        else if (component.includes('/Dispatch/')) items.push({ label: 'Dispatch', href: '/admin/taxi/dispatch' });
+        else items.push({ label: 'Taxi Administration' });
+        if (/\/(Form|Show)$/.test(component)) items.push({ label: component.endsWith('Form') ? 'Edit' : 'Details' });
+        return items;
+    }
+    if (component.startsWith('Admin/Packages')) {
+        const items = [dashboard, { label: 'Tours', href: '/admin/packages' }, { label: component.endsWith('Index') ? 'Tour Packages' : 'Tour' }];
+        if (!component.endsWith('Index')) items.push({ label: component.endsWith('Form') ? 'Edit' : 'Details' });
+        return items;
+    }
+    if (component === 'Admin/Enquiries') return [dashboard, { label: 'Travel Enquiries' }];
+    if (component.startsWith('Admin/Bookings/')) {
+        const items = [dashboard, { label: 'Tour Bookings', href: '/admin/tour/bookings' }];
+        if (component.endsWith('Index')) items.push({ label: 'All Tour Bookings' });
+        else if (component.endsWith('Show')) items.push({ label: 'Tour Booking Details' });
+        else items.push({ label: 'New Tour Booking' });
+        return items;
+    }
+    if (component.startsWith('Admin/Destinations')) return [dashboard, { label: 'Travel Content' }, { label: component.endsWith('Index') ? 'Destinations' : 'Edit Destination' }];
+    if (component.startsWith('Admin/Places')) return [dashboard, { label: 'Travel Content' }, { label: component.endsWith('Index') ? 'Places' : 'Edit Place' }];
+    if (component.startsWith('Admin/Pages')) return [dashboard, { label: 'Content' }, { label: 'Pages', href: '/admin/pages' }, { label: component.endsWith('Index') ? 'All Pages' : 'Edit Page' }];
+    if (component.startsWith('Admin/Settings')) return [dashboard, { label: 'Settings' }];
+
+    return [];
+});
 // Phase 13A: shared shell follows the current locale direction.
 const direction = computed(() => page.props.localization?.direction ?? 'ltr');
 
@@ -166,6 +220,7 @@ watch(() => page.url, () => {
 
             <main class="admin-main">
                 <AdminToasts />
+                <AdminBreadcrumbs :items="breadcrumbs" />
                 <div class="admin-content"><slot /></div>
             </main>
 

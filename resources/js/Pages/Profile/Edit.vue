@@ -1,10 +1,9 @@
 <script setup>
-import AppLayout from '@/Layouts/AppLayout.vue';
-import AccountNav from '@/Components/AccountNav.vue';
+import AccountLayout from '@/Layouts/AccountLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
-import { Head } from '@inertiajs/vue3';
+import SeoHead from '@/Components/SeoHead.vue';
 
 defineProps({
     mustVerifyEmail: {
@@ -17,16 +16,14 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Profile" />
-
-    <AppLayout>
+    <AccountLayout>
+        <SeoHead title="Profile" noindex private-page />
         <div class="container py-5">
-            <p class="section-eyebrow">My account</p>
             <h1 class="section-title mb-1">Profile Settings</h1>
-            <p class="text-muted small mb-4">Manage your personal information, password and account preferences. Changes are saved securely and historical bookings keep their original snapshot.</p>
-            <AccountNav active="profile" />
+            <p class="text-muted small mb-4">Manage your personal information, password and account preferences.</p>
 
-            <div class="mx-auto" style="max-width: 860px;">
+
+            <div class="account-profile-content">
                 <div class="space-y-4 d-flex flex-column gap-4">
                     <div class="profile-card">
                         <UpdateProfileInformationForm
@@ -45,7 +42,7 @@ defineProps({
                 </div>
             </div>
         </div>
-    </AppLayout>
+    </AccountLayout>
 </template>
 
 <style scoped>

@@ -13,6 +13,8 @@ import EmptyState from '../../Components/Public/States/EmptyState.vue';
 import ErrorState from '../../Components/Public/States/ErrorState.vue';
 import PropertyReviews from '../../Components/Public/Hotels/PropertyReviews.vue';
 import RoomTypeCard from '../../Components/Public/Hotels/RoomTypeCard.vue';
+import DateRangeField from '../../Components/Public/Search/DateRangeField.vue';
+import OccupancyField from '../../Components/Public/Search/OccupancyField.vue';
 import { mediaUrl } from '../../Components/Public/homepage';
 
 const props = defineProps({
@@ -223,11 +225,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                         <p>{{ hasDates ? formatDate(stay.check_in) + ' – ' + formatDate(stay.check_out) : t('common.select_dates_for_exact_rates', 'Choose dates and guests to see exact availability and rates.') }}</p>
                     </div>
                     <form class="property-stay-form" @submit.prevent="checkAvailability">
-                        <label class="public-field"><span class="public-field__label">{{ t('common.check_in', 'Check-in') }}</span><input v-model="stay.check_in" class="public-input" type="date" required></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.check_out', 'Check-out') }}</span><input v-model="stay.check_out" class="public-input" type="date" required></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.rooms', 'Rooms') }}</span><input v-model="stay.rooms" class="public-input" type="number" min="1" max="10"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.adults', 'Adults') }}</span><input v-model="stay.adults" class="public-input" type="number" min="1" max="20"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.children', 'Children') }}</span><input v-model="stay.children" class="public-input" type="number" min="0" max="20"></label>
+                        <DateRangeField v-model:start="stay.check_in" v-model:end="stay.check_out" :label="t('common.stay_dates', 'Check-in — Check-out')" id="property-stay-dates" required />
+                        <OccupancyField id="property-guests" v-model:adults="stay.adults" v-model:children="stay.children" v-model:rooms="stay.rooms" :label="t('common.guests_and_rooms', 'Guests and rooms')" />
                         <button type="submit" class="public-button public-button--primary" :disabled="checking">{{ checking ? t('common.checking', 'Checking…') : t('common.update_stay', 'Update stay') }}</button>
                     </form>
                     <p v-if="checkError" class="property-stay-panel__error" role="alert">{{ checkError }}</p>

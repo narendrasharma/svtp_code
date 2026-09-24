@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { appUrl } from '../../../appUrl';
 import { useLocalization } from '../../../i18n';
-import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
 import ReviewCard from '../../../Components/Hotel/ReviewCard.vue';
 
@@ -36,8 +36,8 @@ function categoryLabel(key, fallback) {
 </script>
 
 <template>
-    <PublicLayout main-class="hotel-customer-page hotel-customer-review-page">
-        <SeoHead :title="review ? t('common.your_review', 'Your review') : t('common.write_review', 'Write a review')" noindex />
+    <AccountLayout>
+        <SeoHead :title="review ? t('common.your_review', 'Your review') : t('common.write_review', 'Write a review')" noindex private-page />
 
         <div class="hotel-customer-container">
             <Link :href="appUrl(`/account/hotel-bookings/${booking.id}`)" class="public-button public-button--text public-button--sm">
@@ -121,5 +121,5 @@ function categoryLabel(key, fallback) {
                 <ReviewCard :review="review" />
             </section>
         </div>
-    </PublicLayout>
+    </AccountLayout>
 </template>

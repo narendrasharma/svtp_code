@@ -1,9 +1,11 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+@import '@vuepic/vue-datepicker/dist/main.css';
 @import './admin-theme.css';
 @import './rtl.css';
 @import './public-system.css';
 @import './public-homepage.css';
+@import './public-hotel-listing.css';
 @import './public-hotel-search.css';
 @import './public-hotel-detail.css';
 @import './public-hotel-booking.css';

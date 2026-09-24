@@ -9,6 +9,7 @@ const form = useForm({
     name: props.place?.name ?? '',
     slug: props.place?.slug ?? '',
     destination_id: props.place?.destination_id ?? '',
+    excerpt: props.place?.excerpt ?? '',
     description: props.place?.description ?? '',
     latitude: props.place?.latitude ?? '',
     longitude: props.place?.longitude ?? '',
@@ -66,6 +67,11 @@ function selectImage(event) {
                 <option v-for="destination in destinations" :key="destination.id" :value="destination.id">{{ destination.name }}</option>
             </select>
             <small class="text-danger">{{ form.errors.destination_id }}</small>
+
+            <label class="form-label mt-3" for="place-excerpt">Excerpt / Short Description</label>
+            <textarea id="place-excerpt" v-model="form.excerpt" class="form-control" rows="2" maxlength="500" placeholder="Short summary for cards and page hero areas."></textarea>
+            <small class="d-block text-muted">Short summary used in cards and page hero areas. Keep it concise; the full description appears below.</small>
+            <small class="text-danger">{{ form.errors.excerpt }}</small>
 
             <label class="form-label mt-3">Description</label>
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Describe this temple, landmark, or attraction."></textarea>

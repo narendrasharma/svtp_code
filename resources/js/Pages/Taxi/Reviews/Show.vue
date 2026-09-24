@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import VendorLayout from '../../../Layouts/VendorLayout.vue';
-import AppLayout from '../../../Layouts/AppLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
@@ -14,7 +14,7 @@ const props = defineProps({
     flagReasons: { type: Array, default: () => [] },
 });
 
-const layout = computed(() => ({ admin: AdminLayout, vendor: VendorLayout, account: AppLayout })[props.portal]);
+const layout = computed(() => ({ admin: AdminLayout, vendor: VendorLayout, account: AccountLayout })[props.portal]);
 const base = computed(() => (props.portal === 'account' ? '/account/taxi/reviews' : `/${props.portal}/taxi/reviews`));
 const moderateForm = useForm({ action: 'approve', moderation_note: '' });
 const replyForm = useForm({ reply: '' });
@@ -38,7 +38,7 @@ function stars(n) {
 <component :is="layout">
 <div class="container-fluid py-3">
 <Link :href="appUrl(base)">← All reviews</Link>
-<h2 class="my-3">Trip review · {{ review.booking_reference ?? `#${review.id}` }}</h2>
+<component :is="portal === 'account' ? 'h1' : 'h2'" class="my-3">Trip review · {{ review.booking_reference ?? `#${review.id}` }}</component>
 <div class="row g-3">
 <div class="col-lg-7">
 <div class="card p-3 mb-3">

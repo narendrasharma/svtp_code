@@ -3,9 +3,8 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { appUrl } from '../../../appUrl';
 import { useLocalization } from '../../../i18n';
-import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
 import Pagination from '../../../Components/Pagination.vue';
 import EmptyState from '../../../Components/Public/States/EmptyState.vue';
 import BookingCard from '../../../Components/Public/Hotel/Bookings/BookingCard.vue';
@@ -34,11 +33,11 @@ function scopeHref(scope) {
 </script>
 
 <template>
-    <PublicLayout main-class="hotel-customer-page">
-        <SeoHead :title="t('common.my_hotel_bookings', 'My hotel bookings')" noindex />
+    <AccountLayout>
+        <SeoHead :title="t('common.my_hotel_bookings', 'My hotel bookings')" noindex private-page />
 
         <div class="hotel-customer-container">
-            <AccountNav active="hotels" />
+
 
             <header class="hotel-customer-header">
                 <div>
@@ -83,5 +82,5 @@ function scopeHref(scope) {
                 <Pagination :links="bookings.links" />
             </div>
         </div>
-    </PublicLayout>
+    </AccountLayout>
 </template>

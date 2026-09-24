@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(fn (Request $request): string => $request->is('admin/*')
+            ? route('admin.login')
+            : route('login'));
+
         // Phase 13A: locale resolves after the session starts (needs the
         // explicit session choice) but before controllers render, so the
         // lazy Inertia shared props always see the resolved locale.

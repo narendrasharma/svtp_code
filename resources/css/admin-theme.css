@@ -413,3 +413,28 @@ html[data-admin-theme] .admin-shell .alert a {
 html[data-admin-theme] .admin-shell .alert .bi {
     color: inherit;
 }
+
+/* Shared Admin outline action: readable on both themes and on interaction. */
+.admin-shell .btn-admin-outline {
+    background: transparent;
+    border: 1px solid var(--admin-border-strong);
+    color: var(--admin-text);
+}
+
+.admin-shell .btn-admin-outline:hover,
+.admin-shell .btn-admin-outline:focus-visible {
+    background: var(--admin-surface-elevated);
+    border-color: var(--admin-primary);
+    color: var(--admin-text);
+    box-shadow: 0 0 0 .2rem var(--admin-focus-ring);
+}
+
+.admin-shell .btn-admin-outline:disabled,
+.admin-shell .btn-admin-outline.disabled {
+    background: var(--admin-surface-sunken);
+    border-color: var(--admin-border);
+    color: var(--admin-text-muted);
+    cursor: not-allowed;
+    opacity: 0.72;
+    box-shadow: none;
+}

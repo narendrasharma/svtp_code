@@ -74,6 +74,7 @@ class PropertyController extends Controller
             'statuses' => collect(PropertyStatus::cases())->map(fn ($s): array => ['value' => $s->value, 'label' => $s->label()]),
             'vendors' => VendorProfile::orderBy('business_name')->get(['id', 'business_name']),
             'types' => PropertyType::where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
+            'cities' => City::active()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -265,6 +266,12 @@ class PropertyController extends Controller
         $property?->load(['amenities:id', 'images']);
 
         return [
+            'adminBreadcrumbs' => [
+                ['label' => 'Dashboard', 'href' => '/admin/dashboard'],
+                ['label' => 'Hotels', 'href' => '/admin/hotel/properties'],
+                ['label' => 'Properties', 'href' => '/admin/hotel/properties'],
+                ['label' => $property ? 'Edit Property' : 'New Property'],
+            ],
             'property' => $property,
             'types' => PropertyType::where('is_active', true)->orderBy('sort_order')->get(['id', 'name']),
             'amenities' => HotelAmenity::where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'category']),
@@ -272,7 +279,7 @@ class PropertyController extends Controller
             'states' => State::active()->ordered()->get(['id', 'country_id', 'name']),
             'vendors' => VendorProfile::orderBy('business_name')->get(['id', 'business_name']),
             'statuses' => collect(PropertyStatus::cases())->map(fn ($s): array => ['value' => $s->value, 'label' => $s->label()]),
-            'canPublish' => true,
+            'canPublish' => auth()->user()?->can('hotel.properties.publish') ?? false,
             'customFields' => $property
                 ? $this->customFields->formSchema('property', $property->id, $property->property_type_id)
                 : $this->customFields->blankSchema('property'),

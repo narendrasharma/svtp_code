@@ -31,6 +31,11 @@ const data = computed(() => props.landing || {
     seo: props.seo,
 });
 const heroImage = computed(() => mediaUrl(data.value.image));
+const heroDescription = computed(() => {
+    const excerpt = data.value.excerpt || props.place.display_excerpt;
+    if (excerpt) return excerpt;
+    return String(data.value.description || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 240);
+});
 const destinationHref = computed(() => props.place.destination?.slug ? appUrl(`/destinations/${props.place.destination.slug}`) : null);
 const geographyLabel = computed(() => Object.values(data.value.geography || {}).filter(Boolean).join(' · '));
 </script>
@@ -49,7 +54,7 @@ const geographyLabel = computed(() => Object.values(data.value.geography || {}).
             <section class="geo-detail-hero geo-detail-hero--place">
                 <div class="geo-detail-hero__media"><ImageWithFallback :src="heroImage" :alt="data.name" aspect="editorial" kind="place" :label="t('common.place', 'Place')" loading="eager" /></div>
                 <div class="geo-detail-hero__shade"></div>
-                <div class="container geo-detail-hero__content">
+                <div class="public-container geo-detail-hero__content">
                     <nav class="geo-breadcrumbs" aria-label="Breadcrumb">
                         <Link :href="appUrl('/')">{{ t('common.home', 'Home') }}</Link>
                         <span aria-hidden="true">/</span>
@@ -63,11 +68,11 @@ const geographyLabel = computed(() => Object.values(data.value.geography || {}).
                     </nav>
                     <p v-if="geographyLabel" class="public-eyebrow">{{ geographyLabel }}</p>
                     <h1>{{ data.name }}</h1>
-                    <p v-if="data.description" class="geo-detail-hero__lede">{{ data.description }}</p>
+                    <p v-if="heroDescription" class="geo-detail-hero__lede">{{ heroDescription }}</p>
                 </div>
             </section>
 
-            <section class="container geo-place-overview">
+            <section class="public-container geo-place-overview">
                 <div>
                     <p class="public-eyebrow">{{ t('common.about', 'About') }}</p>
                     <h2>{{ t('common.about_this_place', 'About this place') }}</h2>
@@ -82,7 +87,7 @@ const geographyLabel = computed(() => Object.values(data.value.geography || {}).
             </section>
 
             <section v-if="data.nearby_hotels?.length" class="geo-commercial-section">
-                <div class="container geo-section">
+                <div class="public-container geo-section">
                     <SectionHeading
                         :eyebrow="t('common.stays', 'Stays')"
                         :title="t('common.stays_in_destination', 'Stays in this destination')"
@@ -94,7 +99,7 @@ const geographyLabel = computed(() => Object.values(data.value.geography || {}).
                 </div>
             </section>
 
-            <section v-if="data.tours?.length" class="container geo-section">
+            <section v-if="data.tours?.length" class="public-container geo-section">
                 <SectionHeading
                     :eyebrow="t('common.tours', 'Tours')"
                     :title="t('common.tours_including_place', 'Tours including this place')"
@@ -106,7 +111,7 @@ const geographyLabel = computed(() => Object.values(data.value.geography || {}).
                 <div class="geo-section-action"><Link :href="appUrl(`/search/tours?q=${encodeURIComponent(data.name)}`)" class="public-button public-button--outline">{{ t('common.explore_tours', 'Explore tours') }}</Link></div>
             </section>
 
-            <section v-if="!data.tours?.length && !data.nearby_hotels?.length" class="container geo-discovery-cta">
+            <section v-if="!data.tours?.length && !data.nearby_hotels?.length" class="public-container geo-discovery-cta">
                 <div>
                     <p class="public-eyebrow">{{ t('common.keep_discovering', 'Keep discovering') }}</p>
                     <h2>{{ t('common.find_more_places', 'Find more places to explore') }}</h2>

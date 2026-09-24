@@ -8,6 +8,8 @@ import SeoHead from '../../Components/SeoHead.vue';
 import HotelSearchCard from '../../Components/Public/Hotels/HotelSearchCard.vue';
 import EmptyState from '../../Components/Public/States/EmptyState.vue';
 import ErrorState from '../../Components/Public/States/ErrorState.vue';
+import DateRangeField from '../../Components/Public/Search/DateRangeField.vue';
+import OccupancyField from '../../Components/Public/Search/OccupancyField.vue';
 
 const props = defineProps({
     results: { type: Object, required: true },
@@ -220,18 +222,15 @@ onBeforeUnmount(() => {
                     </div>
                     <div class="hotel-search-summary__fields">
                         <label class="public-field hotel-search-summary__location-field"><span class="public-field__label">{{ t('common.location', 'Location') }}</span><input v-model="searchForm.q" class="public-input" :placeholder="t('common.city_or_destination', 'City or destination')" autocomplete="off"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.check_in', 'Check-in') }}</span><input v-model="searchForm.check_in" class="public-input" type="date"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.check_out', 'Check-out') }}</span><input v-model="searchForm.check_out" class="public-input" type="date"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.rooms', 'Rooms') }}</span><input v-model="searchForm.rooms" class="public-input" type="number" min="1" max="10"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.adults', 'Adults') }}</span><input v-model="searchForm.adults" class="public-input" type="number" min="1" max="20"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.children', 'Children') }}</span><input v-model="searchForm.children" class="public-input" type="number" min="0" max="20"></label>
+                        <DateRangeField v-model:start="searchForm.check_in" v-model:end="searchForm.check_out" :label="t('common.stay_dates', 'Check-in — Check-out')" id="hotel-stay-dates" />
+                        <OccupancyField id="hotel-guests" v-model:adults="searchForm.adults" v-model:children="searchForm.children" v-model:rooms="searchForm.rooms" :label="t('common.guests_and_rooms', 'Guests and rooms')" />
                         <button type="submit" class="public-button public-button--primary">{{ t('common.update_search', 'Update search') }}</button>
                     </div>
                 </form>
             </div>
         </section>
         <main class="public-section hotel-search-results">
-            <div class="public-container public-container--wide">
+            <div class="public-container">
                 <div class="hotel-search-results__toolbar">
                     <div><span class="public-eyebrow">{{ t('common.curated_stays', 'Curated stays') }}</span><p class="hotel-search-results__count" aria-live="polite">{{ total }} {{ total === 1 ? t('common.property', 'property') : t('common.properties', 'properties') }}</p></div>
                     <div class="hotel-search-results__controls">

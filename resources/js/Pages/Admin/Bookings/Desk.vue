@@ -13,7 +13,7 @@ const props = defineProps({
     statuses: { type: Array, default: () => [] },
 });
 
-const endpoint = appUrl('/admin/bookings');
+const endpoint = appUrl('/admin/tour/bookings');
 const customerEndpoint = appUrl('/admin/customers');
 
 const form = useForm({
@@ -76,7 +76,7 @@ function submit() {
 <template>
     <AdminLayout>
         <div class="mb-4">
-            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Bookings</Link>
+            <Link :href="endpoint" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>All Tour Bookings</Link>
             <h2 class="mt-2 mb-1">Reservation Desk</h2>
             <p class="text-muted mb-0">One screen for walk-in, phone and WhatsApp bookings. Pricing is always recalculated server-side.</p>
         </div>

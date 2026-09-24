@@ -27,6 +27,7 @@ class SavePlaceRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('places')->ignore($this->route('place'))],
             'destination_id' => ['required', 'integer', 'exists:destinations,id'],
+            'excerpt' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'min:-90', 'max:90'],
             'longitude' => ['nullable', 'numeric', 'min:-180', 'max:180'],

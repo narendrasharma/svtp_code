@@ -150,7 +150,7 @@ final class LocationSearchService
                     'slug' => (string) $city->slug,
                     'image' => $city->image,
                     'subtitle' => $this->citySubtitle($city),
-                    'url' => route('discover.locations', ['type' => 'city', 'id' => $city->id], false),
+                    'url' => route('cities.show', $city, false),
                     'property_count' => (int) $city->property_count,
                     'tour_count' => (int) $city->tour_count,
                 ])->all()

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\VehicleType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -26,15 +27,13 @@ class VehicleTypeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'slug' => ['nullable', 'string', 'max:80', 'regex:/^[a-z0-9-]+$/', Rule::unique('vehicle_types', 'slug')],
-            'description' => ['nullable', 'string', 'max:500'],
-            'passenger_capacity' => ['required', 'integer', 'min:1', 'max:60'],
-            'luggage_capacity' => ['nullable', 'integer', 'min:0', 'max:60'],
-            'is_active' => ['sometimes', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
-        ]);
+        $validated = $this->validated($request);
+
+        if ($request->hasFile('image_upload')) {
+            $validated['image_path'] = $request->file('image_upload')->store('taxi/vehicle-types', 'public');
+        }
+
+        unset($validated['image_upload'], $validated['remove_image']);
 
         VehicleType::create([
             ...$validated,
@@ -47,16 +46,22 @@ class VehicleTypeController extends Controller
 
     public function update(Request $request, VehicleType $vehicleType): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'passenger_capacity' => ['required', 'integer', 'min:1', 'max:60'],
-            'luggage_capacity' => ['nullable', 'integer', 'min:0', 'max:60'],
-            'is_active' => ['sometimes', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
-        ]);
+        $validated = $this->validated($request, $vehicleType);
+        $oldImage = $vehicleType->image_path;
+
+        if ($request->hasFile('image_upload')) {
+            $validated['image_path'] = $request->file('image_upload')->store('taxi/vehicle-types', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            $validated['image_path'] = null;
+        }
+
+        unset($validated['image_upload'], $validated['remove_image']);
 
         $vehicleType->update($validated);
+
+        if (array_key_exists('image_path', $validated) && $oldImage !== $validated['image_path']) {
+            $this->deleteManagedImage($oldImage);
+        }
 
         return back()->with('flash', 'Vehicle type updated.');
     }
@@ -70,5 +75,42 @@ class VehicleTypeController extends Controller
         $vehicleType->delete();
 
         return back()->with('flash', 'Vehicle type deleted.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function validated(Request $request, ?VehicleType $vehicleType = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+            'slug' => [
+                'nullable',
+                'string',
+                'max:80',
+                'regex:/^[a-z0-9-]+$/',
+                Rule::unique('vehicle_types', 'slug')->ignore($vehicleType?->id),
+            ],
+            'description' => ['nullable', 'string', 'max:500'],
+            'passenger_capacity' => ['required', 'integer', 'min:1', 'max:60'],
+            'luggage_capacity' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'is_active' => ['sometimes', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'image_upload' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_image' => ['sometimes', 'boolean'],
+        ]);
+    }
+
+    private function deleteManagedImage(?string $imagePath): void
+    {
+        $path = parse_url((string) $imagePath, PHP_URL_PATH) ?: (string) $imagePath;
+
+        if (str_starts_with($path, '/storage/')) {
+            $path = substr($path, strlen('/storage/'));
+        }
+
+        if (str_starts_with($path, 'taxi/vehicle-types/')) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

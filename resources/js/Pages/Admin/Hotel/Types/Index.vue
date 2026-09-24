@@ -4,6 +4,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../../Layouts/AdminLayout.vue';
 import Pagination from '../../../../Components/Pagination.vue';
 import { appUrl } from '../../../../appUrl';
+import IconPicker from '../../../../Components/Admin/IconPicker.vue';
 defineProps({ types: Object });
 const editing = ref(null);
 const form = useForm({ name: '', slug: '', description: '', icon: '', is_active: true, sort_order: 0 });
@@ -28,7 +29,7 @@ function save() {
 <div class="col-md-2"><label class="form-label" for="pt-order">Order</label><input id="pt-order" v-model="form.sort_order" type="number" min="0" class="form-control" /></div>
 <div class="col-md-2"><label class="form-check mt-4"><input v-model="form.is_active" type="checkbox" class="form-check-input" /> Active</label></div>
 <div class="col-md-8"><label class="form-label" for="pt-desc">Description</label><input id="pt-desc" v-model="form.description" maxlength="500" class="form-control" /></div>
-<div class="col-md-4"><label class="form-label" for="pt-icon">Icon</label><input id="pt-icon" v-model="form.icon" maxlength="60" class="form-control" /></div>
+<div class="col-md-4"><IconPicker v-model="form.icon" /></div>
 </div>
 <div class="d-flex gap-2 mt-3"><button class="btn btn-svtp" :disabled="form.processing">Save</button><button type="button" class="btn btn-outline-secondary" @click="editing = null; form.reset()">Cancel</button></div>
 </form>

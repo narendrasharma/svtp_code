@@ -126,27 +126,6 @@ const settingNavigation = [
     },
 
     {
-        key: 'footer',
-        label: 'Footer Settings',
-        icon: 'bi-layout-text-window-reverse',
-        enabled: false,
-    },
-
-    {
-        key: 'email',
-        label: 'Email Settings',
-        icon: 'bi-envelope',
-        enabled: false,
-    },
-
-    {
-        key: 'payment',
-        label: 'Payment Settings',
-        icon: 'bi-credit-card',
-        enabled: false,
-    },
-
-    {
         key: 'marketplace',
         label: 'Marketplace',
         icon: 'bi-shop',
@@ -160,19 +139,6 @@ const settingNavigation = [
         enabled: true,
     },
 
-    {
-        key: 'map',
-        label: 'Map Settings',
-        icon: 'bi-geo-alt',
-        enabled: false,
-    },
-
-    {
-        key: 'ai',
-        label: 'AI Settings',
-        icon: 'bi-stars',
-        enabled: false,
-    },
 ];
 
 const basicForm = useForm({
@@ -299,11 +265,8 @@ function selectSeoOgImage(event) {
                             v-for="item in settingNavigation"
                             :key="item.key"
                             class="settings-menu-item"
-                            :class="{
-                            active: item.enabled && activeSetting === item.key,
-                            disabled: !item.enabled
-                            }"
-                            @click="item.enabled && (activeSetting = item.key)"
+                            :class="{ active: activeSetting === item.key }"
+                            @click="activeSetting = item.key"
                             >
                             <i
                             class="bi"
@@ -314,12 +277,6 @@ function selectSeoOgImage(event) {
                             {{ item.label }}
                             </span>
 
-                            <span
-                            v-if="!item.enabled"
-                            class="ms-auto badge text-bg-secondary"
-                            >
-                            Soon
-                            </span>
                             </div>
 
                     </div>

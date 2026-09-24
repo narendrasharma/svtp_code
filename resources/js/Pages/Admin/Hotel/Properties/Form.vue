@@ -7,8 +7,16 @@ const props = defineProps({ property: Object, types: Array, amenities: Array, co
 const base = props.property ? `/admin/hotel/properties/${props.property.id}` : '/admin/hotel/properties';
 const imageForm = useForm({ image: null, alt_text: '' });
 function uploadImage(e) {
-    imageForm.image = e.target.files[0];
-    imageForm.post(appUrl(`${base}/images`), { onSuccess: () => imageForm.reset() });
+    const file = e.target.files?.[0];
+    if (!file) return;
+    imageForm.clearErrors();
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        imageForm.setError('image', 'Choose a JPG, PNG, WebP or GIF image under 5 MB.');
+        e.target.value = '';
+        return;
+    }
+    imageForm.image = file;
+    imageForm.post(appUrl(`${base}/images`), { forceFormData: true, onSuccess: () => { imageForm.reset(); e.target.value = ''; } });
 }
 </script>
 <template><AdminLayout><div class="container-fluid py-3">
@@ -28,10 +36,11 @@ function uploadImage(e) {
 <button class="btn btn-sm btn-outline-secondary" @click="router.patch(appUrl(`${base}/images/${img.id}/primary`))">Cover</button>
 <button class="btn btn-sm btn-outline-danger" @click="router.delete(appUrl(`${base}/images/${img.id}`))">Remove</button>
 </span></div>
-<label class="btn btn-outline-primary mt-3">Add image<input type="file" accept="image/*" class="d-none" @change="uploadImage" /></label>
+<label class="btn btn-outline-primary mt-3">Add image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="d-none" @change="uploadImage" /></label>
+<small v-if="imageForm.errors.image" class="text-danger d-block mt-2" role="alert">{{ imageForm.errors.image }}</small>
 </div></div>
 <div class="col-lg-4"><div class="card p-3"><h5>Publishing</h5><p>Status: <strong>{{ property.status }}</strong></p>
-<div class="d-flex flex-wrap gap-2">
+<div v-if="canPublish" class="d-flex flex-wrap gap-2">
 <button class="btn btn-sm btn-success" @click="router.post(appUrl(`${base}/publish`))">Publish</button>
 <button class="btn btn-sm btn-outline-warning" @click="router.post(appUrl(`${base}/reject`), { note: 'Does not meet listing standards.' })">Reject</button>
 <button class="btn btn-sm btn-outline-secondary" @click="router.post(appUrl(`${base}/deactivate`))">Deactivate</button>

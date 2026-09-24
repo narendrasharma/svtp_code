@@ -30,6 +30,7 @@ return [
     'drop' => 'الوجهة',
     'date' => 'التاريخ',
     'time' => 'الوقت',
+    'pickup_time_field' => 'وقت الاستلام',
     'passengers' => 'الركاب',
     'travel_marketplace' => 'سوق السفر',
     'find_your_journey' => 'ابحث عن رحلتك القادمة',

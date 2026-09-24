@@ -67,9 +67,12 @@ function clearRow(row) {
 }
 
 const bulk = useForm({
+    room_type_id: props.roomTypeId ?? '',
     start_date: props.start ?? '', end_date: props.end ?? '',
     capacity_override: null, blocked_units: 0, stop_sell: false, note: '', clear: false,
 });
+
+watch(() => props.roomTypeId, (value) => { bulk.room_type_id = value ?? ''; });
 
 function applyBulk() {
     bulk.clear = false;

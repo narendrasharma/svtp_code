@@ -4,11 +4,12 @@ import { computed, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { appUrl } from '../../../appUrl';
 import { useLocalization } from '../../../i18n';
-import PublicLayout from '../../../Layouts/PublicLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
 import ImageWithFallback from '../../../Components/Public/Media/ImageWithFallback.vue';
 import MoneyDisplay from '../../../Components/Public/UI/MoneyDisplay.vue';
 import BookingStatus from '../../../Components/Public/Hotel/Bookings/BookingStatus.vue';
+import DateRangeField from '../../../Components/Public/Search/DateRangeField.vue';
 import BookingTimeline from '../../../Components/Public/Hotel/Bookings/BookingTimeline.vue';
 import RefundHistory from '../../../Components/Public/Hotel/Bookings/RefundHistory.vue';
 import ReviewCard from '../../../Components/Hotel/ReviewCard.vue';
@@ -152,8 +153,8 @@ function priceDifferenceMoney(quote) {
 </script>
 
 <template>
-    <PublicLayout main-class="hotel-customer-page">
-        <SeoHead :title="`${t('common.booking_details', 'Booking details')} · ${booking.booking_number}`" noindex />
+    <AccountLayout>
+        <SeoHead :title="`${t('common.booking_details', 'Booking details')} · ${booking.booking_number}`" noindex private-page />
 
         <div class="hotel-customer-container">
             <nav class="hotel-customer-breadcrumbs" :aria-label="t('common.breadcrumb', 'Breadcrumb')">
@@ -180,7 +181,7 @@ function priceDifferenceMoney(quote) {
             </header>
 
             <div class="hotel-customer-detail-layout">
-                <main class="hotel-customer-detail-main">
+                <div class="hotel-customer-detail-main">
                     <section class="hotel-customer-panel" aria-labelledby="stay-overview-heading">
                         <div class="hotel-customer-panel__heading">
                             <div>
@@ -329,14 +330,7 @@ function priceDifferenceMoney(quote) {
                         </div>
                         <form class="hotel-customer-form" @submit.prevent="quoteReschedule">
                             <div class="hotel-customer-form__grid">
-                                <label class="hotel-customer-form__label" for="reschedule-check-in">
-                                    {{ t('common.new_check_in', 'New check-in') }}
-                                    <input id="reschedule-check-in" v-model="rescheduleForm.check_in" class="hotel-customer-form__control" type="date" required />
-                                </label>
-                                <label class="hotel-customer-form__label" for="reschedule-check-out">
-                                    {{ t('common.new_check_out', 'New check-out') }}
-                                    <input id="reschedule-check-out" v-model="rescheduleForm.check_out" class="hotel-customer-form__control" type="date" required />
-                                </label>
+                                <DateRangeField v-model:start="rescheduleForm.check_in" v-model:end="rescheduleForm.check_out" :label="t('common.new_stay_dates', 'New check-in — check-out')" id="reschedule-stay-dates" required />
                             </div>
                             <p v-if="rescheduleError" class="hotel-customer-form__error" role="alert">{{ rescheduleError }}</p>
                             <button type="submit" class="public-button public-button--outline" :disabled="rescheduleLoading || rescheduleForm.processing">
@@ -370,7 +364,7 @@ function priceDifferenceMoney(quote) {
                             <p v-else class="hotel-customer-alert" role="alert">{{ t('common.reschedule_unavailable', 'These dates cannot be used for this booking.') }}</p>
                         </div>
                     </section>
-                </main>
+                </div>
 
                 <aside class="hotel-customer-detail-sidebar" aria-label="Booking summary and actions">
                     <section class="hotel-customer-panel hotel-customer-price-card" aria-labelledby="price-summary-heading">
@@ -420,5 +414,5 @@ function priceDifferenceMoney(quote) {
                 </aside>
             </div>
         </div>
-    </PublicLayout>
+    </AccountLayout>
 </template>

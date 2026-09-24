@@ -1,7 +1,6 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
@@ -24,7 +23,7 @@ function submit() {
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <div class="container py-5" style="max-width: 800px;">
             <Link :href="appUrl('/account/support')" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Support Tickets</Link>
             <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-1">
@@ -32,7 +31,7 @@ function submit() {
                 <span class="badge bg-secondary">{{ ticket.status }}</span>
             </div>
             <p class="text-muted">{{ ticket.subject }}</p>
-            <AccountNav active="support" />
+
 
             <div class="d-flex flex-column gap-3 mb-4">
                 <div v-for="message in ticket.messages" :key="message.id" class="glass-card p-3" :class="{ 'ms-md-5': message.user_id !== ticket.requester_user_id }">
@@ -56,5 +55,5 @@ function submit() {
             </form>
             <p v-else class="text-muted small">This ticket is {{ ticket.status }}. Open a new ticket if you need further help.</p>
         </div>
-    </AppLayout>
+    </AccountLayout>
 </template>

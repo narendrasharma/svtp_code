@@ -53,6 +53,16 @@ class DashboardController extends Controller
         $range = $analyticsService->resolveRange(request()->only(['preset', 'from', 'to']));
         $analytics = $analyticsService->adminSummary($range['from'], $range['to']);
         $timeseries = $analyticsService->timeseries($range['from'], $range['to']);
+        if (! request()->user()?->can('reports.view')) {
+            foreach (['gross_booking_value', 'platform_commission', 'vendor_earnings', 'refunded_amount', 'gross_booking_value_by_currency', 'pending_withdrawal_amount'] as $key) {
+                unset($analytics[$key]);
+            }
+            unset($analytics['coupons']['discount_granted']);
+            foreach ($analytics['system']['modules'] ?? [] as &$module) {
+                $module['value_by_currency'] = [];
+            }
+            unset($module);
+        }
 
         // -----------------------------------------------------------------
         // 1. Recent Tour Packages (latest 5)
@@ -207,7 +217,7 @@ class DashboardController extends Controller
                 'key' => 'cancellation_requests',
                 'label' => 'Pending cancellation requests',
                 'count' => BookingCancellationRequest::where('status', 'pending')->count(),
-                'url' => '/admin/bookings',
+                'url' => '/admin/tour/bookings',
                 'permission' => 'bookings.cancel',
             ],
             [

@@ -8,6 +8,9 @@ import SeoHead from '../../Components/SeoHead.vue';
 import EmptyState from '../../Components/Public/States/EmptyState.vue';
 import ErrorState from '../../Components/Public/States/ErrorState.vue';
 import TourSearchCard from '../../Components/Public/Tours/TourSearchCard.vue';
+import DateField from '../../Components/Public/Search/DateField.vue';
+import OccupancyField from '../../Components/Public/Search/OccupancyField.vue';
+import LocationField from '../../Components/Public/Search/LocationField.vue';
 
 const props = defineProps({
     results: { type: Object, required: true },
@@ -29,6 +32,7 @@ const searchForm = reactive({
     adults: props.search.adults ?? 1,
     children: props.search.children ?? 0,
 });
+const selectedLocation = ref(props.location?.id ? props.location : null);
 const filterForm = reactive({
     category_id: props.search.category_id ?? '',
     min_duration: props.search.min_duration ?? '',
@@ -103,10 +107,10 @@ function durationFacetLabel(min, max) {
 
 function baseParams() {
     const params = {};
-    const unchanged = props.location?.id && searchForm.q.trim() === String(props.location.label || '').trim();
+    const unchanged = selectedLocation.value?.id && searchForm.q.trim() === String(selectedLocation.value.name || selectedLocation.value.label || '').trim();
     if (unchanged) {
-        params.location_type = props.location.type;
-        params.location_id = props.location.id;
+        params.location_type = selectedLocation.value.type;
+        params.location_id = selectedLocation.value.id;
     } else if (searchForm.q.trim()) {
         params.q = searchForm.q.trim();
     }
@@ -130,6 +134,25 @@ function addFilters(params) {
     });
     if (filterForm.tags.length) params.tags = filterForm.tags;
     return params;
+}
+
+function normalizePriceBounds(changedField = null) {
+    const minimum = Number(filterForm.min_price);
+    const maximum = Number(filterForm.max_price);
+
+    if (!Number.isFinite(minimum) || !Number.isFinite(maximum) || filterForm.min_price === '' || filterForm.max_price === '') {
+        return;
+    }
+
+    if (minimum <= maximum) {
+        return;
+    }
+
+    if (changedField === 'min_price') {
+        filterForm.max_price = filterForm.min_price;
+    } else {
+        filterForm.min_price = filterForm.max_price;
+    }
 }
 
 function visit(params, options = {}) {
@@ -238,10 +261,9 @@ async function openFilters() {
                         <span><i class="bi bi-people" aria-hidden="true"></i>{{ summaryParty }}</span>
                     </div>
                     <div class="tour-search-summary__fields">
-                        <label class="public-field tour-search-summary__location-field"><span class="public-field__label">{{ t('common.destination', 'Destination') }}</span><input v-model="searchForm.q" class="public-input" :placeholder="t('common.city_or_destination', 'City or destination')" autocomplete="off"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.travel_date', 'Travel date') }}</span><input v-model="searchForm.travel_date" class="public-input" type="date"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.adults', 'Adults') }}</span><input v-model="searchForm.adults" class="public-input" type="number" min="1" max="60"></label>
-                        <label class="public-field"><span class="public-field__label">{{ t('common.kids', 'Kids') }}</span><input v-model="searchForm.children" class="public-input" type="number" min="0" max="60"></label>
+                        <LocationField id="tour-search-location" class="tour-search-summary__location-field" v-model="searchForm.q" :label="t('common.destination', 'Destination')" :placeholder="t('common.city_or_destination', 'City or destination')" @input="selectedLocation = null" @select="selectedLocation = $event" />
+                        <DateField v-model="searchForm.travel_date" :label="t('common.travel_date', 'Travel date')" id="tour-travel-date" />
+                        <OccupancyField id="tour-travellers" mode="tour" v-model:adults="searchForm.adults" v-model:children="searchForm.children" :label="t('common.travellers', 'Travellers')" />
                         <button type="submit" class="public-button public-button--primary">{{ t('common.update_search', 'Update search') }}</button>
                     </div>
                 </form>
@@ -249,12 +271,12 @@ async function openFilters() {
         </section>
 
         <main class="public-section tour-search-results">
-            <div class="public-container public-container--wide">
+            <div class="public-container">
                 <div class="tour-search-results__toolbar">
                     <div><span class="public-eyebrow">{{ t('common.curated_experiences', 'Curated experiences') }}</span><p class="tour-search-results__count" aria-live="polite">{{ total }} {{ total === 1 ? t('common.tour', 'tour') : t('common.tours', 'tours') }}</p></div>
                     <div class="tour-search-results__controls">
-                        <button type="button" class="public-button public-button--outline public-button--sm tour-search-filter-trigger" :aria-expanded="isFiltersOpen" @click="openFilters"><i class="bi bi-sliders2" aria-hidden="true"></i>{{ t('common.filters', 'Filters') }}<span v-if="activeFilterCount" class="tour-search-count-badge">{{ activeFilterCount }}</span></button>
-                        <label class="tour-search-sort"><span>{{ t('common.sort', 'Sort') }}</span><select v-model="sort" class="public-select-input" @change="changeSort"><option value="recommended">{{ t('common.recommended', 'Recommended') }}</option><option value="price_asc">{{ t('common.price_low_high', 'Price: low to high') }}</option><option value="price_desc">{{ t('common.price_high_low', 'Price: high to low') }}</option><option value="duration_asc">{{ t('common.duration_shortest', 'Shortest duration') }}</option></select></label>
+                        <button type="button" class="public-button public-button--outline public-button--sm tour-search-filter-trigger" :aria-expanded="isFiltersOpen" :aria-label="t('common.open_filters', 'Open tour filters')" @click="openFilters"><i class="bi bi-sliders2" aria-hidden="true"></i>{{ t('common.filters', 'Filters') }}<span v-if="activeFilterCount" class="tour-search-count-badge">{{ activeFilterCount }}</span></button>
+                        <label class="tour-search-sort"><span>{{ t('common.sort_results', 'Sort results') }}</span><select v-model="sort" class="public-select-input" :aria-label="t('common.sort_results', 'Sort results')" @change="changeSort"><option value="recommended">{{ t('common.recommended', 'Recommended') }}</option><option value="price_asc">{{ t('common.price_low_high', 'Price: low to high') }}</option><option value="price_desc">{{ t('common.price_high_low', 'Price: high to low') }}</option><option value="duration_asc">{{ t('common.duration_shortest', 'Shortest duration') }}</option></select></label>
                     </div>
                 </div>
 
@@ -269,12 +291,12 @@ async function openFilters() {
                         <div class="tour-filter-panel__surface" role="dialog" :aria-modal="isFiltersOpen || undefined" :aria-label="t('common.filters', 'Filters')">
                             <div class="tour-filter-panel__header"><div><span class="public-eyebrow">{{ t('common.refine', 'Refine') }}</span><h2>{{ t('common.filters', 'Filters') }}</h2></div><button ref="closeFiltersButton" type="button" class="public-icon-button tour-filter-panel__close" :aria-label="t('common.close', 'Close')" @click="closeFilters"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>
                             <div class="tour-filter-panel__body">
-                                <fieldset v-if="facets.categories?.length" class="tour-filter-group"><legend>{{ t('common.category', 'Category') }}</legend><label v-for="category in facets.categories" :key="category.id" class="tour-filter-option"><input v-model="filterForm.category_id" type="radio" name="tour_category" :value="String(category.id)"><span>{{ category.name }}</span><small>{{ category.count }}</small></label></fieldset>
-                                <fieldset v-if="facets.duration_bands?.length" class="tour-filter-group"><legend>{{ t('common.duration', 'Duration') }}</legend><label v-for="band in facets.duration_bands" :key="`${band.min}-${band.max}`" class="tour-filter-option"><input v-model="filterForm.min_duration" type="radio" name="tour_duration" :value="String(band.min)" @change="filterForm.max_duration = band.max ? String(band.max) : ''"><span>{{ durationFacetLabel(band.min, band.max) }}</span><small>{{ band.count }}</small></label></fieldset>
-                                <fieldset v-if="facets.tags?.length" class="tour-filter-group"><legend>{{ t('common.tags', 'Themes') }}</legend><label v-for="tag in facets.tags" :key="tag.id" class="tour-filter-option"><input v-model="filterForm.tags" type="checkbox" :value="tag.slug"><span>{{ tag.name }}</span><small>{{ tag.count }}</small></label></fieldset>
-                                <fieldset class="tour-filter-group"><legend>{{ t('common.price_range', 'Price range') }}</legend><div class="tour-filter-price-fields"><label class="public-field"><span class="public-field__label">{{ t('common.minimum', 'Minimum') }}</span><input v-model="filterForm.min_price" class="public-input" type="number" min="0" inputmode="decimal"></label><label class="public-field"><span class="public-field__label">{{ t('common.maximum', 'Maximum') }}</span><input v-model="filterForm.max_price" class="public-input" type="number" min="0" inputmode="decimal"></label></div><p class="tour-filter-note">{{ t('common.tour_price_filter_note', 'Uses the tour source currency returned by search.') }}</p></fieldset>
-                                <fieldset class="tour-filter-group"><legend>{{ t('common.guest_rating', 'Guest rating') }}</legend><label v-for="rating in ratingOptions" :key="rating" class="tour-filter-option"><input v-model="filterForm.min_rating" type="radio" name="tour_rating" :value="String(rating)"><span>{{ rating }}+ {{ t('common.stars', 'stars') }}</span></label></fieldset>
-                                <label class="tour-filter-option tour-filter-option--featured"><input v-model="filterForm.featured" type="checkbox"><span>{{ t('common.featured_only', 'Featured experiences only') }}</span></label>
+                                <fieldset v-if="facets.categories?.length" class="tour-filter-group"><legend>{{ t('common.tour_category', 'Tour category') }}</legend><label v-for="category in facets.categories" :key="category.id" class="tour-filter-option" :class="{ 'is-selected': String(filterForm.category_id) === String(category.id) }"><input v-model="filterForm.category_id" type="radio" name="tour_category" :value="String(category.id)"><span>{{ category.name }}</span><small>{{ category.count }}</small></label></fieldset>
+                                <fieldset v-if="facets.duration_bands?.length" class="tour-filter-group"><legend>{{ t('common.duration', 'Duration') }}</legend><label v-for="band in facets.duration_bands" :key="`${band.min}-${band.max}`" class="tour-filter-option" :class="{ 'is-selected': String(filterForm.min_duration) === String(band.min) && String(filterForm.max_duration || '') === String(band.max || '') }"><input v-model="filterForm.min_duration" type="radio" name="tour_duration" :value="String(band.min)" @change="filterForm.max_duration = band.max ? String(band.max) : ''"><span>{{ durationFacetLabel(band.min, band.max) }}</span><small>{{ band.count }}</small></label></fieldset>
+                                <fieldset class="tour-filter-group"><legend>{{ t('common.price_range', 'Price range') }}</legend><div class="tour-filter-price-fields"><label class="public-field"><span class="public-field__label">{{ t('common.minimum', 'Minimum') }}</span><input v-model="filterForm.min_price" class="public-input" type="number" min="0" inputmode="decimal" :aria-label="t('common.minimum_price', 'Minimum price')" @input="normalizePriceBounds('min_price')"></label><label class="public-field"><span class="public-field__label">{{ t('common.maximum', 'Maximum') }}</span><input v-model="filterForm.max_price" class="public-input" type="number" min="0" inputmode="decimal" :aria-label="t('common.maximum_price', 'Maximum price')" @input="normalizePriceBounds('max_price')"></label></div><p class="tour-filter-note">{{ t('common.tour_price_filter_note', 'Uses the tour source currency returned by search.') }}</p></fieldset>
+                                <fieldset class="tour-filter-group"><legend>{{ t('common.guest_rating', 'Guest rating') }}</legend><label v-for="rating in ratingOptions" :key="rating" class="tour-filter-option" :class="{ 'is-selected': String(filterForm.min_rating) === String(rating) }"><input v-model="filterForm.min_rating" type="radio" name="tour_rating" :value="String(rating)"><span>{{ rating }}+ {{ t('common.stars', 'stars') }}</span></label></fieldset>
+                                <fieldset v-if="facets.tags?.length" class="tour-filter-group"><legend>{{ t('common.themes', 'Themes') }}</legend><label v-for="tag in facets.tags" :key="tag.id" class="tour-filter-option tour-filter-option--checkbox" :class="{ 'is-selected': filterForm.tags.includes(tag.slug) }"><input v-model="filterForm.tags" type="checkbox" :value="tag.slug"><span>{{ tag.name }}</span><small>{{ tag.count }}</small></label></fieldset>
+                                <label class="tour-filter-option tour-filter-option--checkbox tour-filter-option--featured" :class="{ 'is-selected': filterForm.featured }"><input v-model="filterForm.featured" type="checkbox"><span>{{ t('common.featured_only', 'Featured experiences only') }}</span></label>
                             </div>
                             <div class="tour-filter-panel__footer"><button type="button" class="public-button public-button--outline" @click="clearFilters">{{ t('common.clear_filters', 'Clear filters') }}</button><button type="button" class="public-button public-button--primary" @click="applyFilters">{{ t('common.apply_filters', 'Apply filters') }}</button></div>
                         </div>

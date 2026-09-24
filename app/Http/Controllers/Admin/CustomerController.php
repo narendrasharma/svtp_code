@@ -48,7 +48,7 @@ class CustomerController extends Controller
             ->map(fn (User $user): array => [
                 'value' => $user->id,
                 'label' => $user->name,
-                'meta' => trim(($user->phone ?? '').' '.($user->email ?? '')),
+                'meta' => trim('ID #'.$user->id.' · '.($user->phone ?? '').' · '.($user->email ?? '')),
             ])
             ->all();
     }

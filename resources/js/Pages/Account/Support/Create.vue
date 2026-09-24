@@ -1,7 +1,6 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import { appUrl } from '../../../appUrl';
 
 defineProps({
@@ -29,11 +28,11 @@ function submit() {
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <div class="container py-5" style="max-width: 720px;">
             <Link :href="appUrl('/account/support')" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Support Tickets</Link>
             <h1 class="section-title mt-2 mb-1">Open a Support Ticket</h1>
-            <AccountNav active="support" />
+
 
             <form class="glass-card p-3 p-md-4" @submit.prevent="submit">
                 <div class="mb-3">
@@ -79,5 +78,5 @@ function submit() {
                 <button class="btn btn-svtp" :disabled="form.processing">Submit Ticket</button>
             </form>
         </div>
-    </AppLayout>
+    </AccountLayout>
 </template>

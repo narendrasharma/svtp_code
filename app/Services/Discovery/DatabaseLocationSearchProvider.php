@@ -77,7 +77,7 @@ final class DatabaseLocationSearchProvider implements SearchProvider
                 $this->citySubtitle($city),
                 (string) $city->slug,
                 $city->image,
-                route('discover.locations', ['type' => 'city', 'id' => $city->id], false),
+                route('cities.show', $city, false),
                 $this->coordinates($city->latitude ?? null, $city->longitude ?? null),
             ) + ['sort_key' => ($city->is_featured ? '0' : '1').'|'.$city->sort_order.'|'.$city->name]);
     }

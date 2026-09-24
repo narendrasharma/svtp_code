@@ -133,6 +133,26 @@ class EnsureStaffPermission
             'admin.enquiries.index' => 'bookings.view',
             'admin.enquiries.destroy' => 'bookings.update',
 
+            // Legacy /admin/bookings compatibility aliases retain the same
+            // permissions as the canonical /admin/tour/bookings routes.
+            'admin.legacy.bookings.index' => 'bookings.view',
+            'admin.legacy.bookings.create' => 'bookings.create',
+            'admin.legacy.bookings.desk' => 'bookings.create',
+            'admin.legacy.bookings.store' => 'bookings.create',
+            'admin.legacy.bookings.show' => 'bookings.view',
+            'admin.legacy.bookings.status' => 'bookings.update',
+            'admin.legacy.bookings.cancellation.approve' => 'bookings.cancel',
+            'admin.legacy.bookings.cancellation.reject' => 'bookings.cancel',
+            'admin.legacy.bookings.refunds.store' => 'finance.refunds',
+            'admin.legacy.bookings.payments.store' => 'payments.record',
+            'admin.legacy.bookings.payments.due-date' => 'payments.record',
+            'admin.legacy.bookings.payments.remind' => 'payments.record',
+            'admin.legacy.bookings.payments.receipt' => 'bookings.view',
+            'admin.legacy.bookings.reschedule.store' => 'bookings.reschedule',
+            'admin.legacy.bookings.notes.store' => 'bookings.update',
+            'admin.legacy.bookings.share-invoice' => 'communications.send',
+            'admin.legacy.bookings.share-receipt' => 'communications.send',
+
             // Taxi module (12A.1).
             'admin.taxi.dashboard' => 'taxi.dashboard.view',
             'admin.taxi.bookings.index' => 'taxi.bookings.view',

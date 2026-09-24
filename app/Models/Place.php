@@ -21,11 +21,11 @@ class Place extends Model
      */
     public static function translatableFields(): array
     {
-        return ['name', 'description', 'meta_title', 'meta_description'];
+        return ['name', 'excerpt', 'description', 'meta_title', 'meta_description'];
     }
 
     protected $fillable = [
-        'destination_id', 'name', 'slug', 'description', 'image',
+        'destination_id', 'name', 'slug', 'excerpt', 'description', 'image',
         'latitude', 'longitude', 'is_active', 'sort_order',
         'meta_description', 'meta_title',
     ];

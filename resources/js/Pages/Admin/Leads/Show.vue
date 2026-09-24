@@ -105,7 +105,7 @@ function formatDate(value) {
                         <dt class="col-sm-4 text-muted">Assignee</dt><dd class="col-sm-8">{{ lead.assignee?.name ?? 'Unassigned' }}</dd>
                         <dt class="col-sm-4 text-muted">Customer</dt><dd class="col-sm-8">{{ lead.customer?.name ?? 'Not linked' }}</dd>
                         <dt v-if="lead.enquiry" class="col-sm-4 text-muted">From enquiry</dt><dd v-if="lead.enquiry" class="col-sm-8">#{{ lead.enquiry.id }} ({{ lead.enquiry.enquiry_type }})</dd>
-                        <dt v-if="lead.converted_booking" class="col-sm-4 text-muted">Booking</dt><dd v-if="lead.converted_booking" class="col-sm-8"><Link :href="appUrl(`/admin/bookings/${lead.converted_booking.id}`)">{{ lead.converted_booking.booking_reference_id }}</Link></dd>
+                        <dt v-if="lead.converted_booking" class="col-sm-4 text-muted">Tour Booking</dt><dd v-if="lead.converted_booking" class="col-sm-8"><Link :href="appUrl(`/admin/tour/bookings/${lead.converted_booking.id}`)">{{ lead.converted_booking.booking_reference_id }}</Link></dd>
                         <dt v-if="lead.lost_reason" class="col-sm-4 text-muted">Lost reason</dt><dd v-if="lead.lost_reason" class="col-sm-8">{{ lead.lost_reason }}</dd>
                     </dl>
                     <p v-if="lead.summary" class="small mt-3 mb-0"><span class="text-muted">Summary:</span> {{ lead.summary }}</p>

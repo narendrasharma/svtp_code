@@ -44,7 +44,7 @@ class Destination extends Model
      */
     public static function translatableFields(): array
     {
-        return ['name', 'description', 'meta_title', 'meta_description'];
+        return ['name', 'excerpt', 'description', 'meta_title', 'meta_description'];
     }
 
     /**
@@ -71,6 +71,7 @@ class Destination extends Model
         'destination_type',
         'name',
         'slug',
+        'excerpt',
         'description',
         'image',
         'latitude',

@@ -89,7 +89,7 @@ function submit() {
             <div v-if="form.errors.body" class="text-danger small mb-2">{{ form.errors.body }}</div>
 
             <label for="message-url" class="form-label small">Action link <span class="text-muted">(optional, must start with /)</span></label>
-            <input id="message-url" v-model="form.action_url" class="form-control mb-3" maxlength="500" placeholder="/admin/bookings" />
+            <input id="message-url" v-model="form.action_url" class="form-control mb-3" maxlength="500" placeholder="/admin/tour/bookings" />
 
             <button class="btn btn-svtp" :disabled="form.processing || !form.user_ids.length">Send Message</button>
             <Link :href="appUrl('/admin/communication-logs')" class="btn btn-link btn-sm">View message log</Link>

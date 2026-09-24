@@ -75,6 +75,12 @@ class TaxiBookingController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Taxi/Bookings/Form', [
+            'adminBreadcrumbs' => [
+                ['label' => 'Dashboard', 'href' => '/admin/dashboard'],
+                ['label' => 'Taxi', 'href' => '/admin/taxi/dashboard'],
+                ['label' => 'Bookings', 'href' => '/admin/taxi/bookings'],
+                ['label' => 'New Taxi Booking'],
+            ],
             'vehicleTypes' => VehicleType::active()->get(['id', 'name', 'passenger_capacity']),
             'vendors' => VendorProfile::where('is_active', true)->orderBy('business_name')->get(['id', 'business_name']),
             'tripTypes' => collect(TripType::cases())

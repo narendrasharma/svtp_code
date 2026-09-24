@@ -14,7 +14,7 @@ const props = defineProps({
     paymentStatuses: { type: Array, default: () => [] },
 });
 
-const endpoint = appUrl('/admin/bookings');
+const endpoint = appUrl('/admin/tour/bookings');
 const filters = useForm({
     search: props.filters.search ?? '',
     status: props.filters.status ?? '',

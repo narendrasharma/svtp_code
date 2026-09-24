@@ -1,6 +1,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import FieldHelp from '../../../Components/Admin/FieldHelp.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
@@ -57,9 +58,9 @@ function submit() {
                 <div class="col-md-4"><label for="min-amount" class="form-label">Min booking (₹)</label><input id="min-amount" v-model="form.minimum_booking_amount" type="number" step="0.01" min="0" class="form-control" /></div>
                 <div class="col-md-4"><label for="starts" class="form-label">Starts at</label><input id="starts" v-model="form.starts_at" type="datetime-local" class="form-control" /></div>
                 <div class="col-md-4"><label for="ends" class="form-label">Ends at</label><input id="ends" v-model="form.ends_at" type="datetime-local" class="form-control" /></div>
-                <div class="col-md-4"><label for="usage" class="form-label">Usage limit</label><input id="usage" v-model="form.usage_limit" type="number" min="1" class="form-control" /></div>
-                <div class="col-md-4"><label for="per-user" class="form-label">Per-user limit</label><input id="per-user" v-model="form.usage_limit_per_user" type="number" min="1" class="form-control" /></div>
-                <div class="col-md-4"><label for="scope" class="form-label">Scope*</label><select id="scope" v-model="form.scope" class="form-select"><option value="global">All tours</option><option value="vendor">Selected vendor</option><option value="tours">Selected tours</option></select></div>
+                <div class="col-md-4"><label for="usage" class="form-label">Usage limit <FieldHelp text="The maximum number of times this coupon can be used across all customers. Example: enter 100 to allow 100 total redemptions." /></label><input id="usage" v-model="form.usage_limit" type="number" min="1" class="form-control" /></div>
+                <div class="col-md-4"><label for="per-user" class="form-label">Per-user limit <FieldHelp text="The maximum number of times one customer can use this coupon. Example: enter 1 for one use per customer." /></label><input id="per-user" v-model="form.usage_limit_per_user" type="number" min="1" class="form-control" /></div>
+                <div class="col-md-4"><label for="scope" class="form-label">Scope* <FieldHelp text="Choose where this coupon can be used: all tours, one vendor's tours, or selected tours." /></label><select id="scope" v-model="form.scope" class="form-select"><option value="global">All tours</option><option value="vendor">Selected vendor</option><option value="tours">Selected tours</option></select></div>
                 <div v-if="form.scope !== 'global'" class="col-md-6"><label for="vendor" class="form-label">Vendor</label><select id="vendor" v-model="form.vendor_profile_id" class="form-select"><option value="">Select vendor</option><option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">{{ vendor.business_name }}</option></select></div>
                 <div v-if="form.scope === 'tours'" class="col-12"><label class="form-label">Tours</label><div class="border rounded p-2" style="max-height: 220px; overflow: auto;"><div v-for="tour in tours" :key="tour.id" class="form-check"><input :id="`tour-${tour.id}`" v-model="form.tour_ids" :value="tour.id" type="checkbox" class="form-check-input" /><label :for="`tour-${tour.id}`" class="form-check-label small">{{ tour.title }}</label></div></div></div>
                 <div class="col-md-6"><div class="form-check mt-4"><input id="active" v-model="form.is_active" type="checkbox" class="form-check-input" /><label for="active" class="form-check-label">Active</label></div></div>

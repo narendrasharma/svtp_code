@@ -38,12 +38,17 @@ const navigation = computed(() => [
     { key: 'about', label: t('navigation.about', 'About'), href: '/about' },
 ].filter(Boolean));
 
-const accountLink = computed(() => authUser.value
-    ? { label: t('navigation.account', 'My Account'), href: '/account' }
-    : { label: t('navigation.sign_in', 'Sign in'), href: '/login' });
+const accountLink = computed(() => {
+    if (!authUser.value) return { label: t('navigation.sign_in', 'Sign in'), href: '/login' };
+    if (authUser.value.role === 'admin') return { label: t('common.admin_console', 'Admin Console'), href: '/admin/dashboard' };
+    if (authUser.value.role === 'vendor') return { label: t('common.vendor_dashboard', 'Vendor Dashboard'), href: '/vendor' };
+
+    return { label: t('navigation.account', 'My Account'), href: '/account' };
+});
 
 function isActive(link) {
-    return currentPath.value === link.href || currentPath.value.startsWith(link.href + '/');
+    const href = appUrl(link.href);
+    return currentPath.value === href || currentPath.value.startsWith(href + '/');
 }
 
 function closeMobile() {

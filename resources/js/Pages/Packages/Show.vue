@@ -6,6 +6,7 @@ import { appUrl } from '../../appUrl';
 import { useLocalization } from '../../i18n';
 import PublicLayout from '../../Layouts/PublicLayout.vue';
 import SeoHead from '../../Components/SeoHead.vue';
+import DateField from '../../Components/Public/Search/DateField.vue';
 import ImageWithFallback from '../../Components/Public/Media/ImageWithFallback.vue';
 import MoneyDisplay from '../../Components/Public/UI/MoneyDisplay.vue';
 import RatingDisplay from '../../Components/Public/UI/RatingDisplay.vue';
@@ -360,7 +361,7 @@ onBeforeUnmount(() => {
                             <span class="public-eyebrow">{{ t('common.plan_your_tour', 'Plan your tour') }}</span>
                             <h2>{{ t('common.your_tour_details', 'Your tour details') }}</h2>
                             <form class="tour-booking-form" @submit.prevent="updateQuote">
-                                <label class="public-field"><span class="public-field__label">{{ t('common.travel_date', 'Travel date') }}</span><input v-model="selection.travel_date" class="public-input" type="date" :aria-describedby="props.context.invalid_date && !selection.travel_date ? 'tour-date-error' : undefined"></label>
+                                <DateField v-model="selection.travel_date" :label="t('common.travel_date', 'Travel date')" id="tour-detail-date" min="today" />
                                 <p v-if="props.context.invalid_date && !selection.travel_date" id="tour-date-error" class="tour-booking-card__error" role="alert">{{ t('common.invalid_travel_date', 'Please choose a valid travel date.') }}</p>
                                 <div class="tour-booking-form__party"><label class="public-field"><span class="public-field__label">{{ t('common.adults', 'Adults') }}</span><input v-model.number="selection.adults" class="public-input" type="number" min="1" max="30"></label><label class="public-field"><span class="public-field__label">{{ t('common.children', 'Children') }}</span><input v-model.number="selection.children" class="public-input" type="number" min="0" max="30"></label></div>
                                 <button type="submit" class="public-button public-button--outline tour-booking-form__update" :disabled="quoteLoading"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>{{ quoteLoading ? t('common.checking', 'Checking…') : t('common.update_details', 'Update details') }}</button>

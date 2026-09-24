@@ -91,6 +91,8 @@ class PlaceController extends Controller
             'name' => $place->name,
             'display_name' => $place->translated('name', $locale) ?? $place->name,
             'slug' => $place->slug,
+            'excerpt' => $place->excerpt,
+            'display_excerpt' => $place->translated('excerpt', $locale) ?? $place->excerpt,
             'description' => $place->description,
             'display_description' => $place->translated('description', $locale) ?? $place->description,
             'image' => $place->image,

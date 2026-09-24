@@ -82,10 +82,9 @@ class AdminNavigationTest extends TestCase
         $routes = collect(AdminNavigation::flatItems())->pluck('route')->all();
         $labels = collect(AdminNavigation::flatItems())->pluck('label')->all();
 
-        // settings + seo-settings intentionally share the settings page;
-        // everything else must be unique.
-        $this->assertSame(count($routes), count(array_unique($routes)) + 1);
+        $this->assertSame(count($routes), count(array_unique($routes)));
         $this->assertSame(count($labels), count(array_unique($labels)));
+        $this->assertNotContains('SEO Settings', $labels);
     }
 
     public function test_no_duplicate_profile_or_settings_links(): void
@@ -135,7 +134,7 @@ class AdminNavigationTest extends TestCase
 
         $this->assertNotEmpty($matches);
         $labels = collect($matches)->pluck('label')->all();
-        $this->assertContains('SEO Settings', $labels);
+        $this->assertContains('Settings', $labels);
     }
 
     public function test_sidebar_search_matches_keywords_and_groups(): void
@@ -147,7 +146,7 @@ class AdminNavigationTest extends TestCase
         $this->assertContains('Coupons', collect($coupon)->pluck('label')->all());
 
         $refund = AdminNavigation::searchFiltered($filtered, 'refund');
-        $this->assertContains('All Bookings', collect($refund)->pluck('label')->all());
+        $this->assertContains('All Tour Bookings', collect($refund)->pluck('label')->all());
     }
 
     public function test_guests_and_customers_get_empty_navigation(): void

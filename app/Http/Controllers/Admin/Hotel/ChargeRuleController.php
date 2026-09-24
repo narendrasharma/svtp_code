@@ -77,7 +77,7 @@ class ChargeRuleController extends Controller
             'charge_type' => ['required', 'string', Rule::in(HotelChargeRule::TYPES)],
             'calculation' => ['required', 'string', Rule::in(HotelChargeRule::CALCULATIONS)],
             'value' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
+            'currency' => ['nullable', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
             'included_in_price' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:9999'],

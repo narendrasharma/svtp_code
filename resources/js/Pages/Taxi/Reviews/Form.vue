@@ -1,7 +1,6 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
@@ -39,9 +38,9 @@ function stars(n) {
 }
 </script>
 <template>
-<AppLayout><div class="container py-4"><AccountNav active="taxi" />
+<AccountLayout><div class="container py-4">
 <Link :href="appUrl('/account/taxi/bookings')">← My taxi bookings</Link>
-<h2 class="my-3">Rate your trip · {{ booking.reference }}</h2>
+<h1 class="my-3">Rate your trip · {{ booking.reference }}</h1>
 <p class="text-muted">{{ booking.trip_type }} · Pickup {{ booking.pickup_at }} · Status: {{ booking.status }}</p>
 
 <div v-if="existing" class="card p-3 mb-3">
@@ -71,5 +70,5 @@ function stars(n) {
 <button class="btn btn-svtp mt-3" :disabled="form.processing">Submit review</button>
 <p class="small text-muted mt-2 mb-0">One review per trip. Reviews may be moderated before they appear.</p>
 </form>
-</div></AppLayout>
+</div></AccountLayout>
 </template>

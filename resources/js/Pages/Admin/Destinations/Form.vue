@@ -16,6 +16,7 @@ const props = defineProps({
 const form = useForm({
     name: props.destination?.name ?? '',
     slug: props.destination?.slug ?? '',
+    excerpt: props.destination?.excerpt ?? '',
     country_id: props.destination?.country_id ?? '',
     state_id: props.destination?.state_id ?? '',
     city_id: props.destination?.city_id ?? '',
@@ -141,6 +142,11 @@ function selectImage(event) {
                     <small class="text-danger">{{ form.errors.longitude }}</small>
                 </div>
             </div>
+
+            <label class="form-label mt-3" for="destination-excerpt">Excerpt / Short Description</label>
+            <textarea id="destination-excerpt" v-model="form.excerpt" class="form-control" rows="2" maxlength="500" placeholder="Short summary for cards and page hero areas."></textarea>
+            <small class="d-block text-muted">Short summary used in cards and page hero areas. Keep it concise; the full description appears below.</small>
+            <small class="text-danger">{{ form.errors.excerpt }}</small>
 
             <label class="form-label mt-3">Description</label>
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Introduce this destination to travellers."></textarea>

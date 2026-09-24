@@ -43,7 +43,7 @@ class AdminNavigation
             ],
             [
                 'key' => 'tours',
-                'label' => 'Tours',
+                'label' => 'Travel Content',
                 'module' => ModuleManager::TOURS,
                 'items' => [
                     self::item('packages', 'Tour Packages', 'bi-map', 'admin.packages.index', null, 'tours.view', ['tours', 'packages', 'itinerary', 'price'], 10),
@@ -62,11 +62,11 @@ class AdminNavigation
             ],
             [
                 'key' => 'bookings',
-                'label' => 'Bookings',
+                'label' => 'Tour Bookings',
                 'items' => [
-                    self::item('bookings-new', 'New Booking', 'bi-plus-circle', 'admin.bookings.desk', null, 'bookings.create', ['new booking', 'reservation desk', 'walk-in', 'walk in', 'phone booking', 'offline'], 5),
-                    self::item('bookings', 'All Bookings', 'bi-calendar-check', 'admin.bookings.index', null, 'bookings.view', ['booking', 'reservation', 'cancellation', 'refund', 'reference', 'trip', 'payment', 'reschedule'], 10),
-                    self::item('enquiries', 'Enquiries', 'bi-chat-left-text', 'admin.enquiries.index', null, 'bookings.view', ['enquiry', 'inquiry', 'lead', 'contact', 'callback'], 20),
+                    self::item('bookings-new', 'New Tour Booking', 'bi-plus-circle', 'admin.bookings.desk', null, 'bookings.create', ['new tour booking', 'reservation desk', 'walk-in', 'walk in', 'phone booking', 'offline'], 5),
+                    self::item('bookings', 'All Tour Bookings', 'bi-calendar-check', 'admin.bookings.index', null, 'bookings.view', ['tour booking', 'booking', 'reservation', 'cancellation', 'refund', 'reference', 'trip', 'payment', 'reschedule'], 10),
+                    self::item('enquiries', 'Travel Enquiries', 'bi-chat-left-text', 'admin.enquiries.index', null, 'bookings.view', ['enquiry', 'inquiry', 'travel lead', 'contact', 'callback'], 20),
                 ],
             ],
             [
@@ -96,7 +96,8 @@ class AdminNavigation
                 'module' => ModuleManager::HOTELS,
                 'items' => [
                     self::item('hotel-properties', 'Properties', 'bi-buildings', 'admin.hotel.properties.index', null, 'hotel.properties.view', ['hotel', 'property', 'resort', 'villa', 'homestay', 'listing'], 10),
-                    self::item('hotel-reviews', 'Reviews', 'bi-star', 'admin.hotel.reviews.index', null, 'hotel.reviews.view', ['hotel review', 'rating', 'verified stay', 'moderation'], 12),
+                    self::item('hotel-bookings', 'Hotel Bookings', 'bi-calendar2-check', 'admin.hotel.bookings.index', null, 'hotel.bookings.view', ['hotel booking', 'reservation', 'guest stay', 'check in', 'check out'], 11),
+                    self::item('hotel-reviews', 'Hotel Reviews', 'bi-star', 'admin.hotel.reviews.index', null, 'hotel.reviews.view', ['hotel review', 'rating', 'verified stay', 'moderation'], 12),
                     self::item('hotel-inventory', 'Inventory', 'bi-calendar-check', 'admin.hotel.inventory.index', null, 'hotel.inventory.view', ['inventory', 'availability', 'calendar', 'stop sell', 'blocked'], 15),
                     self::item('hotel-rate-plans', 'Rate Plans', 'bi-currency-exchange', 'admin.hotel.rate-plans.index', null, 'hotel.rate_plans.view', ['rate plan', 'pricing', 'rates', 'meal plan', 'season'], 16),
                     self::item('hotel-daily-rates', 'Daily Rates', 'bi-calendar2-week', 'admin.hotel.daily-rates.index', null, 'hotel.pricing.view', ['daily rate', 'price calendar', 'seasonal price'], 17),
@@ -175,10 +176,9 @@ class AdminNavigation
                 'key' => 'system',
                 'label' => 'System',
                 'items' => [
-                    self::item('settings', 'Settings', 'bi-gear', 'admin.settings.index', null, 'settings.view', ['setting', 'configuration', 'general', 'contact', 'social', 'marketplace commission'], 10),
+                    self::item('settings', 'Settings', 'bi-gear', 'admin.settings.index', null, 'settings.view', ['setting', 'configuration', 'general', 'contact', 'social', 'marketplace commission', 'seo', 'meta', 'search engine', 'google', 'og image', 'index'], 10),
                     self::item('languages', 'Languages', 'bi-translate', 'admin.languages.index', null, 'settings.view', ['language', 'locale', 'translation', 'rtl', 'arabic', 'hindi'], 15),
                     self::item('currencies', 'Currencies', 'bi-currency-exchange', 'admin.currencies.index', null, 'currencies.view', ['currency', 'exchange rate', 'fx', 'money', 'usd', 'inr', 'display currency'], 16),
-                    self::item('settings-seo', 'SEO Settings', 'bi-search', 'admin.settings.index', null, 'settings.view', ['seo', 'meta', 'search engine', 'google', 'og image', 'index'], 20),
                     self::item('modules', 'Modules', 'bi-grid-1x2', 'admin.modules.index', null, 'modules.manage', ['module', 'taxi', 'hotels', 'tours module', 'enable', 'disable'], 30),
                     self::item('number-series', 'Number Series', 'bi-123', 'admin.number-series.index', null, 'settings.view', ['number series', 'reference', 'prefix', 'sequence', 'booking reference', 'invoice number'], 40),
                     self::item('reports', 'Reports', 'bi-bar-chart', 'admin.reports.index', null, 'reports.view', ['report', 'analytics', 'booking report', 'finance report', 'export', 'csv', 'commission'], 50),
@@ -285,6 +285,11 @@ class AdminNavigation
     public static function activeGroupKey(string $currentPath): ?string
     {
         $path = '/'.ltrim(strtok($currentPath, '?'), '/');
+
+        if ($path === '/admin/bookings' || str_starts_with($path, '/admin/bookings/')) {
+            return 'bookings';
+        }
+
         $bestKey = null;
         $bestLength = 0;
 

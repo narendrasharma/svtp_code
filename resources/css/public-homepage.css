@@ -5,9 +5,10 @@
 
 .homepage-hero {
     position: relative;
+    z-index: 2;
     isolation: isolate;
     min-height: 41rem;
-    overflow: hidden;
+    overflow: visible;
     background: radial-gradient(circle at 78% 35%, rgb(200 120 82 / 18%), transparent 21rem), linear-gradient(120deg, #0b3539 0%, #123f42 48%, #203f3d 100%);
     color: #fff;
 }
@@ -20,7 +21,7 @@
     border: 1px solid rgb(255 253 249 / 11%);
     border-radius: 50%;
     content: "";
-    inset-inline-end: -13rem;
+    inset-inline-end: 0;
     top: 8rem;
     transform: rotate(-18deg);
 }
@@ -33,7 +34,7 @@
     border-top: 1px solid rgb(234 201 183 / 14%);
     border-radius: 50%;
     content: "";
-    inset-inline-end: -9rem;
+    inset-inline-end: 0;
     bottom: -8rem;
     transform: rotate(-8deg);
 }
@@ -41,6 +42,7 @@
 .homepage-hero__image, .homepage-hero__texture { position: absolute; z-index: -3; inset: 0; }
 .homepage-hero__image { background-position: center; background-size: cover; filter: saturate(0.82) contrast(1.04); opacity: 0.68; }
 .homepage-hero__texture {
+    overflow: hidden;
     z-index: -2;
     background: linear-gradient(90deg, rgb(7 35 38 / 98%) 0%, rgb(8 43 46 / 92%) 38%, rgb(11 47 48 / 66%) 72%, rgb(11 38 40 / 76%) 100%), radial-gradient(circle at 84% 16%, rgb(200 120 82 / 32%), transparent 23rem), repeating-linear-gradient(112deg, transparent 0 7rem, rgb(255 253 249 / 2%) 7.1rem 7.17rem);
 }
@@ -55,27 +57,17 @@
 
 .homepage-search { align-self: center; width: 100%; max-width: 45rem; margin-inline-start: auto; border: 1px solid rgb(255 255 255 / 62%); border-radius: var(--public-radius-xl); background: rgb(255 253 249 / 97%); box-shadow: 0 2rem 5rem rgb(4 24 26 / 36%), 0 0 0 0.5rem rgb(255 253 249 / 5%); color: var(--public-text); padding: clamp(1.25rem, 2.2vw, 1.8rem); }
 .homepage-search .public-search-tabs { margin-bottom: 1.4rem; }
-.homepage-search__fields { display: grid; align-items: end; gap: 0.75rem; grid-template-columns: minmax(12rem, 1.7fr) repeat(3, minmax(5.7rem, 0.85fr)) auto; }
+.homepage-search__fields { display: grid; align-items: end; gap: 0.75rem; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; }
 .homepage-search__fields > * { min-width: 0; }
 .homepage-search .public-input { min-width: 0; padding-inline: 0.75rem; }
 .homepage-search .public-location-field__input { padding-inline-start: 2.7rem; }
-.homepage-search--tours .homepage-search__fields { grid-template-columns: minmax(11rem, 1.55fr) minmax(8.25rem, 1fr) minmax(4.8rem, 0.7fr) minmax(4.8rem, 0.7fr) auto; }
+.homepage-search--tours .homepage-search__fields { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+.homepage-search--taxi .homepage-search__fields { grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, .8fr); }
+.homepage-search--taxi .homepage-search__fields .public-button { width: 100%; }
 .homepage-search__location { min-width: 0; }
-.homepage-search .public-button { min-height: 2.9rem; white-space: nowrap; }
+.homepage-search .public-button { min-height: var(--public-control-height); white-space: nowrap; }
 .homepage-search__empty { margin: 1rem 0 0; color: var(--public-text-muted); }
 
-.public-location-field { position: relative; }
-.public-location-field__control { position: relative; display: block; }
-.public-location-field__input { padding-inline-start: 2.7rem; }
-.public-location-field__icon { position: absolute; z-index: 1; top: 50%; color: var(--public-brand); pointer-events: none; inset-inline-start: 0.95rem; transform: translateY(-50%); }
-.public-location-field__spinner { position: absolute; top: 0.9rem; inset-inline-end: 0.85rem; }
-.public-location-field__suggestions { position: absolute; z-index: 10; top: calc(100% + 0.45rem); right: 0; left: 0; max-height: 18rem; overflow: auto; margin: 0; padding: 0.35rem; border: 1px solid var(--public-border); border-radius: var(--public-radius-md); background: var(--public-surface-elevated); box-shadow: var(--public-shadow-md); list-style: none; }
-.public-location-field__suggestions button { display: flex; width: 100%; align-items: center; gap: 0.7rem; border: 0; border-radius: var(--public-radius-sm); background: transparent; color: var(--public-text); cursor: pointer; padding: 0.65rem; text-align: start; }
-.public-location-field__suggestions button:hover, .public-location-field__suggestions button:focus-visible, .public-location-field__suggestions button.is-active { background: var(--public-brand-soft); outline: 0; }
-.public-location-field__suggestion-icon { display: grid; width: 2rem; height: 2rem; flex: 0 0 2rem; place-items: center; border-radius: 50%; background: var(--public-accent-soft); color: var(--public-accent); }
-.public-location-field__suggestions strong, .public-location-field__suggestions small { display: block; }
-.public-location-field__suggestions strong { font-size: 0.86rem; }
-.public-location-field__suggestions small { margin-top: 0.15rem; color: var(--public-text-muted); font-size: 0.72rem; }
 
 .homepage-destinations-section { background: var(--public-bg); }
 .homepage-destination-mosaic { display: grid; gap: 1rem; grid-auto-rows: minmax(11rem, 1fr); grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -128,7 +120,10 @@
 .homepage-rated-lead p { max-width: 16rem; margin: 1rem 0 0; color: var(--public-text-muted); }
 .homepage-rated-list { display: grid; gap: 0.75rem; }
 .homepage-hotel-card--compact { display: grid; grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 1.3fr); box-shadow: none; }
-.homepage-hotel-card--compact .public-media-frame { height: 100%; min-height: 9rem; }
+.homepage-hotel-card--compact .public-media-frame { width: 100%; height: 100%; min-height: 9rem; }
+.homepage-hotel-card--compact .public-media-frame > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.homepage-hotel-card--compact .homepage-hotel-card__body { min-width: 0; overflow: hidden; }
+.homepage-hotel-card--compact .homepage-hotel-card__footer { min-width: 0; flex-wrap: wrap; }
 .homepage-hotel-card--compact .homepage-hotel-card__body { min-height: 9rem; }
 
 .homepage-place-gallery { display: grid; gap: 1rem; grid-auto-rows: 13rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }

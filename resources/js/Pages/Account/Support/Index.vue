@@ -1,7 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import Pagination from '../../../Components/Pagination.vue';
 import { appUrl } from '../../../appUrl';
 
@@ -15,13 +14,13 @@ function statusBadge(status) {
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <div class="container py-5" style="max-width: 960px;">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
                 <h1 class="section-title mb-0">Support Tickets</h1>
                 <Link :href="appUrl('/account/support/create')" class="btn btn-svtp btn-sm"><i class="bi bi-plus-lg me-1"></i>New Ticket</Link>
             </div>
-            <AccountNav active="support" />
+
 
             <div v-if="tickets.data.length" class="d-flex flex-column gap-2">
                 <Link
@@ -42,5 +41,5 @@ function statusBadge(status) {
             <p v-else class="text-muted">No tickets yet. Open one and our team will reply here.</p>
             <Pagination :links="tickets.links" />
         </div>
-    </AppLayout>
+    </AccountLayout>
 </template>

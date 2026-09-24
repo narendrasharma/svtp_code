@@ -13,6 +13,10 @@ class EnquiryController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Enquiries', [
+            'adminBreadcrumbs' => [
+                ['label' => 'Dashboard', 'href' => '/admin/dashboard'],
+                ['label' => 'Travel Enquiries'],
+            ],
             'enquiries' => Enquiry::with('tourPackage:id,title')->latest()->paginate(20),
         ]);
     }

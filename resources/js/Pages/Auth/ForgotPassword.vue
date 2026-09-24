@@ -1,68 +1,20 @@
 <script setup>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
+import { appUrl } from '../../appUrl';
+import PublicAuthShell from '../../Components/Public/Layout/PublicAuthShell.vue';
 
-defineProps({
-    status: {
-        type: String,
-    },
-});
-
-const form = useForm({
-    email: '',
-});
-
-const submit = () => {
-    form.post(route('password.email'));
-};
+defineProps({ status: { type: String, default: null } });
+const form = useForm({ email: '' });
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Forgot Password" />
-
-        <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
-        </div>
-
-        <div
-            v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
-        >
-            {{ status }}
-        </div>
-
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Email Password Reset Link
-                </PrimaryButton>
-            </div>
+    <PublicAuthShell title="Reset your password" intro="Enter your email and we’ll send you a secure password reset link.">
+        <p v-if="status" class="public-auth-status" role="status">{{ status }}</p>
+        <form class="public-auth-form" @submit.prevent="form.post(appUrl('/forgot-password'))">
+            <label class="public-auth-field" for="forgot-email">Email address<input id="forgot-email" v-model="form.email" class="public-input" type="email" autocomplete="email" required autofocus></label>
+            <small v-if="form.errors.email" class="public-auth-error">{{ form.errors.email }}</small>
+            <button type="submit" class="public-button public-button--primary" :disabled="form.processing">{{ form.processing ? 'Sending…' : 'Email reset link' }}</button>
         </form>
-    </GuestLayout>
+        <p class="public-auth-footer"><a :href="appUrl('/login')">Back to sign in</a></p>
+    </PublicAuthShell>
 </template>

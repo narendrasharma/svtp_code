@@ -30,6 +30,11 @@ const data = computed(() => props.landing || {
     seo: props.seo,
 });
 const heroImage = computed(() => mediaUrl(data.value.image));
+const heroDescription = computed(() => {
+    const excerpt = data.value.excerpt || props.destination.display_excerpt;
+    if (excerpt) return excerpt;
+    return String(data.value.description || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 240);
+});
 const geographyLabel = computed(() => Object.values(data.value.geography || {}).filter(Boolean).join(' · '));
 const placeItems = computed(() => (data.value.places || []).map((place) => ({
     ...place,
@@ -57,7 +62,7 @@ function destinationUrl(slug) {
             <section class="geo-detail-hero">
                 <div class="geo-detail-hero__media"><ImageWithFallback :src="heroImage" :alt="data.name" aspect="editorial" kind="destination" :label="t('common.destination', 'Destination')" loading="eager" /></div>
                 <div class="geo-detail-hero__shade"></div>
-                <div class="container geo-detail-hero__content">
+                <div class="public-container geo-detail-hero__content">
                     <nav class="geo-breadcrumbs" aria-label="Breadcrumb">
                         <Link :href="appUrl('/')">{{ t('common.home', 'Home') }}</Link>
                         <span aria-hidden="true">/</span>
@@ -67,11 +72,11 @@ function destinationUrl(slug) {
                     </nav>
                     <p v-if="geographyLabel" class="public-eyebrow">{{ geographyLabel }}</p>
                     <h1>{{ data.name }}</h1>
-                    <p v-if="data.description" class="geo-detail-hero__lede">{{ data.description }}</p>
+                    <p v-if="heroDescription" class="geo-detail-hero__lede">{{ heroDescription }}</p>
                 </div>
             </section>
 
-            <section v-if="data.description" class="container geo-editorial-intro">
+            <section v-if="data.description" class="public-container geo-editorial-intro">
                 <div>
                     <p class="public-eyebrow">{{ t('common.about', 'About') }}</p>
                     <h2>{{ t('common.a_place_to_begin', 'A place to begin') }}</h2>
@@ -79,7 +84,7 @@ function destinationUrl(slug) {
                 <p>{{ data.description }}</p>
             </section>
 
-            <section v-if="placeItems.length" class="container geo-section">
+            <section v-if="placeItems.length" class="public-container geo-section">
                 <SectionHeading
                     :eyebrow="t('common.places_to_explore', 'Places to explore')"
                     :title="t('common.in_this_destination', 'Look closer at this destination')"
@@ -90,14 +95,14 @@ function destinationUrl(slug) {
                 </div>
             </section>
 
-            <section v-else class="container geo-sparse-note">
+            <section v-else class="public-container geo-sparse-note">
                 <i class="bi bi-compass" aria-hidden="true"></i>
                 <p>{{ t('common.destination_places_empty', 'Places to explore will be added as this destination guide grows.') }}</p>
                 <Link :href="appUrl('/places')" class="public-button public-button--outline public-button--sm">{{ t('common.discover_places', 'Discover places') }}</Link>
             </section>
 
             <section v-if="data.hotels?.length" class="geo-commercial-section">
-                <div class="container geo-section">
+                <div class="public-container geo-section">
                     <SectionHeading
                         :eyebrow="t('common.stays', 'Stays')"
                         :title="t('common.stays_in_destination', 'Stays in this destination')"
@@ -110,7 +115,7 @@ function destinationUrl(slug) {
                 </div>
             </section>
 
-            <section v-if="data.tours?.length" class="container geo-section">
+            <section v-if="data.tours?.length" class="public-container geo-section">
                 <SectionHeading
                     :eyebrow="t('common.tours', 'Tours')"
                     :title="t('common.experiences_in_destination', 'Experiences connected to this destination')"
@@ -122,7 +127,7 @@ function destinationUrl(slug) {
                 <div class="geo-section-action"><Link :href="appUrl(`/search/tours?q=${encodeURIComponent(data.name)}`)" class="public-button public-button--outline">{{ t('common.explore_tours', 'Explore tours') }}</Link></div>
             </section>
 
-            <section v-if="!data.hotels?.length && !data.tours?.length" class="container geo-discovery-cta">
+            <section v-if="!data.hotels?.length && !data.tours?.length" class="public-container geo-discovery-cta">
                 <div>
                     <p class="public-eyebrow">{{ t('common.keep_discovering', 'Keep discovering') }}</p>
                     <h2>{{ t('common.more_journey_to_find', 'There is more of the journey to find') }}</h2>

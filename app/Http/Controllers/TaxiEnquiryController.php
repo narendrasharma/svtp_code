@@ -15,6 +15,7 @@ use App\Support\TaxiSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -249,7 +250,7 @@ class TaxiEnquiryController extends Controller
                 'name' => $vehicleType->name,
                 'description' => $vehicleType->description,
                 'icon' => $vehicleType->icon,
-                'image_path' => $vehicleType->image_path,
+                'image' => $this->vehicleTypeImage($vehicleType->image_path),
                 'passenger_capacity' => $vehicleType->passenger_capacity,
                 'luggage_capacity' => $vehicleType->luggage_capacity,
             ],
@@ -259,5 +260,18 @@ class TaxiEnquiryController extends Controller
             'rate_card' => ['name' => $quote['snapshot']['rate_card']['name']],
             'route' => $metrics,
         ];
+    }
+
+    private function vehicleTypeImage(?string $imagePath): ?string
+    {
+        if ($imagePath === null || trim($imagePath) === '') {
+            return null;
+        }
+
+        if (preg_match('/^https?:\/\//i', $imagePath) === 1) {
+            return $imagePath;
+        }
+
+        return Storage::disk('public')->url($imagePath);
     }
 }

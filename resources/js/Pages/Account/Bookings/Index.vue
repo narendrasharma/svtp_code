@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '../../../Layouts/AppLayout.vue';
+import AccountLayout from '../../../Layouts/AccountLayout.vue';
 import SeoHead from '../../../Components/SeoHead.vue';
-import AccountNav from '../../../Components/AccountNav.vue';
 import Pagination from '../../../Components/Pagination.vue';
 import ImageWithFallback from '../../../Components/Public/Media/ImageWithFallback.vue';
 import MoneyDisplay from '../../../Components/Public/UI/MoneyDisplay.vue';
-import Badge from '../../../Components/Public/UI/Badge.vue';
+import BookingStatus from '../../../Components/Public/UI/BookingStatus.vue';
 import { appUrl } from '../../../appUrl';
 import { useLocalization } from '../../../i18n';
 
@@ -54,33 +53,16 @@ function durationLabel(packageData) {
     return `${days} ${days === 1 ? t('common.day', 'day') : t('common.days', 'days')}${nights > 0 ? ` · ${nights} ${nights === 1 ? t('common.night', 'night') : t('common.nights', 'nights')}` : ''}`;
 }
 
-function statusVariant(status) {
-    return status === 'cancelled' ? 'neutral' : status === 'confirmed' || status === 'completed' ? 'brand' : 'accent';
-}
-
-function statusLabel(status) {
-    return {
-        pending: t('common.pending', 'Pending'),
-        confirmed: t('common.confirmed', 'Confirmed'),
-        completed: t('common.completed', 'Completed'),
-        cancelled: t('common.cancelled', 'Cancelled'),
-        unpaid: t('common.unpaid', 'Unpaid'),
-        partially_paid: t('common.partially_paid', 'Partially paid'),
-        paid: t('common.paid', 'Paid'),
-        refunded: t('common.refunded', 'Refunded'),
-    }[status] ?? status;
-}
 </script>
 
 <template>
-    <AppLayout>
+    <AccountLayout>
         <SeoHead :title="t('common.my_tour_bookings', 'My Tour Bookings')" noindex private-page />
 
-        <main class="tour-customer-page">
+        <div class="tour-customer-page">
             <div class="container tour-customer-container">
                 <div class="tour-customer-heading">
                     <div>
-                        <p class="public-eyebrow">{{ t('common.my_account', 'My account') }}</p>
                         <h1>{{ t('common.my_tour_bookings', 'My Tour Bookings') }}</h1>
                         <p>{{ t('common.my_tour_bookings_intro', 'Keep track of your tour plans, booking details, and next steps in one place.') }}</p>
                     </div>
@@ -89,7 +71,7 @@ function statusLabel(status) {
                     </Link>
                 </div>
 
-                <AccountNav active="bookings" />
+
 
                 <form class="tour-customer-filters" @submit.prevent="applyFilters">
                     <label class="tour-customer-filter-field">
@@ -116,8 +98,8 @@ function statusLabel(status) {
                         </div>
                         <div class="tour-customer-booking-card__body">
                             <div class="tour-customer-booking-card__status-row">
-                                <Badge :variant="statusVariant(booking.booking_status)">{{ statusLabel(booking.booking_status) }}</Badge>
-                                <span class="tour-customer-booking-card__payment">{{ statusLabel(booking.payment_status) }}</span>
+                                <BookingStatus :status="booking.booking_status" />
+                                <BookingStatus :status="booking.payment_status" kind="payment" />
                             </div>
                             <h2>{{ booking.package?.title || t('common.tour', 'Tour') }}</h2>
                             <p v-if="booking.package?.destination || booking.package?.city" class="tour-customer-booking-card__location">
@@ -139,13 +121,13 @@ function statusLabel(status) {
                 <section v-else class="tour-customer-empty">
                     <div class="tour-customer-empty__icon" aria-hidden="true"><i class="bi bi-compass"></i></div>
                     <p class="public-eyebrow">{{ t('common.your_next_journey', 'Your next journey') }}</p>
-                    <h2>{{ t('common.no_tour_bookings', 'No Tour bookings yet') }}</h2>
+                    <h2>{{ filters.search || filters.scope ? t('common.no_matching_bookings', 'No bookings in this view') : t('common.no_tour_bookings', 'No Tour bookings yet') }}</h2>
                     <p>{{ t('common.no_tour_bookings_note', 'Your confirmed and upcoming tour plans will appear here.') }}</p>
                     <Link :href="appUrl('/packages')" class="public-button public-button--primary">{{ t('common.explore_tours', 'Explore tours') }}</Link>
                 </section>
 
                 <Pagination :links="bookings.links" />
             </div>
-        </main>
-    </AppLayout>
+        </div>
+    </AccountLayout>
 </template>

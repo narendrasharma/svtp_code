@@ -35,7 +35,7 @@ const geographyLabel = computed(() => [props.city.geography?.state, props.city.g
             <section class="geo-city-hero">
                 <div class="geo-city-hero__media"><ImageWithFallback :src="cityImage" :alt="city.name" aspect="editorial" kind="destination" :label="t('common.city', 'City')" loading="eager" /></div>
                 <div class="geo-city-hero__shade"></div>
-                <div class="container geo-city-hero__content">
+                <div class="public-container geo-city-hero__content">
                     <nav class="geo-breadcrumbs" aria-label="Breadcrumb">
                         <Link :href="appUrl('/')">{{ t('common.home', 'Home') }}</Link>
                         <span aria-hidden="true">/</span>
@@ -47,14 +47,14 @@ const geographyLabel = computed(() => [props.city.geography?.state, props.city.g
                 </div>
             </section>
 
-            <section v-if="destinations.length" class="container geo-section">
+            <section v-if="destinations.length" class="public-container geo-section">
                 <SectionHeading :eyebrow="t('common.destinations', 'Destinations')" :title="t('common.destinations_in_city', 'Destinations in this city')" :description="t('common.destinations_in_city_description', 'Travel concepts and areas connected to the city.')" />
                 <div class="geo-city-destination-grid">
                     <DestinationCard v-for="destination in destinations" :key="destination.id" :destination="destination" />
                 </div>
             </section>
 
-            <section v-if="places.length" class="container geo-section geo-section--places">
+            <section v-if="places.length" class="public-container geo-section geo-section--places">
                 <SectionHeading :eyebrow="t('common.places_to_explore', 'Places to explore')" :title="t('common.places_in_city', 'Places to visit in this city')" />
                 <div class="geo-city-place-grid">
                     <PlaceCard v-for="place in places" :key="place.id" :place="place" />
@@ -62,18 +62,18 @@ const geographyLabel = computed(() => [props.city.geography?.state, props.city.g
             </section>
 
             <section v-if="city.hotels?.length" class="geo-commercial-section">
-                <div class="container geo-section">
+                <div class="public-container geo-section">
                     <SectionHeading :eyebrow="t('common.stays', 'Stays')" :title="t('common.stays_in_city', 'Stays in this city')" />
                     <div class="geo-commercial-grid"><HotelCard v-for="hotel in city.hotels" :key="hotel.id" :hotel="hotel" compact /></div>
                 </div>
             </section>
 
-            <section v-if="city.tours?.length" class="container geo-section">
+            <section v-if="city.tours?.length" class="public-container geo-section">
                 <SectionHeading :eyebrow="t('common.tours', 'Tours')" :title="t('common.tours_in_city', 'Tours in this city')" />
                 <div class="geo-commercial-grid"><TourCard v-for="tour in city.tours" :key="tour.id" :tour="tour" /></div>
             </section>
 
-            <section v-if="!destinations.length && !places.length && !city.hotels?.length && !city.tours?.length" class="container geo-empty-state">
+            <section v-if="!destinations.length && !places.length && !city.hotels?.length && !city.tours?.length" class="public-container geo-empty-state">
                 <i class="bi bi-building" aria-hidden="true"></i>
                 <h2>{{ t('common.city_discovery_coming_soon', 'City discovery is taking shape') }}</h2>
                 <p>{{ t('common.city_discovery_empty_description', 'Published destinations and places will appear here as this city guide grows.') }}</p>

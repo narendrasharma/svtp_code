@@ -215,14 +215,14 @@ function onInputFocus() {
 .smart-select-box.is-disabled { opacity: .65; cursor: not-allowed; }
 .smart-select-box.is-open { border-color: #f59e0b; box-shadow: 0 0 0 .2rem rgba(245,158,11,.18); }
 .smart-select-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; }
-.smart-select-input::placeholder { color: #94a3b8; }
-.smart-select-clear { border: 0; background: transparent; color: #94a3b8; padding: 0 .15rem; line-height: 1; }
-.smart-select-clear:hover { color: #fff; }
-.smart-select-caret { color: #94a3b8; font-size: .8rem; }
-.smart-select-menu { position: absolute; z-index: 1050; left: 0; right: 0; top: calc(100% + 4px); max-height: 240px; overflow-y: auto; border: 1px solid #475569; border-radius: .5rem; background: #162235; box-shadow: 0 12px 32px rgba(0,0,0,.45); padding: .35rem; }
-.smart-select-hint { padding: .35rem .6rem; font-size: .75rem; color: #94a3b8; }
-.smart-select-option { display: block; width: 100%; text-align: left; border: 0; border-radius: .4rem; background: transparent; color: #e5e7eb; padding: .45rem .6rem; }
-.smart-select-option.is-highlighted { background: #1e293b; }
-.smart-select-option.is-selected { color: #fbbf24; }
-.smart-select-empty { margin: 0; padding: .5rem .6rem; font-size: .85rem; color: #94a3b8; }
+.smart-select-input::placeholder { color: var(--admin-input-placeholder, #94a3b8); }
+.smart-select-clear { border: 0; background: transparent; color: var(--admin-text-muted, #94a3b8); padding: 0 .15rem; line-height: 1; }
+.smart-select-clear:hover { color: var(--admin-text, #fff); }
+.smart-select-caret { color: var(--admin-text-muted, #94a3b8); font-size: .8rem; }
+.smart-select-menu { position: absolute; z-index: 1050; left: 0; right: 0; top: calc(100% + 4px); max-height: 240px; overflow-y: auto; border: 1px solid var(--admin-popover-border, #475569); border-radius: .5rem; background: var(--admin-popover-bg, #162235); color: var(--admin-text, #e5e7eb); box-shadow: var(--admin-shadow-md, 0 12px 32px rgba(0,0,0,.45)); padding: .35rem; }
+.smart-select-hint { padding: .35rem .6rem; font-size: .75rem; color: var(--admin-text-muted, #94a3b8); }
+.smart-select-option { display: block; width: 100%; text-align: left; border: 0; border-radius: .4rem; background: transparent; color: var(--admin-text, #e5e7eb); padding: .45rem .6rem; }
+.smart-select-option.is-highlighted { background: var(--admin-surface-sunken, #1e293b); }
+.smart-select-option.is-selected { color: var(--admin-primary, #fbbf24); }
+.smart-select-empty { margin: 0; padding: .5rem .6rem; font-size: .85rem; color: var(--admin-text-muted, #94a3b8); }
 </style>

@@ -94,6 +94,11 @@ class VendorProfile extends Model
         return $this->hasMany(TourPackage::class);
     }
 
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Property::class);
+    }
+
     public function taxiRateCards(): HasMany
     {
         return $this->hasMany(TaxiRateCard::class);

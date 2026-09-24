@@ -7,7 +7,7 @@ defineProps({
 </script>
 
 <template>
-    <nav v-if="links?.length > 3" class="mt-4">
+    <nav v-if="links?.length > 3" class="mt-4" aria-label="Pagination">
         <ul class="pagination justify-content-center">
 
             <li
@@ -23,6 +23,7 @@ defineProps({
                     v-if="link.url"
                     :href="link.url"
                     class="page-link"
+                    :aria-current="link.active ? 'page' : undefined"
                     v-html="link.label"
                     preserve-scroll
                 />
@@ -30,6 +31,7 @@ defineProps({
                 <span
                     v-else
                     class="page-link"
+                    aria-disabled="true"
                     v-html="link.label"
                 ></span>
             </li>

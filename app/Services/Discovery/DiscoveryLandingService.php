@@ -171,6 +171,7 @@ final class DiscoveryLandingService
             'id' => (int) $destination->id,
             'slug' => (string) $destination->slug,
             'name' => DiscoveryResult::displayName($destination, 'name', $locale) ?? $destination->name,
+            'excerpt' => DiscoveryResult::displayName($destination, 'excerpt', $locale) ?? $destination->excerpt,
             'description' => DiscoveryResult::displayName($destination, 'description', $locale) ?? $destination->description,
             'destination_type' => (string) ($destination->destination_type ?? Destination::TYPE_CITY),
             'geography' => [
@@ -235,6 +236,7 @@ final class DiscoveryLandingService
             'id' => (int) $place->id,
             'slug' => (string) $place->slug,
             'name' => DiscoveryResult::displayName($place, 'name', $locale) ?? $place->name,
+            'excerpt' => DiscoveryResult::displayName($place, 'excerpt', $locale) ?? $place->excerpt,
             'description' => DiscoveryResult::displayName($place, 'description', $locale) ?? $place->description,
             'geography' => [
                 'destination' => $place->destination ? DiscoveryResult::displayName($place->destination, 'name', $locale) : null,

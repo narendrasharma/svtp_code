@@ -10,6 +10,8 @@ import Container from '../../Components/Public/Layout/Container.vue';
 import ImageWithFallback from '../../Components/Public/Media/ImageWithFallback.vue';
 import MoneyDisplay from '../../Components/Public/UI/MoneyDisplay.vue';
 import Badge from '../../Components/Public/UI/Badge.vue';
+import DateField from '../../Components/Public/Search/DateField.vue';
+import { calendarDateValue } from '../../Components/Public/Search/dateValues';
 
 const props = defineProps({
     package: { type: Object, required: true },
@@ -21,7 +23,7 @@ const props = defineProps({
 });
 
 const { locale, t } = useLocalization();
-const today = new Date().toISOString().slice(0, 10);
+const today = calendarDateValue(new Date());
 const quote = ref(props.quote);
 const quoteLoading = ref(false);
 const quoteError = ref('');
@@ -238,11 +240,7 @@ onBeforeUnmount(() => clearTimeout(quoteTimer));
                         </dl>
 
                         <div class="tour-booking-form-grid">
-                            <label class="public-field">
-                                <span class="public-field__label">{{ t('common.travel_date', 'Travel date') }} <b>*</b></span>
-                                <input id="tour-travel-date" v-model="form.travel_date" class="public-input" type="date" :min="today" required :aria-invalid="Boolean(fieldError('travel_date'))" aria-describedby="tour-travel-date-error">
-                                <span v-if="fieldError('travel_date')" id="tour-travel-date-error" class="tour-booking-field-error" role="alert">{{ fieldError('travel_date') }}</span>
-                            </label>
+                            <DateField v-model="form.travel_date" :label="t('common.travel_date', 'Travel date')" id="tour-travel-date" :min="today" required :error="fieldError('travel_date')" />
                             <label class="public-field">
                                 <span class="public-field__label">{{ t('common.adults', 'Adults') }} <b>*</b></span>
                                 <input id="tour-adults" v-model.number="form.total_adults" class="public-input" type="number" min="1" max="30" required :aria-invalid="Boolean(fieldError('total_adults'))" aria-describedby="tour-adults-error">

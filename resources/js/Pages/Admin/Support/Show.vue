@@ -126,7 +126,7 @@ function formatDateTime(value) {
                     <dl class="row mb-0 small">
                         <dt class="col-5 text-muted">Booking</dt>
                         <dd class="col-7">
-                            <Link v-if="ticket.booking" :href="appUrl(`/admin/bookings/${ticket.booking.id}`)">{{ ticket.booking.booking_reference_id }}</Link>
+                            <Link v-if="ticket.booking" :href="appUrl(`/admin/tour/bookings/${ticket.booking.id}`)">{{ ticket.booking.booking_reference_id }}</Link>
                             <span v-else>—</span>
                         </dd>
                         <dt class="col-5 text-muted">Lead</dt>

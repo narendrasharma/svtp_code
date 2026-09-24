@@ -30,6 +30,7 @@ return [
     'drop' => 'ड्रॉप',
     'date' => 'तारीख',
     'time' => 'समय',
+    'pickup_time_field' => 'पिकअप समय',
     'passengers' => 'यात्री',
     'travel_marketplace' => 'यात्रा मार्केटप्लेस',
     'find_your_journey' => 'अपनी अगली यात्रा खोजें',

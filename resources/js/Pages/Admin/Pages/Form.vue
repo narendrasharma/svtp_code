@@ -1,6 +1,6 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../appUrl';
 import { Ckeditor } from '@ckeditor/ckeditor5-vue';
@@ -43,8 +43,10 @@ const form = useForm({
     meta_description: props.page?.meta_description ?? '',
 });
 
+const slugManuallyEdited = ref(!!props.page);
+
 watch(() => form.title, (title) => {
-    if (!props.page) {
+    if (!props.page && !slugManuallyEdited.value) {
         form.slug = title
             .toLowerCase()
             .trim()
@@ -52,6 +54,10 @@ watch(() => form.title, (title) => {
             .replace(/^-|-$/g, '');
     }
 });
+
+function markSlugEdited() {
+    slugManuallyEdited.value = true;
+}
 
 const editor = ClassicEditor;
 
@@ -143,8 +149,9 @@ function submit() {
             <small class="text-danger">{{ form.errors.title }}</small>
 
             <label class="form-label mt-3">Slug</label>
-            <input v-model="form.slug" class="form-control" required>
+            <input v-model="form.slug" class="form-control" required @input="markSlugEdited">
             <small class="text-danger">{{ form.errors.slug }}</small>
+            <div class="form-text">Permalink: <code>{{ appUrl(`/${form.slug || 'your-page-slug'}`) }}</code></div>
 
             <label class="form-label mt-3">Template</label>
             <select v-model="form.template" class="form-select" required>

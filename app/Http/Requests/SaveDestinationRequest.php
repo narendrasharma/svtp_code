@@ -33,6 +33,7 @@ class SaveDestinationRequest extends FormRequest
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
             'parent_id' => ['nullable', 'integer', 'exists:destinations,id'],
             'destination_type' => ['nullable', 'string', Rule::in(Destination::types())],
+            'excerpt' => ['nullable', 'string', 'max:500'],
             'latitude' => ['nullable', 'numeric', 'min:-90', 'max:90'],
             'longitude' => ['nullable', 'numeric', 'min:-180', 'max:180'],
             'description' => ['nullable', 'string'],

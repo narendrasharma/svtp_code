@@ -80,7 +80,7 @@ class PageController extends Controller
             $page,
             'meta_title',
             'meta_description',
-            route('cms.page', ['slug' => $page->slug], absolute: true),
+            route('page.show', ['slug' => $page->slug], absolute: true),
             $locale,
         );
         $seo['title'] ??= $page->translated('title', $locale) ?? $page->title;

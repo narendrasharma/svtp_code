@@ -76,7 +76,7 @@ function submit() {
                 <h2 class="mt-2 mb-1">Taxi module settings</h2>
                 <p class="text-muted mb-0">Control taxi booking availability and booking guardrails.</p>
             </div>
-            <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-outline-light">View taxi bookings</Link>
+            <Link :href="appUrl('/admin/taxi/bookings')" class="btn btn-admin-outline">View taxi bookings</Link>
         </div>
 
         <form class="card" @submit.prevent="submit">
@@ -383,5 +383,4 @@ function submit() {
 .form-control:focus, .form-select:focus { border-color: #f59e0b; box-shadow: 0 0 0 .2rem rgba(245, 158, 11, .18); }
 .form-check-label { color: #e2e8f0; }
 .form-text { color: #94a3b8; }
-.btn.btn-outline-light { color: #f8fafc; border-color: rgba(148, 163, 184, .35); }
 </style>
