@@ -12,6 +12,7 @@ use App\Models\TaxiAssignment;
 use App\Models\TaxiBooking;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Notifications\CrmNotification;
 use App\Support\TaxiSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;

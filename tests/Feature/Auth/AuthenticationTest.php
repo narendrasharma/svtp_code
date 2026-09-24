@@ -4,15 +4,31 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('app.url', 'http://localhost/code');
+        URL::forceRootUrl('http://localhost');
+    }
+
     public function test_admin_login_screen_can_be_rendered(): void
     {
-        $response = $this->get('/admin');
+        $response = $this->get(route('login', absolute: false));
+
+        $response->assertOk();
+    }
+
+    public function test_admin_login_alias_can_be_rendered(): void
+    {
+        $response = $this->get(route('admin.login', absolute: false));
 
         $response->assertOk();
     }
@@ -28,7 +44,7 @@ class AuthenticationTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($admin)->get('/admin');
+        $response = $this->actingAs($admin)->get(route('login', absolute: false));
 
         $response->assertRedirect(route('admin.dashboard', absolute: false));
     }
@@ -37,7 +53,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->post('/admin/login', [
+        $response = $this->post(route('login.store', absolute: false), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -50,14 +66,14 @@ class AuthenticationTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response = $this->actingAs($admin)->get(route('admin.dashboard', absolute: false));
 
         $response->assertOk();
     }
 
     public function test_guests_cannot_access_the_admin_dashboard(): void
     {
-        $response = $this->get('/admin/dashboard');
+        $response = $this->get(route('admin.dashboard', absolute: false));
 
         $response->assertRedirect(route('login', absolute: false));
     }
@@ -75,7 +91,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post('/admin/login', [
+        $this->post(route('login.store', absolute: false), [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
@@ -87,7 +103,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'customer']);
 
-        $this->post('/admin/login', [
+        $this->post(route('login.store', absolute: false), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -99,7 +115,7 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($user)->post('/admin/logout');
+        $response = $this->actingAs($user)->post(route('logout', absolute: false));
 
         $this->assertGuest();
         $response->assertRedirect('/');
@@ -109,8 +125,8 @@ class AuthenticationTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $this->actingAs($admin)->post('/admin/logout');
-        $response = $this->get('/admin/dashboard');
+        $this->actingAs($admin)->post(route('logout', absolute: false));
+        $response = $this->get(route('admin.dashboard', absolute: false));
 
         $this->assertGuest();
         $response->assertRedirect(route('login', absolute: false));

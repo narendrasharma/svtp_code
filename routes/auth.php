@@ -15,6 +15,9 @@ Route::get('admin', [AuthenticatedSessionController::class, 'create'])
     ->name('login');
 
 Route::middleware('guest')->group(function () {
+    Route::get('admin/login', [AuthenticatedSessionController::class, 'create'])
+        ->name('admin.login');
+
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
