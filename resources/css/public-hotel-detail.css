@@ -499,6 +499,9 @@
     display: grid;
     align-content: start;
     gap: 1.1rem;
+    min-width: 0;
+    position: sticky;
+    top: 1.25rem;
 }
 
 .property-aside-card,
@@ -507,11 +510,6 @@
     border-top: 2px solid var(--public-brand);
     background: var(--public-surface-elevated);
     box-shadow: var(--public-shadow-sm);
-}
-
-.property-aside-card--sticky {
-    position: sticky;
-    top: 1.25rem;
 }
 
 .property-aside-card h2,
@@ -578,10 +576,30 @@
     font-weight: 800;
 }
 
-.property-selection-card .public-button {
+.property-selection-card .public-button--primary {
     width: 100%;
-    background: #fff;
+    border-color: var(--public-surface-elevated);
+    background: var(--public-surface-elevated);
     color: var(--public-brand);
+}
+
+.property-selection-card .public-button--primary:hover:not(:disabled),
+.property-selection-card .public-button--primary:focus-visible {
+    border-color: var(--public-brand-soft);
+    background: var(--public-brand-soft);
+    color: var(--public-brand-hover);
+    box-shadow: var(--public-shadow-md);
+}
+
+.property-selection-card .public-button--primary:focus-visible {
+    outline: 3px solid var(--public-accent-soft);
+    outline-offset: 3px;
+}
+
+.property-mobile-selection .public-button--primary,
+.property-mobile-selection .public-button--primary:hover,
+.property-mobile-selection .public-button--primary:focus-visible {
+    color: #fff;
 }
 
 .property-reviews {
@@ -926,9 +944,6 @@
 
     .property-detail-aside {
         margin-top: 3rem;
-    }
-
-    .property-aside-card--sticky {
         position: static;
     }
 

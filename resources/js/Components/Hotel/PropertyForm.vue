@@ -5,6 +5,7 @@ import axios from 'axios';
 import { appUrl } from '../../appUrl';
 import CustomFieldInputs from './CustomFieldInputs.vue';
 import RichTextEditor from '../Admin/RichTextEditor.vue';
+import AiAssist from '../AiAssist.vue';
 
 const props = defineProps({
     property: { type: Object, default: null },
@@ -22,6 +23,7 @@ const props = defineProps({
     showStatus: { type: Boolean, default: false },
     showFeatured: { type: Boolean, default: false },
     customFields: { type: Array, default: () => [] },
+    aiEndpoint: { type: String, required: true },
 });
 
 const editing = !!props.property;
@@ -65,6 +67,11 @@ const form = useForm({
 });
 
 const cities = ref([]);
+const hotelAiContext = computed(() => ({
+    name: form.name,
+    type: props.types.find((item) => Number(item.id) === Number(form.property_type_id))?.name,
+    city: cities.value.find((item) => Number(item.id) === Number(form.city_id))?.name ?? props.property?.city?.name,
+}));
 const citiesLoading = ref(false);
 const destinations = ref([]);
 const destinationsLoading = ref(false);
@@ -136,6 +143,11 @@ function submit() {
     if (editing && props.updateUrl) form.put(props.updateUrl);
     else form.post(props.submitUrl);
 }
+
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
+}
 </script>
 <template>
 <form @submit.prevent="submit">
@@ -148,7 +160,7 @@ function submit() {
 <div class="col-md-6"><label class="form-label" for="pf-type">Property type *</label><select id="pf-type" v-model="form.property_type_id" required class="form-select"><option value="">Choose type</option><option v-for="t in types" :key="t.id" :value="t.id">{{ t.name }}</option></select></div>
 <div class="col-md-6"><label class="form-label" for="pf-star">Star classification</label><select id="pf-star" v-model="form.star_rating" class="form-select"><option value="">Unrated</option><option v-for="n in [1,2,3,4,5]" :key="n" :value="n">{{ n }} star{{ n > 1 ? 's' : '' }}</option></select></div>
 <div class="col-12"><label class="form-label" for="pf-short">Short description</label><input id="pf-short" v-model="form.short_description" maxlength="500" class="form-control" /></div>
-<div class="col-12"><label class="form-label">Full description</label><RichTextEditor v-model="form.description" /><div class="form-text">Use headings, lists, links and images. Unsafe HTML is cleaned on the server.</div></div>
+<div class="col-12"><label class="form-label">Full description</label><RichTextEditor v-model="form.description" /><div class="form-text">Use headings, lists, links and images. Unsafe HTML is cleaned on the server.</div><AiAssist content-type="hotel" field="description" :source="form.description" :context="hotelAiContext" :entity-id="property?.id" :endpoint="aiEndpoint" @apply="form.description = $event" /></div>
 <div v-if="showVendor" class="col-md-6"><label class="form-label" for="pf-vendor">Owning vendor (blank = platform)</label><select id="pf-vendor" v-model="form.vendor_profile_id" class="form-select"><option value="">Platform-managed</option><option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.business_name }}</option></select></div>
 <div v-if="showStatus" class="col-md-6"><label class="form-label" for="pf-status">Status</label><select id="pf-status" v-model="form.status" class="form-select" disabled><option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option></select><div class="form-text">Status changes via publish / submit actions.</div></div>
 <div v-if="showFeatured" class="col-md-6"><label class="form-check"><input v-model="form.is_featured" type="checkbox" class="form-check-input" /> Featured property</label></div>
@@ -199,6 +211,7 @@ function submit() {
 <div class="col-md-6"><label class="form-label" for="pf-meta-t">Meta title</label><input id="pf-meta-t" v-model="form.meta_title" maxlength="255" class="form-control" /></div>
 <div class="col-md-6"><label class="form-label" for="pf-meta-d">Meta description</label><input id="pf-meta-d" v-model="form.meta_description" maxlength="500" class="form-control" /></div>
 </div>
+<AiAssist content-type="hotel" field="seo" mode="seo" :source="form.description" :context="hotelAiContext" :entity-id="property?.id" :endpoint="aiEndpoint" @apply="applySeoDraft" />
 
 <div v-if="customFields.length" class="mt-4">
 <h5 class="mb-3">Additional Information</h5>

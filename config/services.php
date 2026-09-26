@@ -53,10 +53,38 @@ return [
     ],
 
     'ai' => [
+        'enabled' => env('AI_ENABLED'),
         'provider' => env('AI_PROVIDER', 'openai'),
-        'openai_key' => env('OPENAI_API_KEY'),
-        'gemini_key' => env('GEMINI_API_KEY'),
-        'anthropic_key' => env('ANTHROPIC_API_KEY'),
+        'knowledge' => ['enabled' => env('AI_KNOWLEDGE_ENABLED', false)],
+        'actions' => ['enabled' => env('AI_AGENT_ACTIONS_ENABLED', false)],
+        'embedding' => [
+            'provider' => env('AI_EMBEDDING_PROVIDER', 'openai'),
+            'model' => env('AI_EMBEDDING_MODEL', env('AI_EMBEDDING_PROVIDER', 'openai') === 'gemini' ? 'gemini-embedding-2' : 'text-embedding-3-small'),
+            'models' => [
+                'openai' => ['text-embedding-3-small', 'text-embedding-3-large'],
+                'gemini' => ['gemini-embedding-2', 'gemini-embedding-001'],
+            ],
+        ],
+        'providers' => [
+            'azure' => [
+                'model' => env('AZURE_FOUNDRY_DEPLOYMENT', ''),
+                'key' => env('AZURE_FOUNDRY_API_KEY'),
+                'endpoint' => env('AZURE_FOUNDRY_ENDPOINT', ''),
+                'tool_calling' => env('AZURE_FOUNDRY_TOOL_CALLING', false),
+            ],
+            'openai' => [
+                'model' => env('AI_MODEL', 'gpt-4o-mini'),
+                'key' => env('OPENAI_API_KEY'),
+            ],
+            'gemini' => [
+                'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+                'key' => env('GEMINI_API_KEY'),
+            ],
+            'claude' => [
+                'model' => env('CLAUDE_MODEL', 'claude-sonnet-4-6'),
+                'key' => env('ANTHROPIC_API_KEY'),
+            ],
+        ],
     ],
 
 ];

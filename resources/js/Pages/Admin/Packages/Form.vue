@@ -1,10 +1,10 @@
 <script setup>
 import { appUrl } from '../../../appUrl';
 import SmartMultiSelect from '../../../Components/SmartMultiSelect.vue';
+import AiAssist from '../../../Components/AiAssist.vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import axios from 'axios';
 import { Ckeditor } from '@ckeditor/ckeditor5-vue';
 
 import {
@@ -165,17 +165,21 @@ const tagOptions = computed(() => props.tags.map((tag) => ({
     meta: tag.is_active ? '' : 'Inactive',
 })));
 
-const aiNotes = ref('');
-const aiLoading = ref(false);
+const tourAiContext = computed(() => ({
+    title: form.title,
+    duration_days: Number(form.duration_days) || undefined,
+    category: props.categories.find((item) => Number(item.id) === Number(form.category_id))?.name,
+    destination: props.destinations
+        .filter((item) => form.destination_ids.map(Number).includes(Number(item.id)))
+        .map((item) => item.name).join(', ').slice(0, 150),
+    places: props.places
+        .filter((item) => form.place_ids.map(Number).includes(Number(item.id)))
+        .map((item) => item.name).slice(0, 15),
+}));
 
-async function generateWithAi() {
-    aiLoading.value = true;
-    try {
-        const { data } = await axios.post(appUrl('/admin/packages/ai-draft-itinerary'), { notes: aiNotes.value });
-        form.overview = data.draft; // admin reviews/edits before saving
-    } finally {
-        aiLoading.value = false;
-    }
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
 }
 
 function addItineraryDay() {
@@ -269,14 +273,6 @@ function submit() {
                 <div class="col-6"><input v-model.number="form.discounted_price" type="number" class="form-control mb-2" placeholder="Discounted Price" /></div>
             </div>
 
-            <div class="border rounded p-2 mb-2 bg-light">
-                <label class="form-label small fw-semibold">AI Itinerary Assistant</label>
-                <textarea v-model="aiNotes" class="form-control mb-2" rows="2" placeholder="e.g. Gokul, Mathura, Vrindavan temples list..."></textarea>
-                <button type="button" class="btn btn-sm btn-outline-secondary" :disabled="aiLoading" @click="generateWithAi">
-                    {{ aiLoading ? 'Generating...' : 'Generate Draft Overview' }}
-                </button>
-            </div>
-
 <!--
             <textarea v-model="form.overview" class="form-control mb-2" rows="4" placeholder="Overview"></textarea>
 -->
@@ -288,6 +284,8 @@ function submit() {
                     :editor="editor"
                     :config="editorConfig"
                 />
+                <AiAssist content-type="tour" field="overview" :source="form.overview" :context="tourAiContext"
+                    :entity-id="package?.id" :endpoint="appUrl('/admin/ai/content')" @apply="form.overview = $event" />
 
                 <small class="text-danger">
                     {{ form.errors.overview }}
@@ -303,6 +301,9 @@ function submit() {
                         <label class="form-label fw-semibold mb-0">Day-wise Itinerary</label>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @click="addItineraryDay">Add Day</button>
                     </div>
+                    <AiAssist content-type="tour" field="itinerary" mode="itinerary" :source="form.day_wise_itinerary"
+                        :context="tourAiContext" :entity-id="package?.id" :endpoint="appUrl('/admin/ai/content')"
+                        @apply="form.day_wise_itinerary = $event.days" />
                     <div v-for="(day, dayIndex) in form.day_wise_itinerary" :key="dayIndex" class="border rounded p-2 mb-2 bg-light">
                         <div class="row g-2 align-items-center mb-2">
                             <div class="col-3">
@@ -480,6 +481,10 @@ function submit() {
                             {{ form.errors.meta_description }}
                         </small>
                     </div>
+
+                    <AiAssist content-type="tour" field="seo" mode="seo" :source="form.overview"
+                        :context="tourAiContext" :entity-id="package?.id" :endpoint="appUrl('/admin/ai/content')"
+                        @apply="applySeoDraft" />
 
                 </div>
             </div>

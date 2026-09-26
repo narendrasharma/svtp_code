@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\AI\Support\AIException;
 use App\Http\Controllers\Controller;
 use App\Services\AiContentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AiContentController extends Controller
 {
-    public function draftItinerary(Request $request, AiContentService $ai)
+    public function draftItinerary(Request $request, AiContentService $ai): JsonResponse
     {
-        $request->validate(['notes' => ['required', 'string', 'max:2000']]);
+        $validated = $request->validate(['notes' => ['required', 'string', 'max:2000']]);
 
-        // Draft only — admin reviews and edits before saving to the package.
-        return response()->json(['draft' => $ai->generateItineraryDraft($request->notes)]);
+        try {
+            return response()->json(['draft' => $ai->generateItineraryDraft($validated['notes'])]);
+        } catch (AIException $exception) {
+            return response()->json(['message' => $exception->getMessage()], $exception->httpStatus);
+        }
     }
 }

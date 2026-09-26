@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuthenticateMcpToken;
 use App\Http\Middleware\BlockSensitiveActionsDuringImpersonation;
 use App\Http\Middleware\EnsureDriverIdentity;
 use App\Http\Middleware\EnsureModuleEnabled;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->preventRequestForgery(except: ['mcp']);
         $middleware->redirectGuestsTo(fn (Request $request): string => $request->is('admin/*')
             ? route('admin.login')
             : route('login'));
@@ -46,11 +48,13 @@ return Application::configure(basePath: dirname(__DIR__))
             // Phase 11.5A platform core.
             'module' => EnsureModuleEnabled::class,
             'staff.permissions' => EnsureStaffPermission::class,
+            'mcp.auth' => AuthenticateMcpToken::class,
         ]);
         $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['api_key']);
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*') || $request->is('mcp') || $request->expectsJson(),
         );
     })->create();

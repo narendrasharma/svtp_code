@@ -2,6 +2,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AiAssist from '../../../Components/AiAssist.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({ place: { type: Object, default: null }, destinations: Array });
@@ -40,6 +41,11 @@ function submit() {
     }
 }
 
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
+}
+
 function selectImage(event) {
     form.image_upload = event.target.files?.[0] ?? null;
 
@@ -75,6 +81,9 @@ function selectImage(event) {
 
             <label class="form-label mt-3">Description</label>
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Describe this temple, landmark, or attraction."></textarea>
+            <AiAssist content-type="place" field="description" output-format="plain" :source="form.description"
+                :context="{ name: form.name, excerpt: form.excerpt, destination: destinations.find((item) => Number(item.id) === Number(form.destination_id))?.name }"
+                :entity-id="place?.id" :endpoint="appUrl('/admin/ai/content')" @apply="form.description = $event" />
             <small class="text-danger">{{ form.errors.description }}</small>
 
             <div class="row">
@@ -184,6 +193,9 @@ function selectImage(event) {
                             {{ form.errors.meta_description }}
                         </small>
                     </div>
+                    <AiAssist content-type="place" field="seo" mode="seo" :source="form.description"
+                        :context="{ name: form.name, excerpt: form.excerpt, destination: destinations.find((item) => Number(item.id) === Number(form.destination_id))?.name }"
+                        :entity-id="place?.id" :endpoint="appUrl('/admin/ai/content')" @apply="applySeoDraft" />
 
                 </div>
             </div>

@@ -25,7 +25,7 @@ function uploadImage(e) {
 <div class="card p-3 mb-3"><PropertyForm
 :property="property" :types="types" :amenities="amenities" :countries="countries ?? []" :states="states" :vendors="vendors" :statuses="statuses"
 :submit-url="appUrl('/admin/hotel/properties')" :update-url="property ? appUrl(`${base}`) : ''"
-:show-vendor="true" :show-status="!!property" :show-featured="true" :cities-url="appUrl('/admin/hotel/cities')" :destinations-url="appUrl('/admin/hotel/destinations')" :custom-fields="customFields ?? []" /></div>
+:show-vendor="true" :show-status="!!property" :show-featured="true" :cities-url="appUrl('/admin/hotel/cities')" :destinations-url="appUrl('/admin/hotel/destinations')" :custom-fields="customFields ?? []" :ai-endpoint="appUrl('/admin/ai/content')" /></div>
 <div v-if="property" class="row g-3">
 <div class="col-lg-8"><div class="card p-3"><h5>Gallery</h5>
 <div v-if="!property.images?.length" class="text-muted">No images yet.</div>

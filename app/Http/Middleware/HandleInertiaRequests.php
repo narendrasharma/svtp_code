@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\AI\Support\AIManager;
 use App\Models\PromotionalPopup;
 use App\Models\Setting;
 use App\Models\TourCategory;
@@ -45,6 +46,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'ai' => fn () => ['available' => $request->user()
+                && ($request->user()->isAdmin() || $request->user()->isVendor())
+                && app(AIManager::class)->available()],
             // Phase 9: cheap unread badge for bells (single count query,
             // guests get zero). Recent items load only on the page itself.
             'notificationsUnreadCount' => fn () => $request->user()

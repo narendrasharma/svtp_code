@@ -2,18 +2,24 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\AI\Support\AIProviderRegistry;
+use App\AI\Support\AISettings;
+use App\AI\Support\EmbeddingProviderRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\MarketplaceCommissionService;
 use App\Services\VendorLedgerService;
 use App\Support\OperationsSettings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class SettingController extends Controller
 {
-    public function index()
+    public function index(AISettings $aiSettings, AIProviderRegistry $aiProviders, EmbeddingProviderRegistry $embeddingProviders): Response
     {
         return Inertia::render('Admin/Settings/Index', [
             'settings' => [
@@ -103,8 +109,79 @@ class SettingController extends Controller
                 // Operations / scheduler-driven platform work (11.5D).
                 'operations' => OperationsSettings::all(),
 
+                'ai' => [
+                    'enabled' => $aiSettings->enabled(),
+                    'provider' => $aiSettings->providerKey(),
+                    'model' => $aiSettings->model($aiSettings->providerKey()),
+                    'credential_configured' => $aiSettings->hasCredential($aiSettings->providerKey()),
+                    'credentials' => collect($aiProviders->keys())
+                        ->mapWithKeys(fn (string $provider): array => [$provider => $aiSettings->hasCredential($provider)])
+                        ->all(),
+                    'azure_endpoint' => $aiSettings->azureEndpoint(),
+                    'azure_tool_calling' => $aiSettings->azureToolCallingEnabled(),
+                    'providers' => $aiProviders->keys(),
+                    'default_models' => collect($aiProviders->keys())
+                        ->mapWithKeys(fn (string $provider): array => [$provider => config("services.ai.providers.{$provider}.model")])
+                        ->all(),
+                    'knowledge_enabled' => $aiSettings->knowledgeEnabled(),
+                    'agent_actions_enabled' => $aiSettings->agentActionsEnabled(),
+                    'embedding_provider' => $aiSettings->embeddingProviderKey(),
+                    'embedding_model' => $aiSettings->embeddingModel(),
+                    'embedding_providers' => $embeddingProviders->keys(),
+                    'embedding_models' => collect($embeddingProviders->keys())
+                        ->mapWithKeys(fn (string $provider): array => [$provider => config("services.ai.embedding.models.{$provider}", [])])
+                        ->all(),
+                    'embedding_credential_configured' => $aiSettings->hasCredential($aiSettings->embeddingProviderKey()),
+                    'embedding_credentials' => collect($embeddingProviders->keys())
+                        ->mapWithKeys(fn (string $provider): array => [$provider => $aiSettings->hasCredential($provider)])
+                        ->all(),
+                ],
+
             ],
         ]);
+    }
+
+    public function updateAi(Request $request, AISettings $aiSettings, AIProviderRegistry $aiProviders, EmbeddingProviderRegistry $embeddingProviders): RedirectResponse
+    {
+        $embeddingProvider = $request->input('embedding_provider');
+        $embeddingModels = is_string($embeddingProvider) ? config("services.ai.embedding.models.{$embeddingProvider}", []) : [];
+
+        $validated = $request->validate([
+            'ai_enabled' => ['required', 'boolean'],
+            'ai_provider' => ['required', 'string', Rule::in($aiProviders->keys())],
+            'ai_model' => ['required_if:ai_provider,azure', 'nullable', 'string', 'max:100'],
+            'azure_endpoint' => ['required_if:ai_provider,azure', 'nullable', 'url:https', 'max:500'],
+            'azure_tool_calling' => ['sometimes', 'boolean'],
+            'api_key' => [Rule::requiredIf(fn (): bool => $request->input('ai_provider') === 'azure' && ! $aiSettings->hasCredential('azure')), 'nullable', 'string', 'max:2048'],
+            'knowledge_enabled' => ['required', 'boolean'],
+            'agent_actions_enabled' => ['sometimes', 'boolean'],
+            'embedding_provider' => ['required', 'string', Rule::in($embeddingProviders->keys())],
+            'embedding_model' => ['required', 'string', Rule::in($embeddingModels)],
+            'embedding_api_key' => ['nullable', 'string', 'max:2048'],
+        ]);
+
+        Setting::setValue('ai.enabled', $validated['ai_enabled'] ? '1' : '0');
+        Setting::setValue('ai.provider', $validated['ai_provider']);
+        Setting::setValue('ai.model', trim($validated['ai_model'] ?? '') ?: null);
+
+        if ($validated['ai_provider'] === 'azure') {
+            Setting::setValue('ai.azure.endpoint', rtrim(trim($validated['azure_endpoint']), '/'));
+            Setting::setValue('ai.azure.tool_calling', ($validated['azure_tool_calling'] ?? false) ? '1' : '0');
+        }
+        Setting::setValue('ai.knowledge.enabled', $validated['knowledge_enabled'] ? '1' : '0');
+        Setting::setValue('ai.agent_actions.enabled', ($validated['agent_actions_enabled'] ?? false) ? '1' : '0');
+        Setting::setValue('ai.embedding.provider', $validated['embedding_provider']);
+        Setting::setValue('ai.embedding.model', $validated['embedding_model']);
+
+        if (filled($validated['api_key'] ?? null)) {
+            $aiSettings->saveCredential($validated['ai_provider'], trim($validated['api_key']));
+        }
+
+        if (filled($validated['embedding_api_key'] ?? null)) {
+            $aiSettings->saveCredential($validated['embedding_provider'], trim($validated['embedding_api_key']));
+        }
+
+        return back()->with('flash', 'AI settings updated successfully.');
     }
 
     public function updateSeo(Request $request)

@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import VendorLayout from '../../../Layouts/VendorLayout.vue';
 import { appUrl } from '../../../appUrl';
+import AiAssist from '../../../Components/AiAssist.vue';
 
 const props = defineProps({
     tour: { type: Object, default: null },
@@ -23,7 +24,12 @@ const form = useForm({
     price: props.tour?.price ?? '',
     discounted_price: props.tour?.discounted_price ?? '',
     overview: props.tour?.overview ?? '',
-    day_wise_itinerary: props.tour?.day_wise_itinerary ?? [],
+    day_wise_itinerary: Array.isArray(props.tour?.day_wise_itinerary)
+        ? props.tour.day_wise_itinerary.map((day) => ({
+            day: day.day,
+            title: day.title ?? '',
+            points: Array.isArray(day.points) ? [...day.points] : [],
+        })) : [],
     inclusions: props.tour?.inclusions ?? [],
     exclusions: props.tour?.exclusions ?? [],
     gallery: props.tour?.gallery ?? [],
@@ -40,6 +46,26 @@ const form = useForm({
 
 const coverPreview = ref(props.tour?.cover_image || null);
 const galleryFiles = ref([]);
+const tourAiContext = computed(() => ({
+    title: form.title,
+    duration_days: Number(form.duration_days) || undefined,
+    category: props.categories.find((item) => Number(item.id) === Number(form.category_id))?.name,
+    destination: props.destinations
+        .filter((item) => form.destination_ids.map(Number).includes(Number(item.id)))
+        .map((item) => item.name).join(', ').slice(0, 150),
+    places: props.places
+        .filter((item) => form.place_ids.map(Number).includes(Number(item.id)))
+        .map((item) => item.name).slice(0, 15),
+}));
+
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
+}
+
+function updatePoints(day, event) {
+    day.points = event.target.value.split(/\n|,/).map((point) => point.trim()).filter(Boolean);
+}
 
 function onCoverChange(e) {
     const file = e.target.files[0];
@@ -124,6 +150,9 @@ function submit() {
                 <div class="col-12">
                     <label class="form-label">Overview</label>
                     <textarea v-model="form.overview" rows="4" class="form-control"></textarea>
+                    <AiAssist content-type="tour" field="overview" output-format="plain" :source="form.overview"
+                        :context="tourAiContext" :entity-id="tour?.id" :endpoint="appUrl('/vendor/ai/content')"
+                        @apply="form.overview = $event" />
                 </div>
 
                 <div class="col-md-6">
@@ -175,13 +204,16 @@ function submit() {
 
                 <div class="col-12">
                     <label class="form-label">Itinerary</label>
+                    <AiAssist content-type="tour" field="itinerary" mode="itinerary" :source="form.day_wise_itinerary"
+                        :context="tourAiContext" :entity-id="tour?.id" :endpoint="appUrl('/vendor/ai/content')"
+                        @apply="form.day_wise_itinerary = $event.days" />
                     <div v-for="(day, idx) in form.day_wise_itinerary" :key="idx" class="border rounded p-3 mb-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <strong>Day {{ day.day }}</strong>
                             <button type="button" class="btn btn-sm btn-outline-danger" @click="removeItineraryDay(idx)">Remove</button>
                         </div>
                         <input v-model="day.title" placeholder="Title" class="form-control form-control-sm mb-2" />
-                        <textarea v-model="day.points" placeholder="Points (comma separated or array)" class="form-control form-control-sm"></textarea>
+                        <textarea :value="day.points.join('\n')" @change="updatePoints(day, $event)" placeholder="One point per line" class="form-control form-control-sm"></textarea>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-secondary" @click="addItineraryDay">+ Add Day</button>
                 </div>
@@ -193,6 +225,11 @@ function submit() {
                 <div class="col-md-6">
                     <label class="form-label">Meta Description</label>
                     <input v-model="form.meta_description" type="text" class="form-control" maxlength="170" />
+                </div>
+                <div class="col-12">
+                    <AiAssist content-type="tour" field="seo" mode="seo" :source="form.overview"
+                        :context="tourAiContext" :entity-id="tour?.id" :endpoint="appUrl('/vendor/ai/content')"
+                        @apply="applySeoDraft" />
                 </div>
             </div>
 

@@ -25,7 +25,7 @@ function uploadImage(e) {
 <div class="card p-3 mb-3"><PropertyForm
 :property="property" :types="types" :amenities="amenities" :countries="countries ?? []" :states="states"
 :submit-url="appUrl('/vendor/hotel/properties')" :update-url="property ? appUrl(`${base}`) : ''"
-:show-status="!!property" :cities-url="appUrl('/vendor/hotel/cities')" :destinations-url="appUrl('/vendor/hotel/destinations')" :custom-fields="customFields ?? []">
+:show-status="!!property" :cities-url="appUrl('/vendor/hotel/cities')" :destinations-url="appUrl('/vendor/hotel/destinations')" :custom-fields="customFields ?? []" :ai-endpoint="appUrl('/vendor/ai/content')">
 <template #actions>
 <button v-if="property && ['draft', 'rejected'].includes(property.status)" type="button" class="btn btn-outline-success" @click="router.post(appUrl(`${base}/submit`))">{{ requireApproval ? 'Submit for review' : 'Publish now' }}</button>
 </template>

@@ -26,6 +26,8 @@ class StaffPermissions
                 'label' => 'General',
                 'permissions' => [
                     'dashboard.view' => 'View admin dashboard',
+                    'ai.assistant.use' => 'Use the read-only AI assistant',
+                    'ai.knowledge.manage' => 'Manage internal AI knowledge',
                     'reports.view' => 'View reports & analytics',
                     'analytics.view' => 'View dashboard analytics (alias of reports)',
                     'audit.view' => 'View activity / audit logs',

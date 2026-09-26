@@ -2,7 +2,7 @@
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 import { appUrl } from '../../../appUrl';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     settings: {
@@ -139,6 +139,13 @@ const settingNavigation = [
         enabled: true,
     },
 
+    {
+        key: 'ai',
+        label: 'AI Settings',
+        icon: 'bi-stars',
+        enabled: true,
+    },
+
 ];
 
 const basicForm = useForm({
@@ -171,6 +178,36 @@ const marketplaceForm = useForm({
     platform_commission_percentage: props.settings.platform_commission_percentage ?? '10.00',
     minimum_withdrawal_amount: props.settings.minimum_withdrawal_amount ?? '1000.00',
 });
+
+const aiForm = useForm({
+    ai_enabled: props.settings.ai?.enabled ?? false,
+    ai_provider: props.settings.ai?.provider ?? 'openai',
+    ai_model: props.settings.ai?.model ?? '',
+    azure_endpoint: props.settings.ai?.azure_endpoint ?? '',
+    azure_tool_calling: props.settings.ai?.azure_tool_calling ?? false,
+    api_key: '',
+    knowledge_enabled: props.settings.ai?.knowledge_enabled ?? false,
+    agent_actions_enabled: props.settings.ai?.agent_actions_enabled ?? false,
+    embedding_provider: props.settings.ai?.embedding_provider ?? 'openai',
+    embedding_model: props.settings.ai?.embedding_model ?? 'text-embedding-3-small',
+    embedding_api_key: '',
+});
+
+watch(() => aiForm.ai_provider, (provider) => {
+    aiForm.ai_model = props.settings.ai?.default_models?.[provider] ?? '';
+});
+
+watch(() => aiForm.embedding_provider, (provider) => {
+    aiForm.embedding_model = props.settings.ai?.embedding_models?.[provider]?.[0] ?? '';
+    aiForm.embedding_api_key = '';
+});
+
+function submitAiSettings() {
+    aiForm.post(appUrl('/admin/settings/ai'), {
+        preserveScroll: true,
+        onSuccess: () => aiForm.reset('api_key', 'embedding_api_key'),
+    });
+}
 
 
 function submitMarketplaceSettings() {
@@ -288,6 +325,102 @@ function selectSeoOgImage(event) {
 
             <!-- RIGHT CONTENT -->
             <div class="col-lg-9">
+
+
+                <form v-if="activeSetting === 'ai'" @submit.prevent="submitAiSettings">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center gap-2">
+                            <i class="bi bi-stars"></i>
+                            <strong>AI Settings</strong>
+                            <a :href="appUrl('/admin/mcp-access')" class="btn btn-sm btn-outline-secondary ms-auto">MCP Access</a>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-3">AI Provider is used for content generation and the Assistant. Knowledge Embedding Provider independently indexes and searches Knowledge for RAG.</p>
+                            <div class="form-check form-switch mb-4">
+                                <input id="ai-enabled" v-model="aiForm.ai_enabled" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" for="ai-enabled">Enable AI features</label>
+                            </div>
+                            <hr class="my-4" />
+                            <div class="form-check form-switch mb-3">
+                                <input id="knowledge-enabled" v-model="aiForm.knowledge_enabled" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" for="knowledge-enabled">Enable knowledge retrieval</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input id="agent-actions-enabled" v-model="aiForm.agent_actions_enabled" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" for="agent-actions-enabled">Enable guarded Agent actions</label>
+                                <div class="form-text">Every proposed change still requires confirmation in the Assistant.</div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="embedding-provider">Knowledge embedding provider</label>
+                                    <select id="embedding-provider" v-model="aiForm.embedding_provider" class="form-select">
+                                        <option v-for="provider in settings.ai?.embedding_providers ?? []" :key="provider" :value="provider">{{ provider === 'openai' ? 'OpenAI' : 'Gemini' }}</option>
+                                    </select>
+                                    <div v-if="aiForm.errors.embedding_provider" class="text-danger small mt-1">{{ aiForm.errors.embedding_provider }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="embedding-model">Embedding model</label>
+                                    <select id="embedding-model" v-model="aiForm.embedding_model" class="form-select">
+                                        <option v-for="model in settings.ai?.embedding_models?.[aiForm.embedding_provider] ?? []" :key="model" :value="model">{{ model }}</option>
+                                    </select>
+                                    <div v-if="aiForm.errors.embedding_model" class="text-danger small mt-1">{{ aiForm.errors.embedding_model }}</div>
+                                </div>
+                                <div v-if="aiForm.embedding_provider !== aiForm.ai_provider" class="col-12">
+                                    <label class="form-label" for="embedding-api-key">{{ aiForm.embedding_provider === 'gemini' ? 'Gemini' : 'OpenAI' }} API key for Knowledge</label>
+                                    <input id="embedding-api-key" v-model="aiForm.embedding_api_key" class="form-control" type="password" autocomplete="new-password" placeholder="Leave blank to keep the current key" />
+                                    <div class="form-text">{{ settings.ai?.embedding_credentials?.[aiForm.embedding_provider] ? 'Configured. The saved key is never displayed.' : 'Enter your provider key to index and search Knowledge.' }}</div>
+                                    <div v-if="aiForm.errors.embedding_api_key" class="text-danger small mt-1">{{ aiForm.errors.embedding_api_key }}</div>
+                                </div>
+                                <div v-else class="col-12 small text-muted">Knowledge uses the same encrypted {{ aiForm.embedding_provider === 'gemini' ? 'Gemini' : 'OpenAI' }} key as AI Provider. {{ settings.ai?.embedding_credentials?.[aiForm.embedding_provider] ? 'Configured.' : 'Enter it in the API key field below.' }}</div>
+                                <div class="col-12 small text-muted">Changing the embedding provider or model requires reindexing existing Knowledge. Use Reindex in AI Knowledge after saving; no embeddings are regenerated by changing this setting.</div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="ai-provider">Assistant / Content provider</label>
+                                    <select id="ai-provider" v-model="aiForm.ai_provider" class="form-select">
+                                        <option v-for="provider in settings.ai?.providers ?? []" :key="provider" :value="provider">
+                                            {{ provider === 'openai' ? 'OpenAI' : provider === 'claude' ? 'Claude' : provider === 'azure' ? 'Azure Foundry' : 'Gemini' }}
+                                        </option>
+                                    </select>
+                                    <div v-if="aiForm.errors.ai_provider" class="text-danger small mt-1">{{ aiForm.errors.ai_provider }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="ai-model">{{ aiForm.ai_provider === 'azure' ? 'Deployment / model' : 'Default model' }}</label>
+                                    <input id="ai-model" v-model="aiForm.ai_model" class="form-control" type="text" maxlength="100" placeholder="gpt-4o-mini" />
+                                    <div v-if="aiForm.ai_provider === 'azure'" class="form-text">Enter your deployed model name, not the model family.</div>
+                                    <div v-else class="form-text">For Gemini Assistant, use a supported function-calling model such as gemini-3.8-flash. Existing saved models stay unchanged.</div>
+                                    <div v-if="aiForm.errors.ai_model" class="text-danger small mt-1">{{ aiForm.errors.ai_model }}</div>
+                                </div>
+                                <template v-if="aiForm.ai_provider === 'azure'">
+                                    <div class="col-12">
+                                        <label class="form-label" for="azure-endpoint">Endpoint / project endpoint</label>
+                                        <input id="azure-endpoint" v-model="aiForm.azure_endpoint" class="form-control" type="url" maxlength="500" placeholder="https://your-resource.services.ai.azure.com/api/projects/your-project" />
+                                        <div class="form-text">Paste the Azure OpenAI resource or Foundry project endpoint. Triparo uses its v1 Responses API.</div>
+                                        <div v-if="aiForm.errors.azure_endpoint" class="text-danger small mt-1">{{ aiForm.errors.azure_endpoint }}</div>
+                                    </div>
+                                    <div class="col-12 form-check form-switch ms-2">
+                                        <input id="azure-tool-calling" v-model="aiForm.azure_tool_calling" class="form-check-input" type="checkbox" />
+                                        <label class="form-check-label" for="azure-tool-calling">This deployment supports function calling</label>
+                                        <div class="form-text">Enable Assistant only after confirming function calling for this deployment. Content generation can work without it.</div>
+                                    </div>
+                                </template>
+                                <div class="col-12">
+                                    <label class="form-label" for="ai-api-key">API key</label>
+                                    <input id="ai-api-key" v-model="aiForm.api_key" class="form-control" type="password" autocomplete="new-password" placeholder="Leave blank to keep the current key" />
+                                    <div class="form-text">
+                                        {{ settings.ai?.credentials?.[aiForm.ai_provider] ? 'Configured. Enter a new key only to replace it.' : 'Not configured. Enter your own provider key to enable drafts.' }}
+                                    </div>
+                                    <div v-if="aiForm.errors.api_key" class="text-danger small mt-1">{{ aiForm.errors.api_key }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button type="submit" class="btn btn-warning" :disabled="aiForm.processing">
+                                {{ aiForm.processing ? 'Saving...' : 'Save AI Settings' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
 
 
                 <form

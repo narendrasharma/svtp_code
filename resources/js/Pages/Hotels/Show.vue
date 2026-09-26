@@ -264,7 +264,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                     </div>
 
                     <aside class="property-detail-aside">
-                        <div class="property-aside-card property-aside-card--sticky">
+                        <div class="property-aside-card">
                             <span class="public-eyebrow">{{ t('common.good_to_know', 'Good to know') }}</span>
                             <h2>{{ t('common.property_policies', 'Property policies') }}</h2>
                             <dl class="property-policy-list">

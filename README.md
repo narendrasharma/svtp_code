@@ -7,6 +7,10 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Optional Triparo MCP server
+
+The remote MCP READ server is off by default. Run the normal forward-only Laravel migrations, set the public `APP_URL` to the HTTPS base URL used by MCP hosts, then enable MCP and create a personal bearer token under Admin → Settings → AI Settings → MCP Access. Connect the host to the application's `/mcp` endpoint with `Authorization: Bearer <token>`. Tokens are shown once, expire after 90 days, and can be revoked from that page. The optional `MCP_ENABLED=false` setting in `.env.example` supplies the initial default; the Admin switch overrides it. Tool access uses the token owner's current staff permissions. MCP write tools and OAuth-based automatic host onboarding are not included.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

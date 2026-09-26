@@ -202,24 +202,24 @@ onMounted(loadQuote);
                             <div class="hotel-booking-form__grid">
                                 <div class="public-field hotel-booking-form__field--wide">
                                     <label class="public-field__label" for="guest-name">{{ t('common.full_name', 'Full name') }}</label>
-                                    <input id="guest-name" v-model="form.guest_name" class="public-field__control" :class="{ 'is-invalid': fieldError('guest_name') }" type="text" autocomplete="name" required :aria-invalid="!!fieldError('guest_name')" aria-describedby="guest-name-error">
+                                    <input id="guest-name" v-model="form.guest_name" class="public-field__control public-input" :class="{ 'is-invalid': fieldError('guest_name') }" type="text" autocomplete="name" required :aria-invalid="!!fieldError('guest_name')" aria-describedby="guest-name-error">
                                     <p v-if="fieldError('guest_name')" id="guest-name-error" class="hotel-booking-field-error" role="alert">{{ fieldError('guest_name') }}</p>
                                 </div>
                                 <div class="public-field">
                                     <label class="public-field__label" for="guest-email">{{ t('common.email', 'Email') }}</label>
-                                    <input id="guest-email" v-model="form.guest_email" class="public-field__control" :class="{ 'is-invalid': fieldError('guest_email') }" type="email" autocomplete="email" required :aria-invalid="!!fieldError('guest_email')" aria-describedby="guest-email-error">
+                                    <input id="guest-email" v-model="form.guest_email" class="public-field__control public-input" :class="{ 'is-invalid': fieldError('guest_email') }" type="email" autocomplete="email" required :aria-invalid="!!fieldError('guest_email')" aria-describedby="guest-email-error">
                                     <p v-if="fieldError('guest_email')" id="guest-email-error" class="hotel-booking-field-error" role="alert">{{ fieldError('guest_email') }}</p>
                                 </div>
                                 <div class="public-field">
                                     <label class="public-field__label" for="guest-phone">{{ t('common.phone', 'Phone') }}</label>
-                                    <input id="guest-phone" v-model="form.guest_phone" class="public-field__control" :class="{ 'is-invalid': fieldError('guest_phone') }" type="tel" inputmode="tel" autocomplete="tel" required :aria-invalid="!!fieldError('guest_phone')" aria-describedby="guest-phone-error">
+                                    <input id="guest-phone" v-model="form.guest_phone" class="public-field__control public-input" :class="{ 'is-invalid': fieldError('guest_phone') }" type="tel" inputmode="tel" autocomplete="tel" required :aria-invalid="!!fieldError('guest_phone')" aria-describedby="guest-phone-error">
                                     <p v-if="fieldError('guest_phone')" id="guest-phone-error" class="hotel-booking-field-error" role="alert">{{ fieldError('guest_phone') }}</p>
                                 </div>
                             </div>
 
                             <div class="public-field">
                                 <label class="public-field__label" for="special-requests">{{ t('common.special_requests', 'Special requests') }} <span>({{ t('common.optional', 'optional') }})</span></label>
-                                <textarea id="special-requests" v-model="form.special_requests" class="public-field__control" rows="4" maxlength="2000"></textarea>
+                                <textarea id="special-requests" v-model="form.special_requests" class="public-field__control public-textarea" rows="4" maxlength="2000"></textarea>
                                 <p class="hotel-booking-help">{{ t('common.special_requests_note', 'Requests are shared with the property and are subject to availability.') }}</p>
                             </div>
 

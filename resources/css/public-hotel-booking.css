@@ -232,6 +232,34 @@
 
 .hotel-booking-form .public-field__control {
     width: 100%;
+    border-color: var(--public-border-strong);
+    background: var(--public-surface);
+    color: var(--public-text);
+}
+
+.hotel-booking-form .public-field__control::placeholder {
+    color: var(--public-text-muted);
+}
+
+.hotel-booking-form .public-field__control:focus {
+    border-color: var(--public-brand);
+    background: var(--public-surface);
+    color: var(--public-text);
+    box-shadow: 0 0 0 3px rgb(11 89 96 / 16%);
+    outline: 0;
+}
+
+.hotel-booking-form .public-field__control:focus-visible {
+    outline: 2px solid var(--public-brand);
+    outline-offset: 2px;
+}
+
+.hotel-booking-form .public-field__control.is-invalid {
+    border-color: var(--public-danger);
+}
+
+.hotel-booking-form .public-field__control.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgb(170 74 69 / 16%);
 }
 
 .hotel-booking-form textarea.public-field__control {

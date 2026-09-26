@@ -134,6 +134,21 @@ class HotelPropertyService
         });
     }
 
+    public function setFeatured(Property $property, bool $featured, User $actor): Property
+    {
+        if (! $this->canPublish($actor, $property)) {
+            throw ValidationException::withMessages(['is_featured' => 'You cannot change property merchandising.']);
+        }
+
+        if ($featured && $property->status !== PropertyStatus::Published->value) {
+            throw ValidationException::withMessages(['is_featured' => 'Only published properties can be featured.']);
+        }
+
+        $property->fill(['is_featured' => $featured])->save();
+
+        return $property->fresh();
+    }
+
     public function submit(Property $property, User $actor): Property
     {
         return DB::transaction(function () use ($property, $actor): Property {

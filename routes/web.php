@@ -6,6 +6,7 @@ use App\Http\Controllers\Account\HotelReviewController;
 use App\Http\Controllers\Account\SupportTicketController as AccountSupportTicketController;
 use App\Http\Controllers\Admin\ActivityLogController as AdminActivityLogController;
 use App\Http\Controllers\Admin\AdminSearchController;
+use App\Http\Controllers\Admin\AgentActionController;
 use App\Http\Controllers\Admin\AiContentController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BookingManagerController;
@@ -37,10 +38,13 @@ use App\Http\Controllers\Admin\Hotel\RoomController;
 use App\Http\Controllers\Admin\Hotel\UnitController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Admin\InvitationController as AdminInvitationController;
+use App\Http\Controllers\Admin\KnowledgeAgentController;
+use App\Http\Controllers\Admin\KnowledgeController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LeadSourceController as AdminLeadSourceController;
 use App\Http\Controllers\Admin\LocationLookupController as AdminLocationLookupController;
+use App\Http\Controllers\Admin\McpAccessController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\MenuItemController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
@@ -87,6 +91,7 @@ use App\Http\Controllers\Admin\VendorFinanceController as AdminVendorFinanceCont
 use App\Http\Controllers\Admin\VendorPlanController as AdminVendorPlanController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\ContentCopilotController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DiscoveryController;
@@ -106,6 +111,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvitationAcceptController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\McpServerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlaceController as PublicPlaceController;
@@ -383,6 +389,7 @@ Route::middleware('auth')->prefix('vendor')->name('vendor.')->group(function () 
 
 // Vendor dashboard/profile (requires vendor role)
 Route::middleware(['auth', 'vendor'])->prefix('vendor')->name('vendor.')->group(function () {
+    Route::post('/ai/content', [ContentCopilotController::class, 'generate'])->name('ai.content')->middleware('throttle:10,1');
     Route::get('/', [VendorDashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [VendorProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [VendorProfileController::class, 'edit'])->name('profile.edit');
@@ -634,7 +641,31 @@ Route::middleware(['auth', 'driver'])->prefix('driver')->name('driver.')->group(
     });
 });
 
+Route::middleware(['auth', 'admin'])->post('/admin/ai/content', [ContentCopilotController::class, 'generate'])
+    ->name('admin.ai.content')->middleware('throttle:10,1');
+
+Route::match(['GET', 'POST', 'DELETE', 'OPTIONS'], '/mcp', McpServerController::class)
+    ->name('mcp.server')->middleware(['throttle:60,1', 'mcp.auth']);
+
 Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/mcp-access', [McpAccessController::class, 'index'])->name('mcp.index');
+    Route::post('/mcp-access/toggle', [McpAccessController::class, 'toggle'])->name('mcp.toggle');
+    Route::post('/mcp-access/tokens', [McpAccessController::class, 'store'])->name('mcp.tokens.store');
+    Route::delete('/mcp-access/tokens/{token}', [McpAccessController::class, 'revoke'])->name('mcp.tokens.revoke');
+    Route::get('/ai-assistant', [KnowledgeAgentController::class, 'index'])->name('ai-assistant.index');
+    Route::get('/ai-assistant/actions', [AgentActionController::class, 'index'])->name('ai-assistant.actions.index');
+    Route::post('/ai-assistant/message', [KnowledgeAgentController::class, 'message'])->name('ai-assistant.message')->middleware('throttle:10,1');
+    Route::get('/ai-assistant/conversations/{conversation}', [KnowledgeAgentController::class, 'show'])->name('ai-assistant.conversations.show');
+    Route::patch('/ai-assistant/conversations/{conversation}', [KnowledgeAgentController::class, 'rename'])->name('ai-assistant.conversations.rename');
+    Route::delete('/ai-assistant/conversations/{conversation}', [KnowledgeAgentController::class, 'destroy'])->name('ai-assistant.conversations.destroy');
+    Route::post('/ai-assistant/actions/{proposal}/confirm', [AgentActionController::class, 'confirm'])->name('ai-assistant.actions.confirm')->middleware('throttle:12,1');
+    Route::post('/ai-assistant/actions/{proposal}/reject', [AgentActionController::class, 'reject'])->name('ai-assistant.actions.reject')->middleware('throttle:12,1');
+    Route::get('/ai-assistant/knowledge', [KnowledgeController::class, 'index'])->name('ai-assistant.knowledge.index');
+    Route::post('/ai-assistant/knowledge', [KnowledgeController::class, 'store'])->name('ai-assistant.knowledge.store');
+    Route::put('/ai-assistant/knowledge/{document}', [KnowledgeController::class, 'update'])->name('ai-assistant.knowledge.update');
+    Route::post('/ai-assistant/knowledge/{document}/reindex', [KnowledgeController::class, 'reindex'])->name('ai-assistant.knowledge.reindex');
+    Route::delete('/ai-assistant/knowledge/{document}', [KnowledgeController::class, 'destroy'])->name('ai-assistant.knowledge.destroy');
+    Route::post('/ai-assistant/knowledge/import', [KnowledgeController::class, 'import'])->name('ai-assistant.knowledge.import');
     Route::post(
         '/editor/upload-image',
         [EditorUploadController::class, 'store']
@@ -799,6 +830,11 @@ Route::middleware(['auth', 'admin', 'staff.permissions'])->prefix('admin')->name
         '/settings/operations',
         [SettingController::class, 'updateOperations']
     )->name('settings.operations.update');
+
+    Route::post(
+        '/settings/ai',
+        [SettingController::class, 'updateAi']
+    )->name('settings.ai.update');
 
     // Phase 13A shared localization (module-independent platform
     // infrastructure — never gated behind Hotels/Tours/Taxi).

@@ -177,6 +177,7 @@ class AdminNavigation
                 'label' => 'System',
                 'items' => [
                     self::item('settings', 'Settings', 'bi-gear', 'admin.settings.index', null, 'settings.view', ['setting', 'configuration', 'general', 'contact', 'social', 'marketplace commission', 'seo', 'meta', 'search engine', 'google', 'og image', 'index'], 10),
+                    self::item('ai-assistant', 'AI Assistant', 'bi-stars', 'admin.ai-assistant.index', null, 'ai.assistant.use', ['ai', 'assistant', 'marketplace questions'], 12),
                     self::item('languages', 'Languages', 'bi-translate', 'admin.languages.index', null, 'settings.view', ['language', 'locale', 'translation', 'rtl', 'arabic', 'hindi'], 15),
                     self::item('currencies', 'Currencies', 'bi-currency-exchange', 'admin.currencies.index', null, 'currencies.view', ['currency', 'exchange rate', 'fx', 'money', 'usd', 'inr', 'display currency'], 16),
                     self::item('modules', 'Modules', 'bi-grid-1x2', 'admin.modules.index', null, 'modules.manage', ['module', 'taxi', 'hotels', 'tours module', 'enable', 'disable'], 30),

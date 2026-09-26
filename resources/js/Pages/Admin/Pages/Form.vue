@@ -2,6 +2,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AiAssist from '../../../Components/AiAssist.vue';
 import { appUrl } from '../../../appUrl';
 import { Ckeditor } from '@ckeditor/ckeditor5-vue';
 import {
@@ -138,6 +139,11 @@ function submit() {
         form.post(url);
     }
 }
+
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
+}
 </script>
 
 <template>
@@ -177,6 +183,9 @@ function submit() {
                     :editor="editor"
                     :config="editorConfig"
                 />
+                <AiAssist content-type="page" field="content" :source="form.content"
+                    :context="{ name: form.title, excerpt: form.excerpt }" :entity-id="page?.id"
+                    :endpoint="appUrl('/admin/ai/content')" @apply="form.content = $event" />
                 <small class="text-danger">{{ form.errors.content }}</small>
             </div>
 
@@ -245,6 +254,9 @@ function submit() {
                             {{ form.errors.meta_description }}
                         </small>
                     </div>
+                    <AiAssist content-type="page" field="seo" mode="seo" :source="form.content"
+                        :context="{ name: form.title, excerpt: form.excerpt }" :entity-id="page?.id"
+                        :endpoint="appUrl('/admin/ai/content')" @apply="applySeoDraft" />
                 </div>
             </div>
 

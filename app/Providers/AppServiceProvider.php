@@ -2,6 +2,23 @@
 
 namespace App\Providers;
 
+use App\AI\Contracts\KnowledgeRetrieverInterface;
+use App\AI\Contracts\VectorStoreInterface;
+use App\AI\Providers\AzureProvider;
+use App\AI\Providers\ClaudeProvider;
+use App\AI\Providers\GeminiEmbeddingProvider;
+use App\AI\Providers\GeminiProvider;
+use App\AI\Providers\OpenAIEmbeddingProvider;
+use App\AI\Providers\OpenAIProvider;
+use App\AI\Support\AIProviderRegistry;
+use App\AI\Support\AIToolRegistry;
+use App\AI\Support\DatabaseKnowledgeRetriever;
+use App\AI\Support\DatabaseVectorStore;
+use App\AI\Support\EmbeddingProviderRegistry;
+use App\AI\Tools\MarketplaceContentActionTool;
+use App\AI\Tools\MarketplaceReadTool;
+use App\AI\Tools\OperationalContentActionTool;
+use App\AI\Tools\SearchKnowledgeTool;
 use App\Contracts\Discovery\SearchProvider;
 use App\Contracts\ExchangeRateProvider;
 use App\Events;
@@ -32,6 +49,7 @@ use App\Policies\VendorPlanPolicy;
 use App\Policies\VendorProfilePolicy;
 use App\Policies\VendorWithdrawalRequestPolicy;
 use App\Services\Discovery\DatabaseLocationSearchProvider;
+use App\Services\HotelPropertyService;
 use App\Services\ImpersonationService;
 use App\Services\ManualExchangeRateProvider;
 use App\Services\Payouts\ManualPayoutProcessor;
@@ -44,6 +62,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
@@ -56,6 +75,47 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(AIProviderRegistry::class, function (Application $app): AIProviderRegistry {
+            $registry = new AIProviderRegistry;
+            $registry->register($app->make(OpenAIProvider::class));
+            $registry->register($app->make(GeminiProvider::class));
+            $registry->register($app->make(ClaudeProvider::class));
+            $registry->register($app->make(AzureProvider::class));
+
+            return $registry;
+        });
+
+        $this->app->singleton(EmbeddingProviderRegistry::class, function (Application $app): EmbeddingProviderRegistry {
+            $registry = new EmbeddingProviderRegistry;
+            $registry->register($app->make(OpenAIEmbeddingProvider::class));
+            $registry->register($app->make(GeminiEmbeddingProvider::class));
+
+            return $registry;
+        });
+
+        $this->app->bind(VectorStoreInterface::class, DatabaseVectorStore::class);
+        $this->app->bind(KnowledgeRetrieverInterface::class, DatabaseKnowledgeRetriever::class);
+
+        $this->app->singleton(AIToolRegistry::class, function (Application $app): AIToolRegistry {
+            $registry = new AIToolRegistry;
+
+            foreach (MarketplaceReadTool::NAMES as $name) {
+                $registry->register(new MarketplaceReadTool($name));
+            }
+
+            $registry->register($app->make(SearchKnowledgeTool::class));
+
+            foreach (MarketplaceContentActionTool::NAMES as $name) {
+                $registry->registerAction(new MarketplaceContentActionTool($name));
+            }
+
+            foreach (OperationalContentActionTool::NAMES as $name) {
+                $registry->registerAction(new OperationalContentActionTool($name, $app->make(HotelPropertyService::class)));
+            }
+
+            return $registry;
+        });
+
         // Phase 13C discovery seam: database driver today; future
         // Scout/Meilisearch/Algolia adapters bind here.
         $this->app->bind(

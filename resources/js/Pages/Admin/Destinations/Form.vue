@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import AiAssist from '../../../Components/AiAssist.vue';
 import { appUrl } from '../../../appUrl';
 
 const props = defineProps({
@@ -72,6 +73,11 @@ function submit() {
     } else {
         form.transform(payload).post(url, { forceFormData: true });
     }
+}
+
+function applySeoDraft(draft) {
+    form.meta_title = draft.title;
+    form.meta_description = draft.description;
 }
 
 function selectImage(event) {
@@ -150,6 +156,9 @@ function selectImage(event) {
 
             <label class="form-label mt-3">Description</label>
             <textarea v-model="form.description" class="form-control" rows="5" placeholder="Introduce this destination to travellers."></textarea>
+            <AiAssist content-type="destination" field="description" output-format="plain" :source="form.description"
+                :context="{ name: form.name, excerpt: form.excerpt }" :entity-id="destination?.id"
+                :endpoint="appUrl('/admin/ai/content')" @apply="form.description = $event" />
             <small class="text-danger">{{ form.errors.description }}</small>
 
             <div class="mt-3">
@@ -255,6 +264,9 @@ function selectImage(event) {
                             {{ form.errors.meta_description }}
                         </small>
                     </div>
+                    <AiAssist content-type="destination" field="seo" mode="seo" :source="form.description"
+                        :context="{ name: form.name, excerpt: form.excerpt }" :entity-id="destination?.id"
+                        :endpoint="appUrl('/admin/ai/content')" @apply="applySeoDraft" />
 
                 </div>
             </div>
