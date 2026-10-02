@@ -106,6 +106,7 @@ class HotelController extends Controller
 
         return Inertia::render('Hotels/Show', [
             'property' => $this->detailFor($property),
+            'maxRoomsPerBooking' => max(1, (int) HotelSettings::get('hotel.booking.max_rooms_per_booking')),
             'reviewSummary' => $summary,
             'reviews' => fn () => $summary !== null ? $reviews->publicReviews($property, $filters['review_sort'] ?? 'recent') : null,
             'reviewCategories' => $summary !== null ? HotelReview::CATEGORY_RATINGS : [],

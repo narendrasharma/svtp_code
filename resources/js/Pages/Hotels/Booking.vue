@@ -21,16 +21,14 @@ const props = defineProps({
 });
 
 const { locale, t } = useLocalization();
-const quote = ref(null);
+const quote = ref(props.selection);
 const quoteLoading = ref(false);
 const quoteError = ref('');
 const bookingError = ref('');
 const form = useForm({
-    room_type_id: props.selection.room_type_id,
-    rate_plan_id: props.selection.rate_plan_id,
+    items: props.selection.items.map(({ room_type_id, rate_plan_id, quantity }) => ({ room_type_id, rate_plan_id, quantity })),
     check_in: props.stay.check_in,
     check_out: props.stay.check_out,
-    rooms: props.stay.rooms,
     adults: props.stay.adults,
     children: props.stay.children,
     guest_name: props.customer.name || '',
@@ -38,7 +36,7 @@ const form = useForm({
     guest_phone: props.customer.phone || '',
     special_requests: '',
     idempotency_key: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random()),
-    quote_fingerprint: '',
+    quote_fingerprint: props.selection.quote_fingerprint,
     terms_accepted: false,
 });
 
@@ -57,7 +55,7 @@ const backHref = computed(() => {
     });
     return appUrl('/hotels/' + props.property.slug + '?' + params.toString() + '#rooms');
 });
-const quoteIsAvailable = computed(() => Boolean(quote.value?.available));
+const quoteIsAvailable = computed(() => Boolean(quote.value?.quote_fingerprint));
 const canSubmit = computed(() => !form.processing && !quoteLoading.value && quoteIsAvailable.value && Boolean(form.quote_fingerprint) && (!props.requiresTerms || form.terms_accepted));
 
 function formatDate(value) {
@@ -69,49 +67,29 @@ function formatDate(value) {
     }
 }
 
-function mealLabel(value) {
-    if (!value) return '';
-    return String(value).replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function cancellationLabel() {
-    if (props.selection.cancellation_note) return props.selection.cancellation_note;
-    if (props.selection.cancellation_mode === 'non_refundable') return t('common.non_refundable', 'Non-refundable');
-    if (props.selection.cancellation_mode) return t('common.cancellation_applies', 'Cancellation terms apply');
-    return '';
-}
-
 function fieldError(field) {
     return form.errors[field] || '';
-}
-
-function applyQuote(result) {
-    const selected = result?.room_types?.flatMap((room) => room.plans || []).find((plan) => Number(plan.rate_plan_id) === Number(props.selection.rate_plan_id));
-    quote.value = selected || null;
-    form.quote_fingerprint = selected?.quote_fingerprint || '';
-    quoteError.value = selected?.available === false
-        ? (selected.unavailable_reason || t('common.stay_unavailable', 'This stay is no longer available.'))
-        : (!selected ? t('common.stay_unavailable', 'This stay is no longer available.') : '');
 }
 
 async function loadQuote() {
     quoteLoading.value = true;
     quoteError.value = '';
     try {
-        const response = await axios.get(appUrl('/hotels/' + props.property.slug + '/rates'), {
+        const response = await axios.get(appUrl('/hotels/' + props.property.slug + '/booking-quote'), {
             params: {
                 check_in: props.stay.check_in,
                 check_out: props.stay.check_out,
-                rooms: props.stay.rooms,
                 adults: props.stay.adults,
                 children: props.stay.children,
-                room_type_id: props.selection.room_type_id,
+                items: form.items,
             },
         });
-        applyQuote(response.data);
+        quote.value = response.data;
+        form.quote_fingerprint = response.data.quote_fingerprint;
     } catch (error) {
         quote.value = null;
-        quoteError.value = error.response?.data?.message || t('common.quote_error', 'The stay could not be priced right now. Please try again.');
+        form.quote_fingerprint = '';
+        quoteError.value = Object.values(error.response?.data?.errors || {})[0]?.[0] || error.response?.data?.message || t('common.quote_error', 'The stay could not be priced right now. Please try again.');
     } finally {
         quoteLoading.value = false;
     }
@@ -122,8 +100,8 @@ function submit() {
     form.post(appUrl('/hotels/' + props.property.slug + '/book'), {
         preserveScroll: true,
         onError: (errors) => {
-            if (errors.quote_fingerprint || errors.availability || errors.rate_plan_id || errors.room_type_id) {
-                bookingError.value = t('common.price_changed_review', 'The price or availability changed. Review the updated total before confirming.');
+            if (errors.quote_fingerprint || errors.availability || errors.items) {
+                bookingError.value = errors.quote_fingerprint || errors.availability || errors.items;
                 loadQuote();
                 return;
             }
@@ -171,16 +149,18 @@ onMounted(loadQuote);
                             <div class="hotel-booking-card__heading">
                                 <div>
                                     <span class="public-eyebrow">{{ t('common.your_stay', 'Your stay') }}</span>
-                                    <h2>{{ selection.room_name }}</h2>
+                                    <h2>{{ stay.rooms }} {{ stay.rooms === 1 ? t('common.room', 'room') : t('common.rooms', 'rooms') }}</h2>
                                 </div>
                                 <Link :href="backHref" class="public-button public-button--ghost public-button--sm">{{ t('common.change_room', 'Change room') }}</Link>
                             </div>
                             <div class="hotel-booking-recap">
                                 <ImageWithFallback :src="mediaUrl(property.image)" :alt="property.name" aspect="square" kind="hotel" :label="property.name" loading="eager" />
-                                <div>
-                                    <strong>{{ selection.rate_name }}</strong>
-                                    <span v-if="selection.meal_plan">{{ mealLabel(selection.meal_plan) }}</span>
-                                    <span v-if="cancellationLabel()">{{ cancellationLabel() }}</span>
+                                <div class="hotel-booking-room-lines">
+                                    <div v-for="item in selection.items" :key="item.room_type_id">
+                                        <strong>{{ item.room_name }} × {{ item.quantity }}</strong>
+                                        <span>{{ item.rate_name }}</span>
+                                        <span v-if="item.cancellation_note">{{ item.cancellation_note }}</span>
+                                    </div>
                                 </div>
                             </div>
                             <dl class="hotel-booking-facts">
@@ -245,9 +225,10 @@ onMounted(loadQuote);
                             <span class="public-eyebrow">{{ t('common.booking_summary', 'Booking summary') }}</span>
                             <h2 id="booking-summary-heading">{{ property.name }}</h2>
                             <p v-if="propertyLocation" class="hotel-booking-summary__location"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ propertyLocation }}</p>
-                            <div class="hotel-booking-summary__selection">
-                                <strong>{{ selection.room_name }}</strong>
-                                <span>{{ selection.rate_name }}</span>
+                            <div v-for="item in selection.items" :key="item.room_type_id" class="hotel-booking-summary__selection">
+                                <strong>{{ item.room_name }} × {{ item.quantity }}</strong>
+                                <span>{{ item.rate_name }}</span>
+                                <MoneyDisplay v-if="quote?.items?.find((line) => line.room_type_id === item.room_type_id)?.display_total" :money="quote.items.find((line) => line.room_type_id === item.room_type_id).display_total" />
                             </div>
                             <div class="hotel-booking-summary__stay">
                                 <div><span>{{ t('common.check_in', 'Check-in') }}</span><strong>{{ formatDate(stay.check_in) }}</strong></div>

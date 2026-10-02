@@ -18,10 +18,12 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\CrmNotification;
 use App\Services\HotelAvailabilityService;
+use App\Services\HotelBookingChangeService;
 use App\Services\HotelBookingService;
 use App\Services\HotelPricingService;
 use App\Support\ModuleManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
@@ -133,6 +135,84 @@ class HotelBookingTest extends TestCase
         $this->assertTrue(app(HotelAvailabilityService::class)->checkRoomType($room, '2027-04-13', '2027-04-14')['available']);
     }
 
+    public function test_public_booking_reserves_multiple_room_types_at_one_property_with_server_totals(): void
+    {
+        config()->set('app.url', 'http://localhost');
+        URL::forceRootUrl('http://localhost');
+        Notification::fake();
+        [$property, $room, $plan] = $this->hotel(3);
+        $suite = HotelRoomType::factory()->create(['property_id' => $property->id, 'status' => RoomTypeStatus::Active->value, 'total_units' => 2]);
+        $suitePlan = HotelRatePlan::factory()->create(['property_id' => $property->id, 'hotel_room_type_id' => $suite->id, 'currency' => 'USD', 'base_rate' => '150.00']);
+        $customer = User::factory()->create();
+        $data = [
+            'items' => [
+                ['room_type_id' => $room->id, 'rate_plan_id' => $plan->id, 'quantity' => 2],
+                ['room_type_id' => $suite->id, 'rate_plan_id' => $suitePlan->id, 'quantity' => 1],
+            ],
+            'check_in' => '2027-04-10', 'check_out' => '2027-04-12', 'adults' => 3, 'children' => 0,
+            'guest_name' => 'Test Guest', 'guest_email' => 'guest@example.com', 'guest_phone' => '+911234567890',
+            'subtotal' => '0.01', 'total' => '0.01',
+        ];
+        $quote = app(HotelBookingService::class)->quoteSelection($property, $data);
+        $query = http_build_query(['items' => $data['items'], 'check_in' => $data['check_in'], 'check_out' => $data['check_out'], 'adults' => $data['adults'], 'children' => 0]);
+        $this->actingAs($customer)->getJson('/hotels/'.$property->slug.'/booking-quote?'.$query)
+            ->assertOk()->assertJsonPath('rooms_count', 3)->assertJsonCount(2, 'items');
+        $this->actingAs($customer)->get('/hotels/'.$property->slug.'/book?'.$query)
+            ->assertInertia(fn (Assert $page) => $page->component('Hotels/Booking')->has('selection.items', 2)->where('stay.rooms', 3));
+        $this->actingAs($customer)->post('/hotels/'.$property->slug.'/book', $data + ['quote_fingerprint' => $quote['quote_fingerprint']])
+            ->assertRedirect();
+
+        $booking = HotelBooking::with('items.reservationNights')->sole();
+        $this->assertSame(3, $booking->rooms_count);
+        $this->assertSame([2, 1], $booking->items->pluck('quantity')->all());
+        $this->assertSame(4, $booking->reservationNights()->count());
+        $this->assertEquals($quote['total'], $booking->total);
+        $this->assertEquals($quote['subtotal'], $booking->subtotal);
+        $this->assertSame($property->id, $booking->property_id);
+        $this->actingAs($customer)->get('/hotel-bookings/'.$booking->id.'/confirmation')
+            ->assertInertia(fn (Assert $page) => $page->component('Hotels/Confirmation')->has('booking.items', 2));
+    }
+
+    public function test_multi_room_booking_rejects_cross_property_rooms_and_sold_out_quantity(): void
+    {
+        config()->set('app.url', 'http://localhost');
+        URL::forceRootUrl('http://localhost');
+        [$property, $room, $plan] = $this->hotel(1);
+        [$otherProperty, $otherRoom, $otherPlan] = $this->hotel(2);
+        $customer = User::factory()->create();
+        $data = [
+            'items' => [
+                ['room_type_id' => $room->id, 'rate_plan_id' => $plan->id, 'quantity' => 1],
+                ['room_type_id' => $otherRoom->id, 'rate_plan_id' => $otherPlan->id, 'quantity' => 1],
+            ],
+            'check_in' => '2027-04-10', 'check_out' => '2027-04-11', 'adults' => 2, 'children' => 0,
+            'guest_name' => 'Test Guest', 'guest_email' => 'guest@example.com', 'guest_phone' => '+911234567890',
+        ];
+        $this->actingAs($customer)->post('/hotels/'.$property->slug.'/book', $data)->assertSessionHasErrors('items');
+        $data['items'] = [['room_type_id' => $room->id, 'rate_plan_id' => $plan->id, 'quantity' => 2]];
+        $this->actingAs($customer)->post('/hotels/'.$property->slug.'/book', $data)->assertSessionHasErrors('availability');
+        $this->assertSame(0, HotelBooking::count());
+    }
+
+    public function test_multi_room_cancellation_uses_each_rate_policy(): void
+    {
+        [$property, $room, $plan] = $this->hotel(2);
+        $suite = HotelRoomType::factory()->create(['property_id' => $property->id, 'status' => RoomTypeStatus::Active->value, 'total_units' => 2]);
+        $suitePlan = HotelRatePlan::factory()->create(['property_id' => $property->id, 'hotel_room_type_id' => $suite->id, 'currency' => 'USD', 'base_rate' => '150.00', 'cancellation_mode' => HotelRatePlan::CANCEL_NON_REFUNDABLE]);
+        $customer = User::factory()->create();
+        $booking = app(HotelBookingService::class)->create([
+            'items' => [
+                ['room_type_id' => $room->id, 'rate_plan_id' => $plan->id, 'quantity' => 1],
+                ['room_type_id' => $suite->id, 'rate_plan_id' => $suitePlan->id, 'quantity' => 1],
+            ],
+            'property_id' => $property->id, 'check_in' => '2027-04-10', 'check_out' => '2027-04-12',
+            'adults' => 2, 'children' => 0, 'guest_name' => 'Test Guest', 'guest_email' => 'guest@example.com', 'guest_phone' => '+911234567890',
+        ], $customer, $customer);
+        $quote = app(HotelBookingChangeService::class)->cancellationQuote($booking, Carbon::parse('2027-04-01'));
+
+        $this->assertEquals($booking->items->last()->total, $quote['cancellation_fee']);
+    }
+
     public function test_sold_out_and_stop_sell_reject_the_whole_stay_without_mutating_capacity(): void
     {
         [$property, $room, $plan] = $this->hotel(1);
@@ -214,11 +294,20 @@ class HotelBookingTest extends TestCase
         app(HotelBookingService::class)->changeStatus($booking, HotelBookingStatus::Completed, $customer);
     }
 
-    public function test_booking_requires_login_even_when_guest_setting_is_enabled(): void
+    public function test_guest_booking_requires_setting_and_can_confirm_when_enabled(): void
     {
+        config()->set('app.url', 'http://localhost');
+        URL::forceRootUrl('http://localhost');
+        [$property, $room, $plan] = $this->hotel(1);
+        $quote = app(HotelPricingService::class)->quote($plan, '2027-04-10', '2027-04-11', 1, 2, 0);
+        $data = $this->payload($room, $plan, $quote) + ['idempotency_key' => 'guest-booking-once'];
+        $this->post('/hotels/'.$property->slug.'/book', $data)->assertRedirect(route('login'));
         Setting::setValue('hotel.booking.allow_guest_booking', '1');
-        [$property] = $this->hotel(1);
-        $this->post(route('hotel-booking.store', ['slug' => $property->slug]), [])->assertStatus(404);
+        $this->post('/hotels/'.$property->slug.'/book', $data)->assertRedirect();
+        $booking = HotelBooking::sole();
+        $this->assertNull($booking->user_id);
+        $this->post('/hotels/'.$property->slug.'/book', array_replace($data, ['guest_email' => 'someone-else@example.com']))->assertSessionHasErrors('idempotency_key');
+        $this->get('/hotel-bookings/'.$booking->id.'/confirmation')->assertOk();
     }
 
     public function test_checkout_requires_login_and_preserves_selection_for_authenticated_customer(): void
@@ -241,8 +330,8 @@ class HotelBookingTest extends TestCase
             ->get(route('hotel-booking.create', ['slug' => $property->slug] + $query, absolute: false))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Hotels/Booking')
-                ->where('selection.room_type_id', $room->id)
-                ->where('selection.rate_plan_id', $plan->id)
+                ->where('selection.items.0.room_type_id', $room->id)
+                ->where('selection.items.0.rate_plan_id', $plan->id)
                 ->where('stay.rooms', 2)
                 ->where('stay.adults', 3)
                 ->where('stay.children', 1)

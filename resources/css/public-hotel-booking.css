@@ -3,6 +3,16 @@
     background: var(--public-bg);
 }
 
+.hotel-booking-room-lines {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.hotel-booking-room-lines > div {
+    display: grid;
+    gap: 0.2rem;
+}
+
 .hotel-booking-container,
 .hotel-confirmation-container {
     padding-block: 1.5rem 6rem;

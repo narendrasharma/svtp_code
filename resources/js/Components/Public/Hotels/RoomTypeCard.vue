@@ -10,10 +10,11 @@ const props = defineProps({
     rates: { type: Array, default: () => [] },
     availability: { type: Object, default: null },
     hasDates: { type: Boolean, default: false },
-    selectedRate: { type: Object, default: null },
+    selection: { type: Object, default: null },
+    maxQuantity: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(['change']);
 const { t } = useLocalization();
 const isExpanded = ref(false);
 const primaryImage = computed(() => props.room.image || props.room.gallery?.[0]?.url || null);
@@ -29,7 +30,11 @@ function cancellationLabel(value) {
 }
 
 function isSelected(rate) {
-    return props.selectedRate?.code === rate.code;
+    return Number(props.selection?.rate_plan_id) === Number(rate.rate_plan_id);
+}
+
+function quantity(rate) {
+    return isSelected(rate) ? Number(props.selection.quantity) : 0;
 }
 </script>
 
@@ -80,10 +85,13 @@ function isSelected(rate) {
                         </div>
                         <div class="property-rate-option__action">
                             <MoneyDisplay v-if="rate.display_total" :money="rate.display_total" />
-                            <small v-if="rate.nights_count">{{ rate.nights_count }} {{ rate.nights_count === 1 ? t('common.night', 'night') : t('common.nights', 'nights') }}</small>
-                            <button type="button" class="public-button public-button--primary public-button--sm" :disabled="!rate.available" @click="emit('select', rate)">
-                                {{ isSelected(rate) ? t('common.selected', 'Selected') : t('common.select_rate', 'Select rate') }}
-                            </button>
+                            <small v-if="rate.nights_count">{{ rate.nights_count }} {{ rate.nights_count === 1 ? t('common.night', 'night') : t('common.nights', 'nights') }} · 1 {{ t('common.adult', 'adult') }}</small>
+                            <div class="property-room-quantity" :aria-label="room.name + ' · ' + rate.name + ' quantity'">
+                                <button type="button" :aria-label="'Remove one ' + room.name + ' (' + rate.name + ')'" :disabled="quantity(rate) === 0" @click="emit('change', { rate, quantity: quantity(rate) - 1 })">−</button>
+                                <output :aria-label="quantity(rate) + ' rooms selected'">{{ quantity(rate) }}</output>
+                                <button type="button" :aria-label="'Add one ' + room.name + ' (' + rate.name + ')'" :disabled="!rate.available || quantity(rate) >= maxQuantity" @click="emit('change', { rate, quantity: quantity(rate) + 1 })">+</button>
+                            </div>
+                            <small v-if="rate.available">{{ availability?.available_rooms || 0 }} {{ t('common.rooms', 'rooms') }} available</small>
                         </div>
                     </div>
                 </template>

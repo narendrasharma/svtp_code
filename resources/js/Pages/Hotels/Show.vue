@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import { appUrl } from '../../appUrl';
@@ -25,6 +25,7 @@ const props = defineProps({
     reviewCategories: { type: Object, default: () => ({}) },
     reviewSort: { type: String, default: 'recent' },
     stay: { type: Object, default: () => ({}) },
+    maxRoomsPerBooking: { type: Number, default: 10 },
 });
 
 const { locale, t } = useLocalization();
@@ -39,7 +40,11 @@ const checking = ref(false);
 const checkError = ref('');
 const availability = ref(null);
 const rates = ref(null);
-const selectedRate = ref(null);
+const selectedRooms = ref({});
+const selectionQuote = ref(null);
+const selectionError = ref('');
+let quoteRequest = 0;
+let availabilityRequest = 0;
 const galleryOpen = ref(false);
 const galleryIndex = ref(0);
 
@@ -55,17 +60,20 @@ const searchHref = computed(() => {
     return appUrl('/search/hotels?' + params.toString());
 });
 const locationText = computed(() => [props.property.city, props.property.destination, props.property.state].filter(Boolean).filter((value, index, list) => list.indexOf(value) === index).join(' · '));
+const selectionItems = computed(() => Object.values(selectedRooms.value).filter((item) => item.quantity > 0));
+const selectedRoomCount = computed(() => selectionItems.value.reduce((total, item) => total + item.quantity, 0));
 const bookingHref = computed(() => {
-    if (!selectedRate.value) return '#rooms';
-
+    if (!selectionQuote.value) return '#rooms';
     const params = new URLSearchParams({
-        room_type_id: String(selectedRate.value.room_type_id),
-        rate_plan_id: String(selectedRate.value.rate_plan_id),
         check_in: stay.check_in,
         check_out: stay.check_out,
-        rooms: String(stay.rooms),
         adults: String(stay.adults),
         children: String(stay.children),
+    });
+    selectionItems.value.forEach((item, index) => {
+        params.set(`items[${index}][room_type_id]`, String(item.room_type_id));
+        params.set(`items[${index}][rate_plan_id]`, String(item.rate_plan_id));
+        params.set(`items[${index}][quantity]`, String(item.quantity));
     });
 
     return appUrl('/hotels/' + props.property.slug + '/book?' + params.toString());
@@ -107,9 +115,10 @@ function roomRates(room) {
     return rates.value?.room_types?.find((item) => item.slug === room.slug)?.plans || [];
 }
 
-async function checkAvailability(options = {}) {
+async function checkAvailability() {
     checkError.value = '';
-    selectedRate.value = null;
+    clearSelection();
+    const request = ++availabilityRequest;
 
     if (!stay.check_in || !stay.check_out) {
         checkError.value = t('common.choose_dates_first', 'Choose check-in and check-out dates to check availability.');
@@ -122,28 +131,72 @@ async function checkAvailability(options = {}) {
         const base = {
             check_in: stay.check_in,
             check_out: stay.check_out,
-            rooms: Number(stay.rooms),
-            adults: Number(stay.adults),
-            children: Number(stay.children),
+            rooms: 1,
+            adults: 1,
+            children: 0,
         };
         const response = await Promise.all([
             axios.get(appUrl('/hotels/' + props.property.slug + '/availability'), { params: base }),
             axios.get(appUrl('/hotels/' + props.property.slug + '/rates'), { params: base }),
         ]);
-        availability.value = response[0].data;
-        rates.value = response[1].data;
+        if (request === availabilityRequest) {
+            availability.value = response[0].data;
+            rates.value = response[1].data;
+        }
     } catch (error) {
-        availability.value = null;
-        rates.value = null;
-        checkError.value = error.response?.data?.message || t('common.availability_error', 'Availability could not be checked. Please try again.');
+        if (request === availabilityRequest) {
+            availability.value = null;
+            rates.value = null;
+            checkError.value = error.response?.data?.message || t('common.availability_error', 'Availability could not be checked. Please try again.');
+        }
     } finally {
-        checking.value = false;
+        if (request === availabilityRequest) checking.value = false;
     }
 }
 
-function selectRate(rate, room) {
-    selectedRate.value = { ...rate, room_type_id: rate.room_type_id || room.id, room_slug: room.slug, room_name: room.name };
+function clearSelection() {
+    quoteRequest++;
+    selectedRooms.value = {};
+    selectionQuote.value = null;
+    selectionError.value = '';
 }
+
+async function changeRoom(rate, room, quantity) {
+    const updated = { ...selectedRooms.value };
+    if (quantity > 0) updated[room.slug] = { room_type_id: rate.room_type_id, rate_plan_id: rate.rate_plan_id, room_name: room.name, rate_name: rate.name, quantity };
+    else delete updated[room.slug];
+    selectedRooms.value = updated;
+    stay.rooms = selectedRoomCount.value || 1;
+    await refreshSelection();
+}
+
+async function refreshSelection() {
+    selectionQuote.value = null;
+    selectionError.value = '';
+    const request = ++quoteRequest;
+    if (!selectionItems.value.length) return;
+    try {
+        const response = await axios.get(appUrl('/hotels/' + props.property.slug + '/booking-quote'), {
+            params: { items: selectionItems.value.map(({ room_type_id, rate_plan_id, quantity }) => ({ room_type_id, rate_plan_id, quantity })), check_in: stay.check_in, check_out: stay.check_out, adults: Number(stay.adults), children: Number(stay.children) },
+        });
+        if (request === quoteRequest) selectionQuote.value = response.data;
+    } catch (error) {
+        if (request === quoteRequest) selectionError.value = Object.values(error.response?.data?.errors || {})[0]?.[0] || error.response?.data?.message || t('common.quote_error', 'The stay could not be priced right now.');
+    }
+}
+
+watch(() => [stay.check_in, stay.check_out], () => {
+    availabilityRequest++;
+    availability.value = null;
+    rates.value = null;
+    clearSelection();
+});
+watch(() => [stay.adults, stay.children], () => {
+    if (selectedRoomCount.value) refreshSelection();
+});
+watch(() => stay.rooms, () => {
+    if (selectedRoomCount.value && Number(stay.rooms) !== selectedRoomCount.value) clearSelection();
+});
 
 function scrollToRooms() {
     document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -167,7 +220,7 @@ function onKeydown(event) {
 
 onMounted(() => {
     window.addEventListener('keydown', onKeydown);
-    if (hasDates.value) checkAvailability({ silent: true });
+    if (hasDates.value) checkAvailability();
 });
 
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
@@ -177,7 +230,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     <PublicLayout main-class="property-detail-page">
         <SeoHead :title="seo.title" :description="seo.description" :image="seo.image" :canonical="seo.canonical" :structured-data="seo.structuredData" />
 
-        <main>
+        <main :class="{ 'has-room-selection': selectedRoomCount > 0 }">
             <div class="public-container property-detail-container">
                 <nav class="property-breadcrumbs" aria-label="Breadcrumb">
                     <Link :href="searchHref"><i class="bi bi-arrow-left" data-dir-icon="arrow" aria-hidden="true"></i>{{ t('common.back_to_stays', 'Back to stays') }}</Link>
@@ -245,7 +298,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                         <section id="rooms" class="property-content-section property-rooms-section" aria-labelledby="rooms-heading">
                             <div class="property-section-heading"><span class="public-eyebrow">{{ t('common.accommodation', 'Accommodation') }}</span><h2 id="rooms-heading">{{ t('common.rooms_and_rates', 'Rooms & rates') }}</h2><p>{{ hasDates ? t('common.rooms_rates_description', 'Compare room types and the commercial terms available for your selected stay.') : t('common.browse_room_types', 'Browse the room types, then add dates when you are ready to check availability.') }}</p></div>
                             <div v-if="property.rooms?.length" class="property-room-list">
-                                <RoomTypeCard v-for="room in property.rooms" :key="room.slug" :room="room" :rates="roomRates(room)" :availability="roomAvailability(room)" :has-dates="hasDates" :selected-rate="selectedRate" @select="selectRate($event, room)" />
+                                <RoomTypeCard v-for="room in property.rooms" :key="room.slug" :room="room" :rates="roomRates(room)" :availability="roomAvailability(room)" :has-dates="hasDates && Boolean(rates)" :selection="selectedRooms[room.slug]" :max-quantity="Math.max(0, Math.min(Number(roomAvailability(room)?.available_rooms || 0), maxRoomsPerBooking - selectedRoomCount + Number(selectedRooms[room.slug]?.quantity || 0)))" @change="changeRoom($event.rate, room, $event.quantity)" />
                             </div>
                             <EmptyState v-else :title="t('common.no_room_types', 'Room details coming soon')" :description="t('common.no_room_types_description', 'This property has not published room types yet.')"><a v-if="property.phone" :href="'tel:' + property.phone" class="public-button public-button--outline">{{ t('common.contact_property', 'Contact property') }}</a></EmptyState>
                         </section>
@@ -264,6 +317,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                     </div>
 
                     <aside class="property-detail-aside">
+                        <div v-if="selectedRoomCount" class="property-selection-card">
+                            <span class="public-eyebrow">{{ t('common.your_selection', 'Your selection') }}</span>
+                            <h2>{{ selectedRoomCount }} {{ selectedRoomCount === 1 ? t('common.room', 'room') : t('common.rooms', 'rooms') }}</h2>
+                            <p>{{ formatDate(stay.check_in) }} – {{ formatDate(stay.check_out) }}</p>
+                            <ul class="property-selection-list"><li v-for="item in selectionItems" :key="item.room_type_id">{{ item.room_name }} × {{ item.quantity }} <small>{{ item.rate_name }}</small></li></ul>
+                            <div v-if="selectionQuote" class="property-selection-total"><span>{{ t('common.total', 'Total') }}</span><MoneyDisplay :money="selectionQuote.display_total" /></div>
+                            <p v-else-if="selectionError" role="alert">{{ selectionError }}</p>
+                            <p v-else>{{ t('common.rechecking_price', 'Rechecking price…') }}</p>
+                            <Link v-if="selectionQuote" :href="bookingHref" class="public-button public-button--primary public-button--lg">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
+                        </div>
                         <div class="property-aside-card">
                             <span class="public-eyebrow">{{ t('common.good_to_know', 'Good to know') }}</span>
                             <h2>{{ t('common.property_policies', 'Property policies') }}</h2>
@@ -284,21 +347,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                             <p v-if="property.postal_code || property.country_code">{{ property.postal_code }} {{ property.country_code }}</p>
                             <a v-if="property.website" :href="property.website" target="_blank" rel="noopener noreferrer" class="public-button public-button--outline public-button--sm">{{ t('common.visit_website', 'Visit website') }}</a>
                         </div>
-                        <div v-if="selectedRate" class="property-selection-card">
-                            <span class="public-eyebrow">{{ t('common.your_selection', 'Your selection') }}</span>
-                            <h2>{{ selectedRate.room_name }}</h2>
-                            <p>{{ selectedRate.name }}</p>
-                            <MoneyDisplay :money="selectedRate.display_total" />
-                            <Link :href="bookingHref" class="public-button public-button--primary public-button--lg">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
-                        </div>
                     </aside>
                 </div>
             </div>
         </main>
 
-        <div v-if="selectedRate" class="property-mobile-selection">
-            <div><span>{{ selectedRate.room_name }}</span><MoneyDisplay :money="selectedRate.display_total" /></div>
-            <Link :href="bookingHref" class="public-button public-button--primary public-button--sm">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
+        <div v-if="selectedRoomCount" class="property-mobile-selection">
+            <div><span>{{ selectedRoomCount }} {{ selectedRoomCount === 1 ? t('common.room', 'room') : t('common.rooms', 'rooms') }} · {{ selectionItems.map((item) => item.room_name + ' × ' + item.quantity).join(', ') }}</span><MoneyDisplay v-if="selectionQuote" :money="selectionQuote.display_total" /><small v-else>{{ selectionError || t('common.rechecking_price', 'Rechecking price…') }}</small></div>
+            <Link v-if="selectionQuote" :href="bookingHref" class="public-button public-button--primary public-button--sm">{{ t('common.continue_to_booking', 'Continue to booking') }}</Link>
         </div>
 
         <div v-if="galleryOpen" class="property-lightbox" role="dialog" aria-modal="true" :aria-label="t('common.property_photos', 'Property photos')" @click.self="closeGallery">

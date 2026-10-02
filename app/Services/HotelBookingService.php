@@ -8,6 +8,7 @@ use App\Enums\HotelReservationStatus;
 use App\Models\HotelBooking;
 use App\Models\HotelRatePlan;
 use App\Models\HotelRoomType;
+use App\Models\Property;
 use App\Models\User;
 use App\Notifications\CrmNotification;
 use App\Support\HotelSettings;
@@ -30,57 +31,42 @@ class HotelBookingService
         }
 
         $booking = DB::transaction(function () use ($data, $customer, $actor, $key): HotelBooking {
+            $items = $this->selectionItems($data);
+            $propertyId = (int) ($data['property_id'] ?? HotelRatePlan::findOrFail((int) $items[0]['rate_plan_id'])->property_id);
             if ($key !== null && ($existing = HotelBooking::where('idempotency_key', $key)->first())) {
+                if ((int) $existing->property_id !== $propertyId || (int) $existing->user_id !== (int) $customer?->id || $existing->guest_email !== trim((string) $data['guest_email'])) {
+                    throw ValidationException::withMessages(['idempotency_key' => 'This booking request was already used for a different reservation.']);
+                }
+
                 return $existing->load('items.reservationNights');
             }
 
-            $roomType = HotelRoomType::query()->whereKey((int) $data['room_type_id'])->lockForUpdate()->first();
-            if (! $roomType) {
-                throw ValidationException::withMessages(['room_type_id' => 'The selected room is no longer available.']);
+            HotelRoomType::query()->whereIn('id', array_column($items, 'room_type_id'))->orderBy('id')->lockForUpdate()->get();
+            $property = Property::findOrFail($propertyId);
+            $selection = $this->quoteSelection($property, $data);
+            $validFingerprints = [$selection['quote_fingerprint']];
+            if (count($selection['items']) === 1) {
+                $validFingerprints[] = self::fingerprint($selection['items'][0]['quote']);
             }
-
-            $plan = HotelRatePlan::query()->whereKey((int) $data['rate_plan_id'])->first();
-            if (! $plan || (int) $plan->hotel_room_type_id !== $roomType->id) {
-                throw ValidationException::withMessages(['rate_plan_id' => 'The selected rate plan does not belong to this room.']);
-            }
-
-            $rooms = (int) $data['rooms'];
-            $this->assertRoomLimit($rooms);
-            $property = $plan->property()->firstOrFail();
-            if ((string) $data['check_in'] < $this->availability->propertyToday($property)->toDateString()) {
-                throw ValidationException::withMessages(['check_in' => 'Check-in cannot be in the past.']);
-            }
-            $quote = $this->pricing->quote($plan, (string) $data['check_in'], (string) $data['check_out'], $rooms, (int) $data['adults'], (int) ($data['children'] ?? 0), true);
-            $fingerprint = self::fingerprint($quote);
-
-            if (! empty($data['quote_fingerprint']) && ! hash_equals((string) $data['quote_fingerprint'], $fingerprint)) {
+            if (! empty($data['quote_fingerprint']) && ! in_array((string) $data['quote_fingerprint'], $validFingerprints, true)) {
                 throw ValidationException::withMessages(['quote_fingerprint' => 'The price or availability changed. Please review the updated total.']);
-            }
-
-            if (! $quote['available']) {
-                throw ValidationException::withMessages(['availability' => $quote['unavailable_reason'] ?? 'The selected stay is no longer available.']);
             }
 
             $vendor = $property->vendorProfile;
             $status = $this->initialStatus();
-            $snapshot = $quote + [
-                'quote_fingerprint' => $fingerprint,
+            $snapshot = [
+                'quote_fingerprint' => $selection['quote_fingerprint'],
                 'property_name' => $property->name,
                 'property_address' => trim(implode(', ', array_filter([$property->address_line_1, $property->city?->name, $property->state?->name]))),
-                'room_type_name' => $roomType->name,
-                'rate_plan_name' => $plan->name,
-                'meal_plan' => $plan->meal_plan,
-                'cancellation_mode' => $plan->cancellation_mode,
-                'cancellation_policy' => [
-                    'mode' => $plan->cancellation_mode,
-                    'free_until_hours' => 48,
-                    'fee_type' => $plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 'full_amount' : 'first_night',
-                    'fee_value' => $plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 100 : null,
-                    'summary' => $plan->cancellation_note ?: ($plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 'Non-refundable' : 'Free cancellation until 48 hours before check-in; then first-night charge.'),
-                ],
+                'items' => array_map(fn (array $line): array => $line['snapshot'], $selection['items']),
+                'nights_count' => $selection['nights_count'],
+                'nightly' => $selection['nightly'],
             ];
-            $taxes = $this->chargeTotal($quote['taxes']);
-            $fees = $this->chargeTotal($quote['fees']);
+            if (count($selection['items']) === 1) {
+                $snapshot = $selection['items'][0]['snapshot'] + $snapshot;
+            } else {
+                $snapshot['cancellation_policy'] = ['mode' => 'mixed', 'summary' => 'Cancellation terms vary by room rate.'];
+            }
 
             $booking = HotelBooking::create([
                 'booking_number' => app(NumberSeriesService::class)->next('hotel_reservation'),
@@ -92,35 +78,38 @@ class HotelBookingService
                 'vendor_name_snapshot' => $vendor?->business_name,
                 'status' => $status,
                 'payment_status' => HotelPaymentStatus::Unpaid,
-                'currency' => $quote['currency'],
-                'check_in' => $quote['check_in'], 'check_out' => $quote['check_out'],
-                'nights' => $quote['nights_count'], 'rooms_count' => $rooms,
-                'adults' => $quote['adults'], 'children' => $quote['children'],
+                'currency' => $selection['currency'],
+                'check_in' => $data['check_in'], 'check_out' => $data['check_out'],
+                'nights' => $selection['nights_count'], 'rooms_count' => $selection['rooms_count'],
+                'adults' => (int) $data['adults'], 'children' => (int) ($data['children'] ?? 0),
                 'guest_name' => trim((string) $data['guest_name']),
                 'guest_email' => trim((string) $data['guest_email']),
                 'guest_phone' => trim((string) $data['guest_phone']),
                 'special_requests' => $this->cleanRequest($data['special_requests'] ?? null),
-                'subtotal' => $quote['subtotal'], 'taxes' => $taxes, 'fees' => $fees, 'total' => $quote['total'],
+                'subtotal' => $selection['subtotal'], 'taxes' => $selection['taxes'], 'fees' => $selection['fees'], 'total' => $selection['total'],
                 'pricing_snapshot' => $snapshot,
                 'terms_accepted_at' => ! empty($data['terms_accepted']) ? now() : null,
                 'booked_at' => now(), 'confirmed_at' => $status === HotelBookingStatus::Confirmed->value ? now() : null,
             ]);
 
-            $item = $booking->items()->create([
-                'room_type_id' => $roomType->id, 'rate_plan_id' => $plan->id,
-                'room_type_name_snapshot' => $roomType->name, 'rate_plan_name_snapshot' => $plan->name,
-                'meal_plan_snapshot' => $plan->meal_plan, 'cancellation_mode_snapshot' => $plan->cancellation_mode,
-                'quantity' => $rooms, 'adults' => $quote['adults'], 'children' => $quote['children'],
-                'check_in' => $quote['check_in'], 'check_out' => $quote['check_out'], 'nights' => $quote['nights_count'],
-                'currency' => $quote['currency'], 'subtotal' => $quote['subtotal'], 'taxes' => $taxes, 'fees' => $fees,
-                'total' => $quote['total'], 'pricing_snapshot' => $snapshot, 'status' => $status,
-            ]);
-
-            foreach ($this->availability->nights($quote['check_in'], $quote['check_out']) as $date) {
-                $item->reservationNights()->create([
-                    'room_type_id' => $roomType->id, 'stay_date' => $date, 'quantity' => $rooms,
-                    'status' => $this->reservationStatus($status),
+            foreach ($selection['items'] as $line) {
+                $quote = $line['quote'];
+                $item = $booking->items()->create([
+                    'room_type_id' => $line['room_type_id'], 'rate_plan_id' => $line['rate_plan_id'],
+                    'room_type_name_snapshot' => $line['room_name'], 'rate_plan_name_snapshot' => $line['rate_name'],
+                    'meal_plan_snapshot' => $line['meal_plan'], 'cancellation_mode_snapshot' => $line['cancellation_mode'],
+                    'quantity' => $line['quantity'], 'adults' => $quote['adults'], 'children' => $quote['children'],
+                    'check_in' => $quote['check_in'], 'check_out' => $quote['check_out'], 'nights' => $quote['nights_count'],
+                    'currency' => $quote['currency'], 'subtotal' => $quote['subtotal'], 'taxes' => $this->chargeTotal($quote['taxes']), 'fees' => $this->chargeTotal($quote['fees']),
+                    'total' => $quote['total'], 'pricing_snapshot' => $line['snapshot'], 'status' => $status,
                 ]);
+
+                foreach ($this->availability->nights($quote['check_in'], $quote['check_out']) as $date) {
+                    $item->reservationNights()->create([
+                        'room_type_id' => $line['room_type_id'], 'stay_date' => $date, 'quantity' => $line['quantity'],
+                        'status' => $this->reservationStatus($status),
+                    ]);
+                }
             }
 
             $this->activity->log('hotel_booking.created', 'hotels', "Hotel booking {$booking->booking_number} created.", $booking, null, ['booking_number' => $booking->booking_number, 'status' => $status], $actor ?? $customer);
@@ -133,6 +122,132 @@ class HotelBookingService
         }
 
         return $booking;
+    }
+
+    /** @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public function quoteSelection(Property $property, array $data): array
+    {
+        $items = $this->selectionItems($data);
+        $roomsCount = array_sum(array_column($items, 'quantity'));
+        $this->assertRoomLimit($roomsCount);
+
+        if ((string) $data['check_in'] < $this->availability->propertyToday($property)->toDateString()) {
+            throw ValidationException::withMessages(['check_in' => 'Check-in cannot be in the past.']);
+        }
+
+        $adultsRemaining = (int) $data['adults'];
+        $childrenRemaining = (int) ($data['children'] ?? 0);
+        if ($adultsRemaining < count($items)) {
+            throw ValidationException::withMessages(['adults' => 'Select at least one adult for each room type.']);
+        }
+
+        $selected = [];
+        foreach ($items as $item) {
+            $room = $property->roomTypes()->active()->find((int) $item['room_type_id']);
+            $plan = $room?->ratePlans()->active()->find((int) $item['rate_plan_id']);
+            if (! $room || ! $plan || (int) $plan->property_id !== $property->id) {
+                throw ValidationException::withMessages(['items' => 'A selected room or rate is no longer available at this hotel.']);
+            }
+            $selected[] = ['room' => $room, 'plan' => $plan, 'quantity' => (int) $item['quantity']];
+        }
+
+        foreach ($selected as $index => $line) {
+            $remainingTypes = count($selected) - $index - 1;
+            $adults = min((int) $line['room']->max_adults * $line['quantity'], $adultsRemaining - $remainingTypes);
+            if ($adults < 1) {
+                throw ValidationException::withMessages(['adults' => 'The selected rooms cannot accommodate these adults.']);
+            }
+            $selected[$index]['adults'] = $adults;
+            $adultsRemaining -= $adults;
+        }
+        if ($adultsRemaining > 0) {
+            throw ValidationException::withMessages(['adults' => 'The selected rooms cannot accommodate these adults.']);
+        }
+
+        $lines = [];
+        $subtotal = $taxes = $fees = $total = '0.00';
+        $nightly = [];
+        foreach ($selected as $line) {
+            $room = $line['room'];
+            $plan = $line['plan'];
+            $quantity = $line['quantity'];
+            $children = min($childrenRemaining, (int) $room->max_children * $quantity, (int) $room->max_occupancy * $quantity - $line['adults']);
+            $childrenRemaining -= $children;
+            $quote = $this->pricing->quote($plan, (string) $data['check_in'], (string) $data['check_out'], $quantity, $line['adults'], $children, true);
+            if (! $quote['available']) {
+                throw ValidationException::withMessages(['availability' => $room->name.': '.($quote['unavailable_reason'] ?? 'No longer available for these dates.')]);
+            }
+            $policy = [
+                'mode' => $plan->cancellation_mode,
+                'free_until_hours' => 48,
+                'fee_type' => $plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 'full_amount' : 'first_night',
+                'fee_value' => $plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 100 : null,
+                'summary' => $plan->cancellation_note ?: ($plan->cancellation_mode === HotelRatePlan::CANCEL_NON_REFUNDABLE ? 'Non-refundable' : 'Free cancellation until 48 hours before check-in; then first-night charge.'),
+            ];
+            $snapshot = $quote + [
+                'quote_fingerprint' => self::fingerprint($quote),
+                'room_type_name' => $room->name,
+                'rate_plan_name' => $plan->name,
+                'meal_plan' => $plan->meal_plan,
+                'cancellation_mode' => $plan->cancellation_mode,
+                'cancellation_policy' => $policy,
+            ];
+            $lines[] = [
+                'room_type_id' => $room->id, 'rate_plan_id' => $plan->id, 'quantity' => $quantity,
+                'room_name' => $room->name, 'rate_name' => $plan->name, 'meal_plan' => $plan->meal_plan,
+                'cancellation_mode' => $plan->cancellation_mode, 'cancellation_note' => $plan->cancellation_note,
+                'quote' => $quote, 'snapshot' => $snapshot,
+            ];
+            $subtotal = bcadd($subtotal, $quote['subtotal'], 2);
+            $taxes = bcadd($taxes, $this->chargeTotal($quote['taxes']), 2);
+            $fees = bcadd($fees, $this->chargeTotal($quote['fees']), 2);
+            $total = bcadd($total, $quote['total'], 2);
+            foreach ($quote['nightly'] as $night) {
+                $date = $night['date'];
+                $nightly[$date] = ['date' => $date, 'night_total' => bcadd($nightly[$date]['night_total'] ?? '0.00', $night['night_total'], 2)];
+            }
+        }
+        if ($childrenRemaining > 0) {
+            throw ValidationException::withMessages(['children' => 'The selected rooms cannot accommodate these children.']);
+        }
+
+        return [
+            'items' => $lines, 'rooms_count' => $roomsCount, 'nights_count' => count($nightly),
+            'currency' => $lines[0]['quote']['currency'], 'subtotal' => $subtotal, 'taxes' => $taxes, 'fees' => $fees, 'total' => $total,
+            'nightly' => array_values($nightly),
+            'quote_fingerprint' => hash('sha256', json_encode(array_map(fn (array $line): string => self::fingerprint($line['quote']), $lines))),
+        ];
+    }
+
+    /** @param array<string, mixed> $data
+     * @return array<int, array{room_type_id: int, rate_plan_id: int, quantity: int}>
+     */
+    protected function selectionItems(array $data): array
+    {
+        $items = $data['items'] ?? [[
+            'room_type_id' => $data['room_type_id'] ?? null,
+            'rate_plan_id' => $data['rate_plan_id'] ?? null,
+            'quantity' => $data['rooms'] ?? null,
+        ]];
+        if (! is_array($items) || $items === [] || count($items) > 10) {
+            throw ValidationException::withMessages(['items' => 'Select between one and ten room types.']);
+        }
+        $seen = [];
+        foreach ($items as &$item) {
+            if (! is_array($item) || filter_var($item['room_type_id'] ?? null, FILTER_VALIDATE_INT) === false || filter_var($item['rate_plan_id'] ?? null, FILTER_VALIDATE_INT) === false || filter_var($item['quantity'] ?? null, FILTER_VALIDATE_INT) === false || (int) $item['quantity'] < 1) {
+                throw ValidationException::withMessages(['items' => 'Choose a valid room, rate, and positive quantity.']);
+            }
+            $item = ['room_type_id' => (int) $item['room_type_id'], 'rate_plan_id' => (int) $item['rate_plan_id'], 'quantity' => (int) $item['quantity']];
+            if (isset($seen[$item['room_type_id']])) {
+                throw ValidationException::withMessages(['items' => 'Select each room type only once.']);
+            }
+            $seen[$item['room_type_id']] = true;
+        }
+        unset($item);
+
+        return array_values($items);
     }
 
     public static function fingerprint(array $quote): string
@@ -180,9 +295,16 @@ class HotelBookingService
     /** @param array<string, mixed> $data */
     protected function assertContact(array $data): void
     {
-        foreach (['room_type_id', 'rate_plan_id', 'check_in', 'check_out', 'rooms', 'adults', 'guest_name', 'guest_email', 'guest_phone'] as $field) {
+        foreach (['check_in', 'check_out', 'adults', 'guest_name', 'guest_email', 'guest_phone'] as $field) {
             if (! array_key_exists($field, $data) || trim((string) $data[$field]) === '') {
                 throw ValidationException::withMessages([$field => 'This field is required.']);
+            }
+        }
+        if (! isset($data['items'])) {
+            foreach (['room_type_id', 'rate_plan_id', 'rooms'] as $field) {
+                if (! isset($data[$field])) {
+                    throw ValidationException::withMessages([$field => 'This field is required.']);
+                }
             }
         }
         if (HotelSettings::enabled('hotel.booking.require_terms_acceptance') && empty($data['terms_accepted'])) {

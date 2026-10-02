@@ -409,6 +409,42 @@
     font-weight: 800;
 }
 
+.property-room-quantity {
+    display: inline-grid;
+    align-items: center;
+    grid-template-columns: 2.75rem 2rem 2.75rem;
+    border: 1px solid var(--public-border-strong);
+    border-radius: var(--public-radius-sm);
+    background: var(--public-surface-elevated);
+}
+
+.property-room-quantity button {
+    min-height: 2.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--public-brand);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.property-room-quantity button:hover:not(:disabled),
+.property-room-quantity button:focus-visible {
+    background: var(--public-brand-soft);
+    outline: 2px solid var(--public-brand);
+    outline-offset: 2px;
+}
+
+.property-room-quantity button:disabled {
+    color: var(--public-text-subtle);
+    cursor: not-allowed;
+}
+
+.property-room-quantity output {
+    color: var(--public-text);
+    font-weight: 700;
+    text-align: center;
+}
+
 .property-room-card__no-date-state {
     display: flex;
     align-items: center;
@@ -560,6 +596,38 @@
 .property-selection-card .public-eyebrow,
 .property-selection-card h2 {
     color: #fff;
+}
+
+.property-selection-list {
+    display: grid;
+    gap: 0.65rem;
+    margin: 1rem 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.property-selection-list small {
+    display: block;
+    margin-top: 0.15rem;
+    color: rgb(255 255 255 / 72%);
+    font-size: 0.73rem;
+    font-weight: 400;
+}
+
+.property-selection-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    border-top: 1px solid rgb(255 255 255 / 28%);
+    padding-top: 1rem;
+}
+
+.property-selection-total .public-money__value {
+    margin: 0;
 }
 
 .property-selection-card p {
@@ -862,7 +930,7 @@
     border-top: 1px solid var(--public-border);
     background: rgb(255 253 249 / 96%);
     box-shadow: 0 -0.75rem 2rem rgb(28 43 45 / 10%);
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
 }
 
 .property-mobile-selection > div {
@@ -958,6 +1026,9 @@
 }
 
 @media (max-width: 650px) {
+    .property-detail-page main.has-room-selection .property-detail-container {
+        padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+    }
     .property-detail-container {
         padding-top: 1rem;
     }

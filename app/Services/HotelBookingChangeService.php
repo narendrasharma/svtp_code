@@ -42,6 +42,26 @@ class HotelBookingChangeService
                 default => (string) ($booking->pricing_snapshot['nightly'][0]['night_total'] ?? $booking->total),
             };
         }
+        if ($booking->items()->count() > 1) {
+            $fee = '0.00';
+            foreach ($booking->items as $item) {
+                $itemPolicy = $item->pricing_snapshot['cancellation_policy'] ?? [];
+                $itemCutoff = $checkIn->copy()->subHours((int) ($itemPolicy['free_until_hours'] ?? 48));
+                if (($itemPolicy['mode'] ?? null) === 'non_refundable') {
+                    $itemFee = (string) $item->total;
+                } elseif ($at->copy()->setTimezone($timezone)->gt($itemCutoff)) {
+                    $itemFee = match ($itemPolicy['fee_type'] ?? 'first_night') {
+                        'percentage' => bcdiv(bcmul((string) $item->total, (string) ($itemPolicy['fee_value'] ?? 100), 2), '100', 2),
+                        'fixed' => (string) min((float) $item->total, (float) ($itemPolicy['fee_value'] ?? 0)),
+                        'full_amount' => (string) $item->total,
+                        default => (string) ($item->pricing_snapshot['nightly'][0]['night_total'] ?? $item->total),
+                    };
+                } else {
+                    $itemFee = '0.00';
+                }
+                $fee = bcadd($fee, $itemFee, 2);
+            }
+        }
         $paid = (string) ($booking->amount_paid ?? '0.00');
         $fee = number_format(min((float) $booking->total, (float) $fee), 2, '.', '');
         $refundable = bcsub((string) max(0, (float) $paid), $fee, 2);
@@ -111,6 +131,9 @@ class HotelBookingChangeService
         if (! in_array($booking->status, [HotelBookingStatus::Pending, HotelBookingStatus::Confirmed], true) || Carbon::parse($checkIn)->lte(now()->startOfDay())) {
             return ['eligible' => false, 'old_dates' => [$booking->check_in->toDateString(), $booking->check_out->toDateString()]];
         }
+        if ($booking->items()->count() > 1) {
+            return $this->multiRoomRescheduleQuote($booking, $checkIn, $checkOut);
+        }
         $item = $booking->items()->firstOrFail();
         $quote = $this->pricing->quote($item->ratePlan()->firstOrFail(), $checkIn, $checkOut, $item->quantity, $item->adults, $item->children, false);
         $pricingAvailable = $quote['available'];
@@ -133,6 +156,9 @@ class HotelBookingChangeService
             $booking = HotelBooking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
             if ($existing = HotelBookingChange::where('idempotency_key', $key)->first()) {
                 return $existing;
+            }
+            if ($booking->items()->count() > 1) {
+                return $this->rescheduleMultipleRooms($booking, $key, $checkIn, $checkOut, $actor, $fingerprint, $reason);
             }
             $item = $booking->items()->firstOrFail();
             $roomType = HotelRoomType::query()->whereKey($item->room_type_id)->lockForUpdate()->firstOrFail();
@@ -161,6 +187,79 @@ class HotelBookingChangeService
 
             return $change;
         });
+    }
+
+    /** @return array<string, mixed> */
+    protected function multiRoomRescheduleQuote(HotelBooking $booking, string $checkIn, string $checkOut): array
+    {
+        $quotes = [];
+        $subtotal = $taxes = $fees = $total = '0.00';
+        $available = true;
+        foreach ($booking->items()->orderBy('room_type_id')->get() as $item) {
+            $quote = $this->pricing->quote($item->ratePlan()->firstOrFail(), $checkIn, $checkOut, $item->quantity, $item->adults, $item->children, false);
+            $stock = $this->availability->checkRoomType($item->roomType()->firstOrFail(), $checkIn, $checkOut, $item->quantity, null, $booking->id);
+            $quote['available'] = $quote['available'] && $stock['available'];
+            $available = $available && $quote['available'];
+            $quotes[$item->id] = $quote;
+            $subtotal = bcadd($subtotal, $quote['subtotal'], 2);
+            $taxes = bcadd($taxes, $this->chargeTotal($quote['taxes']), 2);
+            $fees = bcadd($fees, $this->chargeTotal($quote['fees']), 2);
+            $total = bcadd($total, $quote['total'], 2);
+        }
+        $difference = bcsub($total, (string) $booking->total, 2);
+
+        return [
+            'eligible' => $available, 'old_dates' => [$booking->check_in->toDateString(), $booking->check_out->toDateString()],
+            'new_dates' => [$checkIn, $checkOut], 'old_total' => (string) $booking->total, 'new_total' => $total,
+            'difference' => $difference, 'additional_payment_due' => max(0, (float) $difference),
+            'refundable_difference' => max(0, (float) -$difference), 'availability' => $available,
+            'quote_fingerprint' => hash('sha256', json_encode(array_map(fn (array $quote): string => HotelBookingService::fingerprint($quote), $quotes))),
+            'quote' => ['items' => $quotes, 'subtotal' => $subtotal, 'taxes' => $taxes, 'fees' => $fees, 'total' => $total, 'nights_count' => count($this->availability->nights($checkIn, $checkOut))],
+        ];
+    }
+
+    protected function rescheduleMultipleRooms(HotelBooking $booking, string $key, string $checkIn, string $checkOut, ?User $actor, ?string $fingerprint, ?string $reason): HotelBookingChange
+    {
+        $items = $booking->items()->orderBy('room_type_id')->get();
+        HotelRoomType::query()->whereIn('id', $items->pluck('room_type_id'))->orderBy('id')->lockForUpdate()->get();
+        $quoted = $this->rescheduleQuote($booking, $checkIn, $checkOut);
+        if (! $quoted['eligible'] || $fingerprint !== null && ! hash_equals((string) $quoted['quote_fingerprint'], $fingerprint)) {
+            throw ValidationException::withMessages(['quote_fingerprint' => 'The stay is no longer eligible or the price changed. Please request a new quote.']);
+        }
+        $oldSnapshot = $booking->pricing_snapshot ?? [];
+        $oldIn = $booking->check_in->toDateString();
+        $oldOut = $booking->check_out->toDateString();
+        $oldTotal = $booking->total;
+        $booking->reservationNights()->update(['hotel_reservation_nights.status' => HotelReservationStatus::Cancelled]);
+        foreach ($items as $item) {
+            $quote = $quoted['quote']['items'][$item->id];
+            foreach ($this->availability->nights($checkIn, $checkOut) as $date) {
+                $night = $item->reservationNights()->whereDate('stay_date', $date)->first();
+                if ($night) {
+                    $night->update(['quantity' => $item->quantity, 'status' => HotelReservationStatus::Confirmed]);
+                } else {
+                    $item->reservationNights()->create(['room_type_id' => $item->room_type_id, 'stay_date' => $date, 'quantity' => $item->quantity, 'status' => HotelReservationStatus::Confirmed]);
+                }
+            }
+            $snapshot = array_replace($item->pricing_snapshot ?? [], $quote);
+            $item->update(['check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $quote['nights_count'], 'subtotal' => $quote['subtotal'], 'taxes' => $this->chargeTotal($quote['taxes']), 'fees' => $this->chargeTotal($quote['fees']), 'total' => $quote['total'], 'pricing_snapshot' => $snapshot]);
+        }
+        $totals = $quoted['quote'];
+        $snapshots = $items->map(fn ($item): array => $item->fresh()->pricing_snapshot)->all();
+        $nightly = [];
+        foreach ($snapshots as $snapshot) {
+            foreach ($snapshot['nightly'] as $night) {
+                $date = $night['date'];
+                $nightly[$date] = ['date' => $date, 'night_total' => bcadd($nightly[$date]['night_total'] ?? '0.00', $night['night_total'], 2)];
+            }
+        }
+        $newSnapshot = array_replace($oldSnapshot, ['items' => $snapshots, 'nightly' => array_values($nightly), 'nights_count' => $totals['nights_count'], 'quote_fingerprint' => $quoted['quote_fingerprint']]);
+        $booking->update(['check_in' => $checkIn, 'check_out' => $checkOut, 'nights' => $totals['nights_count'], 'subtotal' => $totals['subtotal'], 'taxes' => $totals['taxes'], 'fees' => $totals['fees'], 'total' => $totals['total'], 'pricing_snapshot' => $newSnapshot]);
+        $change = HotelBookingChange::create(['hotel_booking_id' => $booking->id, 'idempotency_key' => $key, 'old_check_in' => $oldIn, 'old_check_out' => $oldOut, 'new_check_in' => $checkIn, 'new_check_out' => $checkOut, 'old_total' => $oldTotal, 'new_total' => $totals['total'], 'difference' => $quoted['difference'], 'currency' => $booking->currency, 'reason' => $reason, 'old_snapshot' => $oldSnapshot, 'new_snapshot' => $newSnapshot, 'requested_by' => $actor?->id]);
+        $this->activity->log('hotel_booking.rescheduled', 'hotels', "Hotel booking {$booking->booking_number} rescheduled.", $booking, ['check_in' => $oldIn, 'check_out' => $oldOut], ['check_in' => $checkIn, 'check_out' => $checkOut, 'difference' => $quoted['difference']], $actor);
+        $this->notify($booking, 'hotel_booking_rescheduled', ['old_check_in' => $oldIn, 'old_check_out' => $oldOut, 'new_check_in' => $checkIn, 'new_check_out' => $checkOut]);
+
+        return $change;
     }
 
     protected function setCancelled(HotelBooking $booking, ?User $actor): void

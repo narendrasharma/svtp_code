@@ -252,9 +252,10 @@ Route::get('/hotels/{property:slug}', [HotelController::class, 'show'])->name('h
 Route::get('/hotels/{property:slug}/availability', [HotelController::class, 'availability'])->name('hotels.availability')->middleware(['module:hotels', 'throttle:60,1']);
 // Phase 12B.4 public rates (pricing only, no booking yet).
 Route::get('/hotels/{property:slug}/rates', [HotelController::class, 'rates'])->name('hotels.rates')->middleware(['module:hotels', 'throttle:60,1']);
-Route::get('/hotels/{slug}/book', [HotelBookingController::class, 'create'])->name('hotel-booking.create')->middleware(['module:hotels', 'auth']);
+Route::get('/hotels/{slug}/booking-quote', [HotelBookingController::class, 'quote'])->name('hotel-booking.quote')->middleware(['module:hotels', 'throttle:60,1']);
+Route::get('/hotels/{slug}/book', [HotelBookingController::class, 'create'])->name('hotel-booking.create')->middleware('module:hotels');
 Route::post('/hotels/{slug}/book', [HotelBookingController::class, 'store'])->name('hotel-booking.store')->middleware(['module:hotels', 'throttle:10,1']);
-Route::get('/hotel-bookings/{booking}/confirmation', [App\Http\Controllers\Account\HotelBookingController::class, 'confirmation'])->name('hotel-booking.confirmation')->middleware(['module:hotels', 'auth']);
+Route::get('/hotel-bookings/{booking}/confirmation', [App\Http\Controllers\Account\HotelBookingController::class, 'confirmation'])->name('hotel-booking.confirmation')->middleware('module:hotels');
 Route::post('/packages/{package:slug}/reviews', [ReviewController::class, 'storePublic'])
     ->middleware(['throttle:3,10', 'module:tours'])
     ->name('packages.reviews.store');

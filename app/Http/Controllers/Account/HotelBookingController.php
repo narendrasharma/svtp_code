@@ -89,11 +89,12 @@ class HotelBookingController extends Controller
 
     public function confirmation(Request $request, HotelBooking $booking): Response
     {
-        abort_unless((int) $booking->user_id === (int) $request->user()->id, 404);
+        abort_unless($request->user() && (int) $booking->user_id === (int) $request->user()->id || ! $booking->user_id && (int) $request->session()->get('hotel_booking_confirmation_id') === (int) $booking->id, 404);
         $booking->load('property', 'items.reservationNights');
 
         return Inertia::render('Hotels/Confirmation', [
             'booking' => $this->safe($booking),
+            'canViewBooking' => $request->user() && (int) $booking->user_id === (int) $request->user()->id,
             'seo' => [
                 'title' => __('common.booking_confirmed').' · '.$booking->booking_number,
                 'description' => __('common.booking_confirmation_description'),

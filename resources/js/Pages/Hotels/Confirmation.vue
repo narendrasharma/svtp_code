@@ -9,11 +9,11 @@ import MoneyDisplay from '../../Components/Public/UI/MoneyDisplay.vue';
 
 const props = defineProps({
     booking: { type: Object, required: true },
+    canViewBooking: { type: Boolean, default: false },
     seo: { type: Object, default: () => ({}) },
 });
 
 const { locale, t } = useLocalization();
-const item = computed(() => props.booking.items?.[0] || {});
 const propertyHref = computed(() => {
     if (!props.booking.property_slug) return appUrl('/search/hotels');
     return appUrl('/hotels/' + props.booking.property_slug);
@@ -71,9 +71,9 @@ function labelFor(value) {
                                 </div>
                                 <span class="public-badge public-badge--brand">{{ labelFor(booking.status) }}</span>
                             </div>
-                            <div class="hotel-confirmation-recap">
+                            <div v-for="item in booking.items" :key="item.room_type + item.rate_plan" class="hotel-confirmation-recap">
                                 <div>
-                                    <strong>{{ item.room_type }}</strong>
+                                    <strong>{{ item.room_type }} × {{ item.quantity }}</strong>
                                     <span>{{ item.rate_plan }}</span>
                                     <span v-if="item.meal_plan">{{ item.meal_plan }}</span>
                                 </div>
@@ -113,7 +113,7 @@ function labelFor(value) {
                 </div>
 
                 <nav class="hotel-confirmation-actions" aria-label="Booking actions">
-                    <Link :href="appUrl('/account/hotel-bookings/' + booking.id)" class="public-button public-button--primary">{{ t('common.view_booking', 'View booking') }}</Link>
+                    <Link v-if="canViewBooking" :href="appUrl('/account/hotel-bookings/' + booking.id)" class="public-button public-button--primary">{{ t('common.view_booking', 'View booking') }}</Link>
                     <Link :href="propertyHref" class="public-button public-button--outline">{{ t('common.back_to_property', 'Back to property') }}</Link>
                     <Link :href="appUrl('/search/hotels')" class="public-button public-button--ghost">{{ t('common.back_to_hotels', 'Back to hotels') }}</Link>
                 </nav>
